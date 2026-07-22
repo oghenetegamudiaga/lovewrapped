@@ -1,0 +1,6 @@
+{
+  "name": "LoveWrapped",
+  "description": "Create animated, story-style card experiences for meaningful life moments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

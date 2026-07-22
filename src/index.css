@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'DM Sans', sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #2b0818;
+    color: #fce7f3;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Custom LoveWrapped Theme Utilities */
+.bg-theme-dark {
+  background-color: #2b0818;
+}
+
+.bg-theme-wine {
+  background-color: #3a0d22;
+}
+
+.bg-theme-plum {
+  background-color: #4a102b;
+}
+
+.glow-one {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  top: -40px;
+  right: -40px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.4) 0%, rgba(58, 13, 34, 0) 70%);
+  filter: blur(50px);
+  pointer-events: none;
+  animation: pulse-glow 8s infinite alternate ease-in-out;
+}
+
+.glow-two {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  bottom: -40px;
+  left: -40px;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.35) 0%, rgba(58, 13, 34, 0) 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  animation: pulse-glow 10s infinite alternate-reverse ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.7; }
+  100% { transform: scale(1.2) translate(15px, -15px); opacity: 0.95; }
+}
+
+.phone-card-shadow {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 30px rgba(225, 29, 72, 0.15);
+}
+
+.glass-card {
+  background: rgba(58, 13, 34, 0.65);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(251, 113, 133, 0.2);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(74, 16, 43, 0.85);
+  border-color: rgba(251, 113, 133, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(225, 29, 72, 0.25);
+}
+
+/* Eyebrow styling */
+.eyebrow-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #f472b6;
+  text-transform: uppercase;
+}
+
+.eyebrow-pill span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #f43f5e;
+  box-shadow: 0 0 8px #f43f5e;
+}
