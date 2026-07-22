@@ -1,8 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { CreateExperiencePayload, Experience, UserRecord } from './src/types';
 import { generateSlides } from './src/lib/slideEngine';
+import { isSupabaseConfigured, supabase } from './src/lib/supabase';
 
 const app = express();
 const PORT = 3000;
@@ -97,11 +101,55 @@ usersStore.set('user-demo-1', {
 // API Routes
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'LoveWrapped API' });
+  res.json({
+    status: 'ok',
+    service: 'LoveWrapped API',
+    database: isSupabaseConfigured ? 'supabase' : 'in-memory',
+  });
+});
+
+// Image Upload Endpoint for Paid Plan
+app.post('/api/upload', async (req, res) => {
+  try {
+    const { imageBase64, fileName } = req.body;
+    if (!imageBase64) {
+      return res.status(400).json({ message: 'No image data provided.' });
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const cleanFileName = `${Date.now()}_${(fileName || 'image.jpg').replace(/[^a-zA-Z0-9._-]/g, '')}`;
+      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      const { error } = await supabase.storage
+        .from('experience-images')
+        .upload(cleanFileName, buffer, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
+
+      if (error) {
+        console.error('Supabase image upload error:', error);
+        return res.status(500).json({ message: 'Failed to upload image to Supabase storage.' });
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('experience-images')
+        .getPublicUrl(cleanFileName);
+
+      return res.json({ url: publicUrlData.publicUrl });
+    }
+
+    // Fallback: return base64 data string directly if Supabase storage is not configured
+    res.json({ url: imageBase64 });
+  } catch (err: any) {
+    console.error('Upload handler error:', err);
+    res.status(500).json({ message: err.message || 'Image upload failed' });
+  }
 });
 
 // Create new experience
-app.post('/api/experiences', (req, res) => {
+app.post('/api/experiences', async (req, res) => {
   const payload: CreateExperiencePayload = req.body;
   if (!payload.sender_name || !payload.receiver_name || !payload.message) {
     return res.status(400).json({ message: 'Sender, receiver, and message are required.' });
@@ -137,9 +185,37 @@ app.post('/api/experiences', (req, res) => {
     slides: generatedSlides,
   };
 
-  experiencesStore.set(slug, experience);
+  if (isSupabaseConfigured && supabase) {
+    const { error: expError } = await supabase.from('experiences').insert({
+      id: experience.id,
+      slug: experience.slug,
+      sender_name: experience.sender_name,
+      receiver_name: experience.receiver_name,
+      occasion: experience.occasion,
+      tier: experience.tier,
+      image_count: experience.image_count,
+      is_paid: experience.is_paid,
+      payment_reference: experience.payment_reference,
+      views_count: experience.views_count,
+      reactions_count: experience.reactions_count,
+      slides: experience.slides,
+      created_at: experience.created_at,
+    });
 
-  // Record user if email provided
+    if (expError) {
+      console.error('Error inserting experience to Supabase:', expError);
+    }
+
+    if (payload.creator_email) {
+      await supabase.from('users').insert({
+        email: payload.creator_email,
+        tier,
+      });
+    }
+  }
+
+  // Always sync to in-memory store for fast local access / fallback
+  experiencesStore.set(slug, experience);
   if (payload.creator_email) {
     const userId = `usr-${Date.now()}`;
     usersStore.set(userId, {
@@ -154,15 +230,35 @@ app.post('/api/experiences', (req, res) => {
 });
 
 // Get experience by slug
-app.get('/api/experiences/:slug', (req, res) => {
+app.get('/api/experiences/:slug', async (req, res) => {
   const slug = req.params.slug;
+
+  if (isSupabaseConfigured && supabase) {
+    const { data: expData, error } = await supabase
+      .from('experiences')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+
+    if (expData && !error) {
+      const updatedViews = (expData.views_count || 0) + 1;
+      await supabase
+        .from('experiences')
+        .update({ views_count: updatedViews })
+        .eq('slug', slug);
+
+      expData.views_count = updatedViews;
+      return res.json(expData);
+    }
+  }
+
+  // Fallback to in-memory store
   const exp = experiencesStore.get(slug);
 
   if (!exp) {
     return res.status(404).json({ message: 'Experience not found.' });
   }
 
-  // Increment view count
   exp.views_count += 1;
   experiencesStore.set(slug, exp);
 
@@ -170,8 +266,28 @@ app.get('/api/experiences/:slug', (req, res) => {
 });
 
 // React to experience (Heart reaction)
-app.post('/api/experiences/:slug/react', (req, res) => {
+app.post('/api/experiences/:slug/react', async (req, res) => {
   const slug = req.params.slug;
+
+  if (isSupabaseConfigured && supabase) {
+    const { data: expData } = await supabase
+      .from('experiences')
+      .select('reactions_count')
+      .eq('slug', slug)
+      .single();
+
+    if (expData) {
+      const updatedReactions = (expData.reactions_count || 0) + 1;
+      await supabase
+        .from('experiences')
+        .update({ reactions_count: updatedReactions })
+        .eq('slug', slug);
+
+      return res.json({ reactions_count: updatedReactions });
+    }
+  }
+
+  // Fallback
   const exp = experiencesStore.get(slug);
 
   if (!exp) {
@@ -185,15 +301,21 @@ app.post('/api/experiences/:slug/react', (req, res) => {
 });
 
 // Initialize Paystack Payment
-app.post('/api/paystack/initialize', (req, res) => {
-  const { experience_id, email } = req.body;
+app.post('/api/paystack/initialize', async (req, res) => {
+  const { experience_id } = req.body;
   
-  // Find experience by ID
   let exp: Experience | undefined;
-  for (const item of experiencesStore.values()) {
-    if (item.id === experience_id) {
-      exp = item;
-      break;
+  if (isSupabaseConfigured && supabase) {
+    const { data } = await supabase.from('experiences').select('*').eq('id', experience_id).single();
+    if (data) exp = data;
+  }
+
+  if (!exp) {
+    for (const item of experiencesStore.values()) {
+      if (item.id === experience_id) {
+        exp = item;
+        break;
+      }
     }
   }
 
@@ -203,9 +325,13 @@ app.post('/api/paystack/initialize', (req, res) => {
 
   const reference = `LW_PAY_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
   exp.payment_reference = reference;
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase.from('experiences').update({ payment_reference: reference }).eq('id', exp.id);
+  }
+
   experiencesStore.set(exp.slug, exp);
 
-  // Return paystack simulation response
   res.json({
     authorization_url: `/pay?ref=${reference}&expId=${exp.id}`,
     reference,
@@ -214,14 +340,25 @@ app.post('/api/paystack/initialize', (req, res) => {
 });
 
 // Verify Paystack Payment
-app.post('/api/paystack/verify', (req, res) => {
+app.post('/api/paystack/verify', async (req, res) => {
   const { reference, experience_id } = req.body;
 
   let exp: Experience | undefined;
-  for (const item of experiencesStore.values()) {
-    if (item.id === experience_id || item.payment_reference === reference) {
-      exp = item;
-      break;
+  if (isSupabaseConfigured && supabase) {
+    const { data } = await supabase
+      .from('experiences')
+      .select('*')
+      .or(`id.eq.${experience_id},payment_reference.eq.${reference}`)
+      .single();
+    if (data) exp = data;
+  }
+
+  if (!exp) {
+    for (const item of experiencesStore.values()) {
+      if (item.id === experience_id || item.payment_reference === reference) {
+        exp = item;
+        break;
+      }
     }
   }
 
@@ -231,6 +368,14 @@ app.post('/api/paystack/verify', (req, res) => {
 
   exp.is_paid = true;
   exp.payment_reference = reference;
+
+  if (isSupabaseConfigured && supabase) {
+    await supabase
+      .from('experiences')
+      .update({ is_paid: true, payment_reference: reference })
+      .eq('id', exp.id);
+  }
+
   experiencesStore.set(exp.slug, exp);
 
   res.json({
@@ -241,11 +386,18 @@ app.post('/api/paystack/verify', (req, res) => {
 });
 
 // Paystack Webhook endpoint
-app.post('/api/paystack/webhook', (req, res) => {
+app.post('/api/paystack/webhook', async (req, res) => {
   const event = req.body;
   if (event && event.event === 'charge.success') {
     const reference = event.data?.reference;
     if (reference) {
+      if (isSupabaseConfigured && supabase) {
+        await supabase
+          .from('experiences')
+          .update({ is_paid: true })
+          .eq('payment_reference', reference);
+      }
+
       for (const item of experiencesStore.values()) {
         if (item.payment_reference === reference) {
           item.is_paid = true;
@@ -271,7 +423,32 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 }
 
 // Admin API Routes
-app.get('/api/admin/metrics', requireAdmin, (req, res) => {
+app.get('/api/admin/metrics', requireAdmin, async (req, res) => {
+  if (isSupabaseConfigured && supabase) {
+    const { data: exps } = await supabase.from('experiences').select('*');
+    const { data: users } = await supabase.from('users').select('*');
+
+    const allExperiences: Experience[] = exps || [];
+    const allUsers: UserRecord[] = users || [];
+
+    const paidExps = allExperiences.filter((e) => e.tier === 'paid' && e.is_paid);
+    const freeExps = allExperiences.filter((e) => e.tier === 'free');
+    const paidUsersCount = allUsers.filter((u) => u.tier === 'paid').length;
+    const totalReactions = allExperiences.reduce((acc, curr) => acc + (curr.reactions_count || 0), 0);
+    const totalRevenueNgn = paidExps.length * 3000;
+
+    return res.json({
+      totalUsers: allUsers.length + allExperiences.length,
+      totalExperiences: allExperiences.length,
+      paidUsers: paidUsersCount || paidExps.length,
+      totalRevenueNgn,
+      freeExperiencesCount: freeExps.length,
+      paidExperiencesCount: paidExps.length,
+      totalReactions,
+    });
+  }
+
+  // Fallback
   const allExperiences = Array.from(experiencesStore.values());
   const allUsers = Array.from(usersStore.values());
 
@@ -280,11 +457,10 @@ app.get('/api/admin/metrics', requireAdmin, (req, res) => {
   const paidUsersCount = allUsers.filter((u) => u.tier === 'paid').length;
   const totalReactions = allExperiences.reduce((acc, curr) => acc + (curr.reactions_count || 0), 0);
 
-  // Revenue = Paid experiences * ₦3,000
   const totalRevenueNgn = paidExps.length * 3000;
 
   res.json({
-    totalUsers: allUsers.length + allExperiences.length, // total creators
+    totalUsers: allUsers.length + allExperiences.length,
     totalExperiences: allExperiences.length,
     paidUsers: paidUsersCount || paidExps.length,
     totalRevenueNgn,
@@ -294,22 +470,39 @@ app.get('/api/admin/metrics', requireAdmin, (req, res) => {
   });
 });
 
-app.get('/api/admin/users', requireAdmin, (req, res) => {
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  if (isSupabaseConfigured && supabase) {
+    const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+    return res.json(users || []);
+  }
+
   const usersList = Array.from(usersStore.values());
   res.json(usersList);
 });
 
-app.get('/api/admin/experiences', requireAdmin, (req, res) => {
+app.get('/api/admin/experiences', requireAdmin, async (req, res) => {
+  if (isSupabaseConfigured && supabase) {
+    const { data: exps } = await supabase.from('experiences').select('*').order('created_at', { ascending: false });
+    return res.json(exps || []);
+  }
+
   const expsList = Array.from(experiencesStore.values()).sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
   res.json(expsList);
 });
 
-app.delete('/api/admin/experiences/:id', requireAdmin, (req, res) => {
+app.delete('/api/admin/experiences/:id', requireAdmin, async (req, res) => {
   const id = req.params.id;
-  let targetSlug: string | null = null;
 
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase.from('experiences').delete().eq('id', id);
+    if (!error) {
+      return res.json({ success: true, message: 'Experience deleted successfully.' });
+    }
+  }
+
+  let targetSlug: string | null = null;
   for (const [slug, exp] of experiencesStore.entries()) {
     if (exp.id === id) {
       targetSlug = slug;
