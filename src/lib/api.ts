@@ -33,6 +33,24 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
   return res.json();
 }
 
+export async function getSignedUploadUrlApi(
+  fileName: string,
+  contentType: string
+): Promise<{
+  signedUrl?: string;
+  token?: string;
+  path: string;
+  publicUrl?: string;
+  fallback?: boolean;
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
+}> {
+  return apiFetch('/upload-url', {
+    method: 'POST',
+    body: JSON.stringify({ fileName, contentType }),
+  });
+}
+
 export async function createExperienceApi(payload: CreateExperiencePayload): Promise<Experience> {
   return apiFetch<Experience>('/experiences', {
     method: 'POST',

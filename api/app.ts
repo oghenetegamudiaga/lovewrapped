@@ -107,43 +107,48 @@ apiRouter.get('/health', (req, res) => {
   });
 });
 
-// Image Upload Endpoint for Paid Plan
-apiRouter.post('/upload', async (req, res) => {
+// Lightweight Signed URL Endpoint for Direct Client-to-Supabase Storage Uploads
+apiRouter.post('/upload-url', async (req, res) => {
   try {
-    const { imageBase64, fileName } = req.body;
-    if (!imageBase64) {
-      return res.status(400).json({ message: 'No image data provided.' });
-    }
+    const { fileName, contentType } = req.body;
+    const cleanFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${(fileName || 'image.jpg').replace(/[^a-zA-Z0-9._-]/g, '')}`;
 
     if (isSupabaseConfigured && supabase) {
-      const cleanFileName = `${Date.now()}_${(fileName || 'image.jpg').replace(/[^a-zA-Z0-9._-]/g, '')}`;
-      const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Buffer.from(base64Data, 'base64');
-
-      const { error } = await supabase.storage
+      // Attempt signed upload URL creation
+      const { data, error } = await supabase.storage
         .from('experience-images')
-        .upload(cleanFileName, buffer, {
-          contentType: 'image/jpeg',
-          upsert: true,
-        });
-
-      if (error) {
-        console.error('Supabase image upload error:', error);
-        return res.status(500).json({ message: 'Failed to upload image to Supabase storage.' });
-      }
+        .createSignedUploadUrl(cleanFileName);
 
       const { data: publicUrlData } = supabase.storage
         .from('experience-images')
         .getPublicUrl(cleanFileName);
 
-      return res.json({ url: publicUrlData.publicUrl });
+      if (!error && data) {
+        return res.json({
+          signedUrl: data.signedUrl,
+          path: cleanFileName,
+          token: data.token,
+          publicUrl: publicUrlData.publicUrl,
+        });
+      }
+
+      // If signed upload URL is not supported by bucket config, provide Supabase client parameters for direct upload
+      return res.json({
+        path: cleanFileName,
+        publicUrl: publicUrlData.publicUrl,
+        supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+        supabaseAnonKey: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
+      });
     }
 
-    // Fallback: return base64 data string directly if Supabase storage is not configured
-    res.json({ url: imageBase64 });
+    // Fallback if Supabase storage is not configured locally
+    res.json({
+      fallback: true,
+      path: cleanFileName,
+    });
   } catch (err: any) {
-    console.error('Upload handler error:', err);
-    res.status(500).json({ message: err.message || 'Image upload failed' });
+    console.error('Signed upload URL error:', err);
+    res.status(500).json({ message: err.message || 'Failed to generate upload URL' });
   }
 });
 

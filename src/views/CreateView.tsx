@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Heart, Sparkles, Upload, Trash2, ArrowUpRight, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { PlanTier, CreateExperiencePayload, Experience } from '../types';
-import { calculateSlideBudget, generateSlides } from '../lib/slideEngine';
-import { createExperienceApi } from '../lib/api';
+import { PlanTier, CreateExperiencePayload, Experience } from '../types.js';
+import { calculateSlideBudget, generateSlides } from '../lib/slideEngine.js';
+import { createExperienceApi, getSignedUploadUrlApi } from '../lib/api.js';
 
 interface CreateViewProps {
   selectedPlan: PlanTier;
@@ -34,6 +34,10 @@ export const CreateView: React.FC<CreateViewProps> = ({
   const [message, setMessage] = useState('');
   const [creatorEmail, setCreatorEmail] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -56,39 +60,140 @@ export const CreateView: React.FC<CreateViewProps> = ({
     );
   }, [senderName, receiverName, finalOccasion, message, selectedPlan, images]);
 
-  // Handle image file upload
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // Process files with 5MB client-side validation and direct client-to-Supabase Storage upload
+  const processFiles = async (files: FileList | File[]) => {
+    setImageError(null);
+    setUploadError(null);
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
 
     const maxPhotos = 5;
     const remainingSlots = maxPhotos - images.length;
     if (remainingSlots <= 0) {
-      alert(`You have reached the maximum limit of ${maxPhotos} photos for the Paid plan.`);
+      setImageError(`Maximum limit of ${maxPhotos} photos reached.`);
       return;
     }
 
-    const filesToProcess = (Array.from(files) as File[]).slice(0, remainingSlots);
+    const filesToProcess = fileArray.slice(0, remainingSlots);
 
-    filesToProcess.forEach((file: File) => {
+    // Step 1: Pre-upload client validation (5MB size check per image)
+    const validFiles: File[] = [];
+    let oversizeCount = 0;
+
+    for (const file of filesToProcess) {
       if (file.size > 5 * 1024 * 1024) {
-        alert(`File ${file.name} is larger than 5MB. Please select smaller images.`);
-        return;
+        oversizeCount++;
+      } else {
+        validFiles.push(file);
       }
+    }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setImages((prev) => [...prev, event.target!.result as string]);
+    // Set inline validation error immediately if any file exceeds 5MB
+    if (oversizeCount > 0) {
+      setImageError('File too large — max 5MB per image');
+    }
+
+    if (validFiles.length === 0) return;
+
+    // Step 2: Upload in-progress state
+    setIsUploading(true);
+
+    try {
+      for (const file of validFiles) {
+        // Request signed upload URL or parameters from serverless endpoint (sends only tiny JSON metadata)
+        const uploadInfo = await getSignedUploadUrlApi(file.name, file.type || 'image/jpeg');
+
+        if (uploadInfo.signedUrl) {
+          // Direct browser-to-Supabase Storage PUT (bypasses serverless function entirely)
+          const uploadRes = await fetch(uploadInfo.signedUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': file.type || 'image/jpeg',
+            },
+            body: file,
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error(`Storage upload failed with status ${uploadRes.status}`);
+          }
+
+          if (uploadInfo.publicUrl) {
+            setImages((prev) => [...prev, uploadInfo.publicUrl!]);
+          }
+        } else if (uploadInfo.supabaseUrl && uploadInfo.supabaseAnonKey) {
+          // Direct client-side Supabase SDK upload directly from browser
+          const { createClient } = await import('@supabase/supabase-js');
+          const client = createClient(uploadInfo.supabaseUrl, uploadInfo.supabaseAnonKey);
+          const { error: storageErr } = await client.storage
+            .from('experience-images')
+            .upload(uploadInfo.path, file, { contentType: file.type || 'image/jpeg', upsert: true });
+
+          if (storageErr) throw storageErr;
+
+          const { data: pubData } = client.storage
+            .from('experience-images')
+            .getPublicUrl(uploadInfo.path);
+
+          if (pubData?.publicUrl) {
+            setImages((prev) => [...prev, pubData.publicUrl]);
+          }
+        } else {
+          // Local environment fallback (read as Data URL on client without API byte payload)
+          await new Promise<void>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              if (event.target?.result) {
+                setImages((prev) => [...prev, event.target!.result as string]);
+                resolve();
+              } else {
+                reject(new Error('Failed to read file locally.'));
+              }
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+          });
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    } catch (err: unknown) {
+      console.error('Direct image upload error:', err);
+      const msg = err instanceof Error ? err.message : 'Network error or storage upload failure.';
+      setUploadError(`Upload failed: ${msg}. Please check your connection and try again.`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
+    }
     e.target.value = '';
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isUploading) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (!isUploading && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
   const handleRemoveImage = (index: number) => {
+    setImageError(null);
+    setUploadError(null);
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -289,32 +394,95 @@ export const CreateView: React.FC<CreateViewProps> = ({
             {/* Photo Upload if plan allows */}
             {selectedPlan === 'paid' && (
               <div className="pt-2 border-t border-rose-900/40">
-                <label className="block text-xs font-medium text-rose-200/90 mb-2">
-                  Photos ({images.length} / 5)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-medium text-rose-200/90">
+                    Photos ({images.length} / 5)
+                  </label>
+                  <span className="text-[11px] text-rose-300/70">
+                    JPEG, PNG, WebP · up to 5MB each
+                  </span>
+                </div>
+
+                {/* Client-side validation error banner (size limit, format) */}
+                {imageError && (
+                  <div className="mb-3 p-3 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>{imageError}</span>
+                  </div>
+                )}
+
+                {/* Network or Storage upload error banner */}
+                {uploadError && (
+                  <div className="mb-3 p-3 rounded-xl bg-rose-950/90 border border-amber-500/50 text-amber-200 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
 
                 {images.length < 5 && (
-                  <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-rose-700/60 hover:border-rose-400 bg-[#3a0d22]/50 cursor-pointer transition-all mb-4 text-center">
-                    <Upload className="w-5 h-5 text-rose-300 mb-1" />
-                    <span className="text-xs font-medium text-white">Click to upload photo memory</span>
-                    <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+                  <label
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all mb-4 text-center cursor-pointer ${
+                      isUploading
+                        ? 'border-rose-500/50 bg-[#3a0d22]/30 pointer-events-none opacity-80'
+                        : isDragging
+                        ? 'border-rose-400 bg-rose-900/40 scale-[1.01]'
+                        : 'border-rose-700/60 hover:border-rose-400 bg-[#3a0d22]/50'
+                    }`}
+                  >
+                    {isUploading ? (
+                      <>
+                        <RefreshCw className="w-5 h-5 text-rose-300 animate-spin mb-1" />
+                        <span className="text-xs font-medium text-white">Uploading photo directly to storage...</span>
+                        <span className="text-[11px] text-rose-300/70 mt-1">
+                          JPEG, PNG, WebP · up to 5MB each
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 text-rose-300 mb-1" />
+                        <span className="text-xs font-medium text-white">
+                          {isDragging ? 'Drop your images here' : 'Click or drag photo memory to upload'}
+                        </span>
+                        <span className="text-[11px] text-rose-300/70 mt-1">
+                          JPEG, PNG, WebP · up to 5MB each
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          disabled={isUploading}
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </>
+                    )}
                   </label>
                 )}
 
                 {images.length > 0 && (
-                  <div className="grid grid-cols-5 gap-2">
-                    {images.map((imgUrl, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-rose-700/60 group">
-                        <img src={imgUrl} alt="uploaded memory" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="absolute inset-0 bg-black/70 text-rose-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                  <div>
+                    {images.length >= 5 && (
+                      <p className="text-[11px] text-rose-300/70 mb-2">
+                        JPEG, PNG, WebP · up to 5MB each
+                      </p>
+                    )}
+                    <div className="grid grid-cols-5 gap-2">
+                      {images.map((imgUrl, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-rose-700/60 group">
+                          <img src={imgUrl} alt="uploaded memory" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute inset-0 bg-black/70 text-rose-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
