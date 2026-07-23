@@ -9,6 +9,7 @@ import { PayView } from './views/PayView';
 import { WatchView } from './views/WatchView';
 import { AdminView } from './views/AdminView';
 import { Experience, PlanTier } from './types';
+import { DEFAULT_PAYMENT_REF } from './constants.js';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState<string>('/');
@@ -128,7 +129,7 @@ export default function App() {
 
         {currentPath === '/pay' && (
           <PayView
-            reference={paymentState?.reference || 'LW_REF_3000'}
+            reference={paymentState?.reference || DEFAULT_PAYMENT_REF}
             experienceId={paymentState?.expId || currentExperience?.id || 'demo'}
             onViewExperience={(slug) => navigate(`/w/${slug}`)}
           />

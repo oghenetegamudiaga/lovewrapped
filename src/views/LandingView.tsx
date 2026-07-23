@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, ArrowUpRight, Check, Mail } from 'lucide-react';
+import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
 
 interface LandingViewProps {
   onNavigate: (path: string) => void;
@@ -214,7 +215,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
 
             <div>
               <b className="block text-xs font-semibold uppercase tracking-wider text-rose-300 mb-2 pt-1">Premium Story</b>
-              <strong className="block text-4xl font-serif font-bold text-white mb-3">₦3,000</strong>
+              <strong className="block text-4xl font-serif font-bold text-white mb-3">{PAID_PLAN_PRICE_FORMATTED}</strong>
               <span className="block text-lg font-medium text-rose-100 mb-2">Message + Photo Memories</span>
               <ul className="text-xs text-rose-200/90 space-y-2 mb-8 font-normal">
                 <li className="flex items-center gap-2">
@@ -244,7 +245,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
               onClick={() => onNavigate('/create?plan=paid')}
               className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 text-white font-semibold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
             >
-              <span>Create Paid Story (₦3,000)</span>
+              <span>Create Paid Story ({PAID_PLAN_PRICE_FORMATTED})</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
           </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sparkles, ArrowUpRight, Check, Heart, Mail } from 'lucide-react';
 import { PlanTier } from '../types';
+import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
 
 interface PricingViewProps {
   onSelectPlan: (plan: PlanTier) => void;
@@ -71,7 +72,7 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
 
             <div>
               <b className="block text-xs font-semibold uppercase tracking-wider text-rose-300 mb-2 pt-1">Premium Story</b>
-              <strong className="block text-4xl font-serif font-bold text-white mb-3">₦3,000</strong>
+              <strong className="block text-4xl font-serif font-bold text-white mb-3">{PAID_PLAN_PRICE_FORMATTED}</strong>
               <span className="block text-lg font-medium text-rose-100 mb-2">Message + Photo Memories</span>
               <ul className="text-xs text-rose-200/90 space-y-2 mb-8 font-normal">
                 <li className="flex items-center gap-2">

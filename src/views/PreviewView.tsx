@@ -3,6 +3,7 @@ import { Heart, Edit3, CheckCircle2, ArrowUpRight, RefreshCw, Sparkles } from 'l
 import { Experience } from '../types';
 import { StoryViewer } from '../components/StoryViewer';
 import { initializePaymentApi } from '../lib/api';
+import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
 
 interface PreviewViewProps {
   experience: Experience;
@@ -83,7 +84,7 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
             ) : (
               <>
                 <Heart className="w-5 h-5 fill-white" />
-                <span>Complete Story & Pay ₦3,000</span>
+                <span>Complete Story & Pay {PAID_PLAN_PRICE_FORMATTED}</span>
                 <ArrowUpRight className="w-4 h-4" />
               </>
             )}

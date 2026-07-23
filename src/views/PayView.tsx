@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { CreditCard, CheckCircle2, Copy, Share2, Sparkles, RefreshCw, ExternalLink, Heart, ShieldCheck } from 'lucide-react';
 import { Experience } from '../types';
 import { verifyPaymentApi } from '../lib/api';
+import { PAID_PLAN_PRICE_FORMATTED, DEFAULT_PAYMENT_REF } from '../constants.js';
 
 interface PayViewProps {
   reference: string;
@@ -95,7 +96,7 @@ export const PayView: React.FC<PayViewProps> = ({
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
-  const amountText = '₦3,000';
+  const amountText = PAID_PLAN_PRICE_FORMATTED;
 
   return (
     <div className="min-h-[85vh] bg-[#2b0818] text-[#fce7f3] py-12 px-4 sm:px-6 flex items-center justify-center font-sans">
@@ -114,7 +115,7 @@ export const PayView: React.FC<PayViewProps> = ({
                 {amountText}
               </div>
               <p className="text-[11px] text-rose-300/60 mt-2 font-mono">
-                Ref: {reference || 'LW_REF_3000'}
+                Ref: {reference || DEFAULT_PAYMENT_REF}
               </p>
             </div>
 

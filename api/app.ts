@@ -5,6 +5,7 @@ import express from 'express';
 import { CreateExperiencePayload, Experience, UserRecord } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
+import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } from '../src/constants.js';
 
 const app = express();
 const PORT = 3000;
@@ -344,7 +345,7 @@ apiRouter.post('/paystack/initialize', async (req, res) => {
   res.json({
     authorization_url: `/pay?ref=${reference}&expId=${exp.id}`,
     reference,
-    amount: 300000, // ₦3,000 in kobo
+    amount: PAID_PLAN_PRICE_KOBO, // ₦2,000 in kobo (200,000 kobo)
   });
 });
 
@@ -444,7 +445,7 @@ apiRouter.get('/admin/metrics', requireAdmin, async (req, res) => {
     const freeExps = allExperiences.filter((e) => e.tier === 'free');
     const paidUsersCount = allUsers.filter((u) => u.tier === 'paid').length;
     const totalReactions = allExperiences.reduce((acc, curr) => acc + (curr.reactions_count || 0), 0);
-    const totalRevenueNgn = paidExps.length * 3000;
+    const totalRevenueNgn = paidExps.length * PAID_PLAN_PRICE_NGN;
 
     return res.json({
       totalUsers: allUsers.length + allExperiences.length,
@@ -466,7 +467,7 @@ apiRouter.get('/admin/metrics', requireAdmin, async (req, res) => {
   const paidUsersCount = allUsers.filter((u) => u.tier === 'paid').length;
   const totalReactions = allExperiences.reduce((acc, curr) => acc + (curr.reactions_count || 0), 0);
 
-  const totalRevenueNgn = paidExps.length * 3000;
+  const totalRevenueNgn = paidExps.length * PAID_PLAN_PRICE_NGN;
 
   res.json({
     totalUsers: allUsers.length + allExperiences.length,

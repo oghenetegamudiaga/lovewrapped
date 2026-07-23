@@ -3,6 +3,7 @@ import { Heart, Sparkles, Upload, Trash2, ArrowUpRight, AlertCircle, RefreshCw, 
 import { PlanTier, CreateExperiencePayload, Experience } from '../types.js';
 import { calculateSlideBudget, generateSlides } from '../lib/slideEngine.js';
 import { createExperienceApi, getSignedUploadUrlApi } from '../lib/api.js';
+import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
 
 interface CreateViewProps {
   selectedPlan: PlanTier;
@@ -351,7 +352,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
                   : 'text-rose-300/80 hover:text-white'
               }`}
             >
-              Paid (₦3,000)
+              Paid ({PAID_PLAN_PRICE_FORMATTED})
             </button>
           </div>
         </div>
