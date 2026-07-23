@@ -2,11 +2,21 @@ import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord } from '.
 
 const API_BASE = '/api';
 
+export interface AdminTimeseriesPoint {
+  date: string;
+  displayDate: string;
+  revenue: number;
+  paidCount: number;
+  freeCount: number;
+  signups: number;
+}
+
 /**
- * Helper to fetch JSON with error handling.
+ * Helper to fetch JSON with error handling & credentials for httpOnly session cookies.
  */
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
@@ -88,27 +98,50 @@ export async function verifyPaymentApi(
   });
 }
 
-export async function getAdminMetricsApi(passcode: string): Promise<AdminMetrics> {
-  return apiFetch<AdminMetrics>('/admin/metrics', {
-    headers: { 'x-admin-passcode': passcode },
+/* ==================== Admin API Calls (Cookie Auth) ==================== */
+
+export async function adminLoginApi(credentials: { email: string; password: string }): Promise<{ success: boolean; email: string }> {
+  return apiFetch<{ success: boolean; email: string }>('/admin/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials),
   });
 }
 
-export async function getAdminUsersApi(passcode: string): Promise<UserRecord[]> {
-  return apiFetch<UserRecord[]>('/admin/users', {
-    headers: { 'x-admin-passcode': passcode },
+export async function adminLogoutApi(): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/admin/logout', {
+    method: 'POST',
   });
 }
 
-export async function getAdminExperiencesApi(passcode: string): Promise<Experience[]> {
-  return apiFetch<Experience[]>('/admin/experiences', {
-    headers: { 'x-admin-passcode': passcode },
+export async function getAdminMeApi(): Promise<{ authenticated: boolean; email: string }> {
+  return apiFetch<{ authenticated: boolean; email: string }>('/admin/me');
+}
+
+export async function getAdminMetricsApi(): Promise<AdminMetrics> {
+  return apiFetch<AdminMetrics>('/admin/metrics');
+}
+
+export async function getAdminTimeseriesApi(): Promise<AdminTimeseriesPoint[]> {
+  return apiFetch<AdminTimeseriesPoint[]>('/admin/metrics/timeseries');
+}
+
+export async function getAdminUsersApi(): Promise<UserRecord[]> {
+  return apiFetch<UserRecord[]>('/admin/users');
+}
+
+export async function getAdminExperiencesApi(): Promise<Experience[]> {
+  return apiFetch<Experience[]>('/admin/experiences');
+}
+
+export async function updateAdminExperiencePaymentStatusApi(id: string, isPaid: boolean): Promise<{ success: boolean; experience: Experience }> {
+  return apiFetch<{ success: boolean; experience: Experience }>(`/admin/experiences/${id}/payment-status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_paid: isPaid }),
   });
 }
 
-export async function deleteAdminExperienceApi(passcode: string, id: string): Promise<{ success: boolean }> {
+export async function deleteAdminExperienceApi(id: string): Promise<{ success: boolean }> {
   return apiFetch<{ success: boolean }>(`/admin/experiences/${id}`, {
     method: 'DELETE',
-    headers: { 'x-admin-passcode': passcode },
   });
 }

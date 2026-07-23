@@ -3,6 +3,9 @@ dotenv.config();
 
 import crypto from 'crypto';
 import express from 'express';
+import cookieParser from 'cookie-parser';
+import bcrypt from 'bcryptjs';
+import { sealData, unsealData } from 'iron-session';
 import { CreateExperiencePayload, Experience, UserRecord } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
@@ -11,6 +14,7 @@ import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } 
 const app = express();
 const PORT = 3000;
 
+app.use(cookieParser());
 app.use(
   express.json({
     limit: '10mb',
@@ -535,17 +539,85 @@ apiRouter.post('/paystack/webhook', async (req, res) => {
   return res.status(200).json({ status: 'success' });
 });
 
-// Admin Middleware / Auth Check
-const ADMIN_PASSCODE = 'lovewrapped2026'; // Default admin password
+// Admin Authentication & Session Management using iron-session
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET || 'lovewrapped_admin_session_secret_32chars_min!';
 
-function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const authHeader = req.headers['x-admin-passcode'];
-  if (authHeader === ADMIN_PASSCODE) {
-    next();
-  } else {
-    res.status(401).json({ message: 'Unauthorized. Invalid admin passcode.' });
+async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  try {
+    const sessionCookie = req.cookies?.admin_session;
+    if (!sessionCookie) {
+      return res.status(401).json({ message: 'Unauthorized. Admin session required.' });
+    }
+
+    const session = await unsealData<{ isAdmin?: boolean; email?: string }>(sessionCookie, {
+      password: SESSION_SECRET,
+    });
+
+    if (session && session.isAdmin) {
+      next();
+    } else {
+      return res.status(401).json({ message: 'Unauthorized. Invalid or expired session.' });
+    }
+  } catch (err) {
+    return res.status(401).json({ message: 'Unauthorized. Invalid session token.' });
   }
 }
+
+// POST /api/admin/login
+apiRouter.post('/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    const expectedEmail = (process.env.ADMIN_EMAIL || 'admin@lovewrapped.app').trim().toLowerCase();
+    let targetHash = process.env.ADMIN_PASSWORD_HASH;
+
+    if (!targetHash) {
+      // Fallback hash for 'lovewrapped2026' if ADMIN_PASSWORD_HASH env var is not provided
+      targetHash = bcrypt.hashSync('lovewrapped2026', 10);
+    }
+
+    const emailMatches = email.trim().toLowerCase() === expectedEmail;
+    const passwordMatches = bcrypt.compareSync(password, targetHash);
+
+    if (!emailMatches || !passwordMatches) {
+      return res.status(401).json({ message: 'Invalid admin email or password.' });
+    }
+
+    const sessionData = { isAdmin: true, email: expectedEmail, loggedInAt: Date.now() };
+    const sealedCookie = await sealData(sessionData, {
+      password: SESSION_SECRET,
+      ttl: 7 * 24 * 60 * 60, // 7 days
+    });
+
+    res.cookie('admin_session', sealedCookie, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+
+    return res.json({ success: true, message: 'Admin login successful.', email: expectedEmail });
+  } catch (err: unknown) {
+    console.error('Admin login error:', err);
+    const msg = err instanceof Error ? err.message : 'Login failed.';
+    return res.status(500).json({ message: msg });
+  }
+});
+
+// GET /api/admin/me (Check Session)
+apiRouter.get('/admin/me', requireAdmin, (req, res) => {
+  res.json({ authenticated: true, email: process.env.ADMIN_EMAIL || 'admin@lovewrapped.app' });
+});
+
+// POST /api/admin/logout
+apiRouter.post('/admin/logout', (req, res) => {
+  res.clearCookie('admin_session', { path: '/' });
+  res.json({ success: true, message: 'Logged out successfully.' });
+});
 
 // Admin API Routes
 apiRouter.get('/admin/metrics', requireAdmin, async (req, res) => {
@@ -595,6 +667,69 @@ apiRouter.get('/admin/metrics', requireAdmin, async (req, res) => {
   });
 });
 
+// GET /api/admin/metrics/timeseries - Daily revenue & signups trend over last 30 days
+apiRouter.get('/admin/metrics/timeseries', requireAdmin, async (req, res) => {
+  try {
+    let allExperiences: Experience[] = [];
+    let allUsers: UserRecord[] = [];
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: exps } = await supabase.from('experiences').select('*');
+      const { data: users } = await supabase.from('users').select('*');
+      allExperiences = exps || [];
+      allUsers = users || [];
+    } else {
+      allExperiences = Array.from(experiencesStore.values());
+      allUsers = Array.from(usersStore.values());
+    }
+
+    const daysMap = new Map<string, { date: string; displayDate: string; revenue: number; paidCount: number; freeCount: number; signups: number }>();
+
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const dateStr = d.toISOString().split('T')[0];
+      const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      daysMap.set(dateStr, {
+        date: dateStr,
+        displayDate,
+        revenue: 0,
+        paidCount: 0,
+        freeCount: 0,
+        signups: 0,
+      });
+    }
+
+    for (const exp of allExperiences) {
+      if (!exp.created_at) continue;
+      const dateStr = new Date(exp.created_at).toISOString().split('T')[0];
+      if (daysMap.has(dateStr)) {
+        const entry = daysMap.get(dateStr)!;
+        if (exp.tier === 'paid' && exp.is_paid) {
+          entry.revenue += PAID_PLAN_PRICE_NGN;
+          entry.paidCount += 1;
+        } else {
+          entry.freeCount += 1;
+        }
+      }
+    }
+
+    for (const user of allUsers) {
+      if (!user.created_at) continue;
+      const dateStr = new Date(user.created_at).toISOString().split('T')[0];
+      if (daysMap.has(dateStr)) {
+        const entry = daysMap.get(dateStr)!;
+        entry.signups += 1;
+      }
+    }
+
+    res.json(Array.from(daysMap.values()));
+  } catch (err: unknown) {
+    console.error('Timeseries error:', err);
+    res.status(500).json({ message: 'Failed to fetch timeseries metrics.' });
+  }
+});
+
 apiRouter.get('/admin/users', requireAdmin, async (req, res) => {
   if (isSupabaseConfigured && supabase) {
     const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
@@ -615,6 +750,49 @@ apiRouter.get('/admin/experiences', requireAdmin, async (req, res) => {
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
   res.json(expsList);
+});
+
+// PATCH /api/admin/experiences/:id/payment-status - Manual paid/refund toggle
+apiRouter.patch('/admin/experiences/:id/payment-status', requireAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { is_paid } = req.body;
+
+    if (typeof is_paid !== 'boolean') {
+      return res.status(400).json({ message: 'is_paid boolean is required.' });
+    }
+
+    let updatedExp: Experience | undefined;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('experiences')
+        .update({ is_paid })
+        .eq('id', id)
+        .select()
+        .single();
+      if (data) updatedExp = data;
+    }
+
+    for (const item of experiencesStore.values()) {
+      if (item.id === id) {
+        item.is_paid = is_paid;
+        if (!updatedExp) updatedExp = item;
+        experiencesStore.set(item.slug, item);
+        break;
+      }
+    }
+
+    if (!updatedExp) {
+      return res.status(404).json({ message: 'Experience not found.' });
+    }
+
+    return res.json({ success: true, experience: updatedExp });
+  } catch (err: unknown) {
+    console.error('Error updating payment status:', err);
+    const msg = err instanceof Error ? err.message : 'Failed to update payment status.';
+    return res.status(500).json({ message: msg });
+  }
 });
 
 apiRouter.delete('/admin/experiences/:id', requireAdmin, async (req, res) => {

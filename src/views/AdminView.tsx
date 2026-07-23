@@ -1,52 +1,149 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Users, Layers, DollarSign, Heart, Trash2, Eye, Copy, RefreshCw, Key, Check } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Shield,
+  Users,
+  Layers,
+  DollarSign,
+  Heart,
+  Trash2,
+  Eye,
+  Copy,
+  RefreshCw,
+  Mail,
+  Lock,
+  Check,
+  Search,
+  Filter,
+  Download,
+  LogOut,
+  ToggleLeft,
+  ToggleRight,
+  TrendingUp,
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+} from 'recharts';
 import { AdminMetrics, Experience, UserRecord } from '../types';
-import { getAdminMetricsApi, getAdminUsersApi, getAdminExperiencesApi, deleteAdminExperienceApi } from '../lib/api';
+import {
+  getAdminMeApi,
+  adminLoginApi,
+  adminLogoutApi,
+  getAdminMetricsApi,
+  getAdminTimeseriesApi,
+  getAdminUsersApi,
+  getAdminExperiencesApi,
+  deleteAdminExperienceApi,
+  updateAdminExperiencePaymentStatusApi,
+  AdminTimeseriesPoint,
+} from '../lib/api';
 
 interface AdminViewProps {
   onPreviewExperience: (slug: string) => void;
 }
 
 export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => {
-  const [passcode, setPasscode] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+  const [timeseries, setTimeseries] = useState<AdminTimeseriesPoint[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [experiences, setExperiences] = useState<Experience[]>([]);
+  
   const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users'>('metrics');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
-  const loadData = useCallback(async (code: string) => {
-    setIsLoading(true);
-    setAuthError(null);
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tierFilter, setTierFilter] = useState<'all' | 'free' | 'paid'>('all');
 
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const [m, u, e] = await Promise.all([
-        getAdminMetricsApi(code),
-        getAdminUsersApi(code),
-        getAdminExperiencesApi(code),
+      const [m, t, u, e] = await Promise.all([
+        getAdminMetricsApi(),
+        getAdminTimeseriesApi(),
+        getAdminUsersApi(),
+        getAdminExperiencesApi(),
       ]);
 
       setMetrics(m);
+      setTimeseries(t);
       setUsers(u);
       setExperiences(e);
       setIsAuthenticated(true);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Invalid passcode.';
-      setAuthError(msg);
+      console.error('Failed to load admin data:', err);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Check initial session on mount
+  useEffect(() => {
+    async function checkSession() {
+      setIsInitializing(true);
+      try {
+        const me = await getAdminMeApi();
+        if (me.authenticated) {
+          setIsAuthenticated(true);
+          setAdminEmail(me.email);
+          await loadData();
+        }
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+
+    checkSession();
+  }, [loadData]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode) {
-      loadData(passcode);
+    setAuthError(null);
+    setIsLoading(true);
+
+    try {
+      const res = await adminLoginApi({ email: emailInput.trim(), password: passwordInput });
+      if (res.success) {
+        setIsAuthenticated(true);
+        setAdminEmail(res.email);
+        await loadData();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Invalid admin email or password.';
+      setAuthError(msg);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await adminLogoutApi();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      setIsAuthenticated(false);
+      setAdminEmail(null);
+      setEmailInput('');
+      setPasswordInput('');
     }
   };
 
@@ -54,13 +151,33 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
     if (!confirm('Are you sure you want to delete this experience?')) return;
 
     try {
-      await deleteAdminExperienceApi(passcode, id);
+      await deleteAdminExperienceApi(id);
       setExperiences((prev) => prev.filter((exp) => exp.id !== id));
       if (metrics) {
         setMetrics({ ...metrics, totalExperiences: metrics.totalExperiences - 1 });
       }
     } catch (err) {
       alert('Failed to delete experience.');
+    }
+  };
+
+  const handleTogglePaymentStatus = async (exp: Experience) => {
+    const newStatus = !exp.is_paid;
+    const actionLabel = newStatus ? 'Mark Paid' : 'Mark Refunded/Unpaid';
+    if (!confirm(`Are you sure you want to ${actionLabel} for "${exp.sender_name} → ${exp.receiver_name}"?`)) return;
+
+    try {
+      const res = await updateAdminExperiencePaymentStatusApi(exp.id, newStatus);
+      if (res.success && res.experience) {
+        setExperiences((prev) =>
+          prev.map((item) => (item.id === exp.id ? { ...item, is_paid: newStatus } : item))
+        );
+        // Refresh metrics
+        loadData();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update payment status.';
+      alert(msg);
     }
   };
 
@@ -72,6 +189,95 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
     setTimeout(() => setCopiedSlug(null), 2000);
   };
 
+  // Client-side filtering for Experiences
+  const filteredExperiences = useMemo(() => {
+    return experiences.filter((exp) => {
+      const matchesTier = tierFilter === 'all' || exp.tier === tierFilter;
+      const q = searchQuery.toLowerCase().trim();
+      const matchesQuery =
+        !q ||
+        exp.sender_name.toLowerCase().includes(q) ||
+        exp.receiver_name.toLowerCase().includes(q) ||
+        exp.slug.toLowerCase().includes(q) ||
+        exp.occasion.toLowerCase().includes(q) ||
+        (exp.creator_email && exp.creator_email.toLowerCase().includes(q));
+
+      return matchesTier && matchesQuery;
+    });
+  }, [experiences, tierFilter, searchQuery]);
+
+  // Client-side filtering for Users
+  const filteredUsers = useMemo(() => {
+    return users.filter((usr) => {
+      const matchesTier = tierFilter === 'all' || usr.tier === tierFilter;
+      const q = searchQuery.toLowerCase().trim();
+      const matchesQuery = !q || usr.email.toLowerCase().includes(q);
+
+      return matchesTier && matchesQuery;
+    });
+  }, [users, tierFilter, searchQuery]);
+
+  // Export Experiences CSV
+  const exportExperiencesCsv = () => {
+    if (filteredExperiences.length === 0) return;
+
+    const headers = ['ID', 'Slug', 'Sender', 'Receiver', 'Occasion', 'Tier', 'Paid Status', 'Views', 'Reactions', 'Creator Email', 'Created Date'];
+    const rows = filteredExperiences.map((e) => [
+      `"${e.id}"`,
+      `"${e.slug}"`,
+      `"${e.sender_name.replace(/"/g, '""')}"`,
+      `"${e.receiver_name.replace(/"/g, '""')}"`,
+      `"${e.occasion.replace(/"/g, '""')}"`,
+      `"${e.tier}"`,
+      `"${e.is_paid ? 'Paid' : 'Unpaid'}"`,
+      e.views_count,
+      e.reactions_count,
+      `"${e.creator_email || ''}"`,
+      `"${new Date(e.created_at).toISOString()}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `lovewrapped_experiences_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export Users CSV
+  const exportUsersCsv = () => {
+    if (filteredUsers.length === 0) return;
+
+    const headers = ['ID', 'Email', 'Tier', 'Created Date'];
+    const rows = filteredUsers.map((u) => [
+      `"${u.id}"`,
+      `"${u.email}"`,
+      `"${u.tier}"`,
+      `"${new Date(u.created_at).toISOString()}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `lovewrapped_creators_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-[85vh] bg-[#2b0818] text-[#fce7f3] flex items-center justify-center font-sans">
+        <RefreshCw className="w-8 h-8 text-rose-400 animate-spin" />
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-[85vh] bg-[#2b0818] text-[#fce7f3] py-12 px-4 flex items-center justify-center font-sans">
@@ -82,34 +288,52 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
 
           <div>
             <h1 className="font-serif font-bold text-2xl text-white">LoveWrapped Admin</h1>
-            <p className="text-xs text-rose-300/70 mt-1">Enter passcode to access dashboard metrics.</p>
+            <p className="text-xs text-rose-300/70 mt-1">Sign in with your admin credentials.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
             {authError && (
-              <p className="text-xs text-rose-300 bg-rose-950/80 p-2.5 rounded-xl border border-rose-800/80">
+              <p className="text-xs text-rose-300 bg-rose-950/90 p-3 rounded-xl border border-rose-500/50">
                 {authError}
               </p>
             )}
 
-            <div className="relative">
-              <Key className="w-4 h-4 text-rose-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="password"
-                required
-                placeholder="Enter admin passcode..."
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#3a0d22] border border-rose-800/60 text-white text-sm focus:outline-none focus:border-rose-400 placeholder:text-rose-300/40"
-              />
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-rose-200">Admin Email</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-rose-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  placeholder="admin@lovewrapped.app"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#3a0d22] border border-rose-800/60 text-white text-xs focus:outline-none focus:border-rose-400 placeholder:text-rose-300/40"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-rose-200">Password</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-rose-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••••••"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#3a0d22] border border-rose-800/60 text-white text-xs focus:outline-none focus:border-rose-400 placeholder:text-rose-300/40"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 border border-rose-400/20 shadow-lg"
+              className="w-full mt-2 py-3.5 px-4 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 border border-rose-400/20 shadow-lg"
             >
-              {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <span>Login to Admin</span>}
+              {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <span>Sign In to Admin</span>}
             </button>
           </form>
         </div>
@@ -121,7 +345,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
     <div className="min-h-screen bg-[#2b0818] text-[#fce7f3] py-10 px-4 sm:px-6 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-rose-900/40">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-rose-900/40">
           <div>
             <div className="eyebrow-pill mb-2">
               <span />
@@ -130,119 +354,262 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
             <h1 className="font-serif font-bold text-2xl sm:text-3xl text-white">
               Platform Overview & Metrics
             </h1>
+            {adminEmail && (
+              <p className="text-xs text-rose-300/70 mt-1">Logged in as {adminEmail}</p>
+            )}
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 rounded-full bg-rose-950/80 border border-rose-800/60 text-xs font-medium">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 p-1 rounded-full bg-rose-950/80 border border-rose-800/60 text-xs font-medium">
+              <button
+                onClick={() => setActiveTab('metrics')}
+                className={`px-4 py-2 rounded-full transition-all ${
+                  activeTab === 'metrics' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
+                }`}
+              >
+                Metrics
+              </button>
+              <button
+                onClick={() => setActiveTab('experiences')}
+                className={`px-4 py-2 rounded-full transition-all ${
+                  activeTab === 'experiences' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
+                }`}
+              >
+                Experiences ({experiences.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`px-4 py-2 rounded-full transition-all ${
+                  activeTab === 'users' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
+                }`}
+              >
+                Creators ({users.length})
+              </button>
+            </div>
+
             <button
-              onClick={() => setActiveTab('metrics')}
-              className={`px-4 py-2 rounded-full transition-all ${
-                activeTab === 'metrics' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
-              }`}
+              onClick={handleLogout}
+              className="p-2.5 rounded-full bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800/60 transition-colors"
+              title="Sign Out"
             >
-              Metrics
-            </button>
-            <button
-              onClick={() => setActiveTab('experiences')}
-              className={`px-4 py-2 rounded-full transition-all ${
-                activeTab === 'experiences' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
-              }`}
-            >
-              Experiences ({experiences.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`px-4 py-2 rounded-full transition-all ${
-                activeTab === 'users' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
-              }`}
-            >
-              Creators ({users.length})
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Metrics Grid */}
+        {/* Metrics Tab Content */}
         {activeTab === 'metrics' && metrics && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
-              <div className="flex items-center justify-between text-rose-300">
-                <span className="text-xs font-semibold uppercase tracking-wider">Total Creators</span>
-                <Users className="w-5 h-5" />
+          <div className="space-y-8">
+            {/* KPI Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
+                <div className="flex items-center justify-between text-rose-300">
+                  <span className="text-xs font-semibold uppercase tracking-wider">Total Creators</span>
+                  <Users className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-bold text-white">{metrics.totalUsers}</p>
+                <p className="text-xs text-rose-300/60">Registered creators & guests</p>
               </div>
-              <p className="text-3xl font-bold text-white">{metrics.totalUsers}</p>
-              <p className="text-xs text-rose-300/60">Registered creators & guests</p>
+
+              <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
+                <div className="flex items-center justify-between text-pink-300">
+                  <span className="text-xs font-semibold uppercase tracking-wider">Total Experiences</span>
+                  <Layers className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-bold text-white">{metrics.totalExperiences}</p>
+                <p className="text-xs text-rose-300/60">
+                  {metrics.freeExperiencesCount} Free • {metrics.paidExperiencesCount} Paid
+                </p>
+              </div>
+
+              <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
+                <div className="flex items-center justify-between text-emerald-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider">Total Revenue</span>
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-bold text-white">
+                  ₦{metrics.totalRevenueNgn.toLocaleString()}
+                </p>
+                <p className="text-xs text-rose-300/60">Verified Paystack payments (₦2,000/paid)</p>
+              </div>
+
+              <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
+                <div className="flex items-center justify-between text-rose-300">
+                  <span className="text-xs font-semibold uppercase tracking-wider">Heart Reactions</span>
+                  <Heart className="w-5 h-5 fill-rose-500 text-rose-500" />
+                </div>
+                <p className="text-3xl font-bold text-white">{metrics.totalReactions}</p>
+                <p className="text-xs text-rose-300/60">Recipient appreciation taps</p>
+              </div>
             </div>
 
-            <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
-              <div className="flex items-center justify-between text-pink-300">
-                <span className="text-xs font-semibold uppercase tracking-wider">Total Experiences</span>
-                <Layers className="w-5 h-5" />
+            {/* 30-Day Revenue & Signups Recharts Trend Chart */}
+            <div className="glass-card p-6 sm:p-8 rounded-3xl border border-rose-500/20 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 text-rose-300 text-xs font-semibold uppercase tracking-wider mb-1">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    <span>30-Day Performance Trends</span>
+                  </div>
+                  <h2 className="font-serif font-bold text-xl text-white">
+                    Revenue (₦) & Signup Growth
+                  </h2>
+                </div>
               </div>
-              <p className="text-3xl font-bold text-white">{metrics.totalExperiences}</p>
-              <p className="text-xs text-rose-300/60">
-                {metrics.freeExperiencesCount} Free • {metrics.paidExperiencesCount} Paid
-              </p>
-            </div>
 
-            <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
-              <div className="flex items-center justify-between text-emerald-400">
-                <span className="text-xs font-semibold uppercase tracking-wider">Total Revenue</span>
-                <DollarSign className="w-5 h-5" />
+              <div className="h-72 w-full pt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timeseries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="signupsGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#4c1d38" />
+                    <XAxis dataKey="displayDate" stroke="#fda4af" fontSize={11} />
+                    <YAxis stroke="#fda4af" fontSize={11} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#2b0818',
+                        borderColor: '#9f1239',
+                        borderRadius: '12px',
+                        color: '#fce7f3',
+                        fontSize: '12px',
+                      }}
+                      formatter={(value: any, name: any) => {
+                        if (name === 'Revenue (₦)') return [`₦${Number(value).toLocaleString()}`, name];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px', color: '#fce7f3' }} />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      name="Revenue (₦)"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#revenueGrad)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="signups"
+                      name="Signups / Creations"
+                      stroke="#f43f5e"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#signupsGrad)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-              <p className="text-3xl font-bold text-white">
-                ₦{metrics.totalRevenueNgn.toLocaleString()}
-              </p>
-              <p className="text-xs text-rose-300/60">Verified Paystack payments</p>
-            </div>
-
-            <div className="p-6 rounded-3xl glass-card border border-rose-500/20 space-y-2">
-              <div className="flex items-center justify-between text-rose-300">
-                <span className="text-xs font-semibold uppercase tracking-wider">Heart Reactions</span>
-                <Heart className="w-5 h-5 fill-rose-500 text-rose-500" />
-              </div>
-              <p className="text-3xl font-bold text-white">{metrics.totalReactions}</p>
-              <p className="text-xs text-rose-300/60">Recipient appreciation taps</p>
             </div>
           </div>
         )}
 
-        {/* Experiences Table */}
+        {/* Experiences Tab Content */}
         {activeTab === 'experiences' && (
-          <div className="glass-card rounded-3xl border border-rose-500/20 overflow-hidden">
-            <div className="p-6 border-b border-rose-800/50 flex items-center justify-between">
-              <h2 className="font-serif font-bold text-lg text-white">Created Story Cards</h2>
-              <span className="text-xs text-rose-300/80 font-medium">{experiences.length} records</span>
+          <div className="glass-card rounded-3xl border border-rose-500/20 overflow-hidden space-y-4">
+            {/* Header & Controls */}
+            <div className="p-6 border-b border-rose-800/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-serif font-bold text-lg text-white">Created Story Cards</h2>
+                <p className="text-xs text-rose-300/70">
+                  Showing {filteredExperiences.length} of {experiences.length} total experiences
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                {/* Search Bar */}
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="w-4 h-4 text-rose-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search name, slug, email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full sm:w-60 pl-9 pr-3 py-2 rounded-xl bg-[#3a0d22] border border-rose-800/60 text-white text-xs focus:outline-none focus:border-rose-400 placeholder:text-rose-300/40"
+                  />
+                </div>
+
+                {/* Tier Filter Dropdown */}
+                <div className="relative">
+                  <select
+                    value={tierFilter}
+                    onChange={(e) => setTierFilter(e.target.value as any)}
+                    className="px-3 py-2 rounded-xl bg-[#3a0d22] border border-rose-800/60 text-white text-xs focus:outline-none focus:border-rose-400 appearance-none pr-8 cursor-pointer"
+                  >
+                    <option value="all">All Tiers</option>
+                    <option value="free">Free Tier</option>
+                    <option value="paid">Paid Tier</option>
+                  </select>
+                  <Filter className="w-3.5 h-3.5 text-rose-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                {/* Export CSV Button */}
+                <button
+                  onClick={exportExperiencesCsv}
+                  className="px-4 py-2 rounded-xl bg-rose-900/80 hover:bg-rose-800 text-white text-xs font-semibold transition-all flex items-center gap-1.5 border border-rose-700/60 shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5 text-rose-300" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
             </div>
 
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-rose-100">
                 <thead className="bg-[#3a0d22] text-rose-300 uppercase font-bold text-[10px] tracking-wider border-b border-rose-800/60">
                   <tr>
                     <th className="p-4">Sender & Receiver</th>
                     <th className="p-4">Occasion</th>
-                    <th className="p-4">Tier & Payment</th>
+                    <th className="p-4">Tier</th>
+                    <th className="p-4">Payment Status</th>
                     <th className="p-4">Views / Reactions</th>
                     <th className="p-4">Created Date</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-rose-900/40">
-                  {experiences.map((exp) => (
+                  {filteredExperiences.map((exp) => (
                     <tr key={exp.id} className="hover:bg-rose-950/40 transition-colors">
                       <td className="p-4 font-semibold text-white">
                         {exp.sender_name} → {exp.receiver_name}
                         <div className="text-[10px] text-rose-300/60 font-mono font-normal">{exp.slug}</div>
+                        {exp.creator_email && (
+                          <div className="text-[10px] text-rose-400 font-normal">{exp.creator_email}</div>
+                        )}
                       </td>
                       <td className="p-4">{exp.occasion}</td>
+                      <td className="p-4 uppercase font-bold text-[10px] text-rose-300">{exp.tier}</td>
                       <td className="p-4">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                            exp.tier === 'paid'
-                              ? 'bg-rose-900/80 text-rose-200 border border-rose-700'
-                              : 'bg-rose-950 text-rose-300/70 border border-rose-900'
+                        <button
+                          onClick={() => handleTogglePaymentStatus(exp)}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-semibold transition-all ${
+                            exp.is_paid
+                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-700/80 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700'
+                              : 'bg-rose-950 text-rose-300/70 border border-rose-900 hover:bg-emerald-950 hover:text-emerald-300 hover:border-emerald-700'
                           }`}
+                          title="Click to toggle payment status manually"
                         >
-                          {exp.tier} {exp.is_paid ? '• Active' : '• Pending'}
-                        </span>
+                          {exp.is_paid ? (
+                            <>
+                              <ToggleRight className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Paid • Active</span>
+                            </>
+                          ) : (
+                            <>
+                              <ToggleLeft className="w-3.5 h-3.5 text-rose-400" />
+                              <span>Pending / Mark Paid</span>
+                            </>
+                          )}
+                        </button>
                       </td>
                       <td className="p-4">
                         {exp.views_count} views • {exp.reactions_count} ❤️
@@ -254,41 +621,91 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
                         <button
                           onClick={() => onPreviewExperience(exp.slug)}
                           className="p-1.5 rounded-lg bg-rose-900/80 text-rose-200 hover:bg-rose-800"
-                          title="Preview"
+                          title="Preview Story Card"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleCopyLink(exp.slug)}
                           className="p-1.5 rounded-lg bg-rose-900/80 text-rose-200 hover:bg-rose-800"
-                          title="Copy Link"
+                          title="Copy Public Link"
                         >
                           {copiedSlug === exp.slug ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                         <button
                           onClick={() => handleDelete(exp.id)}
                           className="p-1.5 rounded-lg bg-rose-950 text-rose-400 hover:bg-rose-900 hover:text-white border border-rose-800/60"
-                          title="Delete"
+                          title="Delete Experience"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
                     </tr>
                   ))}
+                  {filteredExperiences.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-xs text-rose-300/60">
+                        No story cards match your search and filter criteria.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* Users Table */}
+        {/* Users Tab Content */}
         {activeTab === 'users' && (
-          <div className="glass-card rounded-3xl border border-rose-500/20 overflow-hidden">
-            <div className="p-6 border-b border-rose-800/50 flex items-center justify-between">
-              <h2 className="font-serif font-bold text-lg text-white">Creator Users</h2>
-              <span className="text-xs text-rose-300/80 font-medium">{users.length} records</span>
+          <div className="glass-card rounded-3xl border border-rose-500/20 overflow-hidden space-y-4">
+            {/* Header & Controls */}
+            <div className="p-6 border-b border-rose-800/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-serif font-bold text-lg text-white">Creator Users</h2>
+                <p className="text-xs text-rose-300/70">
+                  Showing {filteredUsers.length} of {users.length} registered creators
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                {/* Search Bar */}
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="w-4 h-4 text-rose-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full sm:w-60 pl-9 pr-3 py-2 rounded-xl bg-[#3a0d22] border border-rose-800/60 text-white text-xs focus:outline-none focus:border-rose-400 placeholder:text-rose-300/40"
+                  />
+                </div>
+
+                {/* Tier Filter Dropdown */}
+                <div className="relative">
+                  <select
+                    value={tierFilter}
+                    onChange={(e) => setTierFilter(e.target.value as any)}
+                    className="px-3 py-2 rounded-xl bg-[#3a0d22] border border-rose-800/60 text-white text-xs focus:outline-none focus:border-rose-400 appearance-none pr-8 cursor-pointer"
+                  >
+                    <option value="all">All Tiers</option>
+                    <option value="free">Free Tier</option>
+                    <option value="paid">Paid Tier</option>
+                  </select>
+                  <Filter className="w-3.5 h-3.5 text-rose-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                {/* Export CSV Button */}
+                <button
+                  onClick={exportUsersCsv}
+                  className="px-4 py-2 rounded-xl bg-rose-900/80 hover:bg-rose-800 text-white text-xs font-semibold transition-all flex items-center gap-1.5 border border-rose-700/60 shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5 text-rose-300" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
             </div>
 
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-rose-100">
                 <thead className="bg-[#3a0d22] text-rose-300 uppercase font-bold text-[10px] tracking-wider border-b border-rose-800/60">
@@ -299,7 +716,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-rose-900/40">
-                  {users.map((usr) => (
+                  {filteredUsers.map((usr) => (
                     <tr key={usr.id} className="hover:bg-rose-950/40 transition-colors">
                       <td className="p-4 font-semibold text-white">{usr.email}</td>
                       <td className="p-4 uppercase text-[10px] font-bold text-rose-300">{usr.tier}</td>
@@ -308,6 +725,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
                       </td>
                     </tr>
                   ))}
+                  {filteredUsers.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="p-8 text-center text-xs text-rose-300/60">
+                        No creator users match your search and filter criteria.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -317,4 +741,3 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
     </div>
   );
 };
-
