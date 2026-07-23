@@ -518,22 +518,6 @@ app.delete('/api/admin/experiences/:id', requireAdmin, async (req, res) => {
   res.status(404).json({ message: 'Experience not found.' });
 });
 
-// Express static asset serving and SPA fallback
-const distPath = path.join(process.cwd(), 'dist');
-app.use(express.static(distPath));
-
-// Fallback to SPA index.html for non-API routes
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ message: 'API route not found.' });
-  }
-  res.sendFile(path.join(distPath, 'index.html'), (err) => {
-    if (err) {
-      next();
-    }
-  });
-});
-
 // Start Express + Vite server setup locally when not running on Vercel
 if (!process.env.VERCEL) {
   async function start() {
@@ -543,6 +527,14 @@ if (!process.env.VERCEL) {
         appType: 'spa',
       });
       app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        if (!req.path.startsWith('/api/')) {
+          res.sendFile(path.join(distPath, 'index.html'));
+        }
+      });
     }
 
     app.listen(PORT, '0.0.0.0', () => {
@@ -554,4 +546,5 @@ if (!process.env.VERCEL) {
 }
 
 export default app;
+
 
