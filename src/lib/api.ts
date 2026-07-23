@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord } from '../types';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord } from '../types.js';
 
 const API_BASE = '/api';
 

@@ -1,4 +1,4 @@
-import { PlanTier, Slide, SlideBudgetInfo } from '../types';
+import { PlanTier, Slide, SlideBudgetInfo } from '../types.js';
 
 /**
  * Calculates slide budget rules for Free vs Paid tier.

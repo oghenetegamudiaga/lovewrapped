@@ -2,9 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
-import { CreateExperiencePayload, Experience, UserRecord } from '../src/types';
-import { generateSlides } from '../src/lib/slideEngine';
-import { isSupabaseConfigured, supabase } from '../src/lib/supabase';
+import { CreateExperiencePayload, Experience, UserRecord } from '../src/types.js';
+import { generateSlides } from '../src/lib/slideEngine.js';
+import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 
 const app = express();
 const PORT = 3000;
