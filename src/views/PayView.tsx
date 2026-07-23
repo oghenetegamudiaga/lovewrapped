@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { CreditCard, CheckCircle2, Copy, Share2, Sparkles, RefreshCw, ExternalLink, Heart, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Copy, Share2, Sparkles, RefreshCw, ExternalLink, Heart, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Experience } from '../types';
 import { verifyPaymentApi } from '../lib/api';
 import { PAID_PLAN_PRICE_FORMATTED, DEFAULT_PAYMENT_REF } from '../constants.js';
@@ -12,68 +12,56 @@ interface PayViewProps {
 }
 
 export const PayView: React.FC<PayViewProps> = ({
-  reference,
-  experienceId,
+  reference: propReference,
+  experienceId: propExperienceId,
   onViewExperience,
 }) => {
   const [experience, setExperience] = useState<Experience | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
   const [isPaidSuccess, setIsPaidSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'bank' | 'ussd'>('card');
 
-  // Load experience details
-  useEffect(() => {
-    let isMounted = true;
+  // Extract reference and experience ID from URL query parameters (redirect callback)
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const effectiveRef = searchParams.get('reference') || searchParams.get('trxref') || propReference;
+  const effectiveExpId = searchParams.get('expId') || propExperienceId;
 
-    async function load() {
-      try {
-        if (experienceId) {
-          const verified = await verifyPaymentApi(reference, experienceId);
-          if (isMounted) {
-            setExperience(verified.experience);
-            if (verified.experience.is_paid) {
-              setIsPaidSuccess(true);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load experience for payment:', err);
-      }
-    }
-
-    load();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [reference, experienceId]);
-
-  // Simulate Paystack transaction verification
-  const handleSimulatePayment = async () => {
-    setIsProcessing(true);
+  const verifyPayment = async () => {
+    setIsVerifying(true);
+    setErrorMsg(null);
 
     try {
-      const res = await verifyPaymentApi(reference, experienceId);
+      if (!effectiveRef || effectiveRef === DEFAULT_PAYMENT_REF) {
+        throw new Error('No transaction reference found in payment callback URL.');
+      }
+
+      const res = await verifyPaymentApi(effectiveRef, effectiveExpId);
       if (res.success && res.experience) {
         setExperience(res.experience);
         setIsPaidSuccess(true);
 
-        // Confetti celebration
         confetti({
           particleCount: 80,
           spread: 100,
           origin: { y: 0.6 },
           colors: ['#f43f5e', '#ec4899', '#fb7185', '#38bdf8', '#fbbf24'],
         });
+      } else {
+        throw new Error('Payment verification was not successful.');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Payment verification failed:', err);
-      alert('Payment verification failed. Please try again.');
+      const msg = err instanceof Error ? err.message : 'Payment verification failed. Please try again.';
+      setErrorMsg(msg);
     } finally {
-      setIsProcessing(false);
+      setIsVerifying(false);
     }
   };
+
+  useEffect(() => {
+    verifyPayment();
+  }, [effectiveRef, effectiveExpId]);
 
   const getShareableUrl = () => {
     if (!experience) return '';
@@ -102,85 +90,52 @@ export const PayView: React.FC<PayViewProps> = ({
     <div className="min-h-[85vh] bg-[#2b0818] text-[#fce7f3] py-12 px-4 sm:px-6 flex items-center justify-center font-sans">
       <div className="max-w-md mx-auto w-full">
         {!isPaidSuccess ? (
-          /* Payment Checkout Box */
+          /* Payment Verification Box */
           <div className="glass-card rounded-3xl border border-rose-500/20 shadow-2xl overflow-hidden">
             {/* Paystack Header Banner */}
             <div className="bg-gradient-to-r from-rose-950 via-[#3a0d22] to-rose-950 text-white p-6 text-center border-b border-rose-800/40">
               <div className="flex items-center justify-center gap-1.5 text-xs text-rose-300 uppercase tracking-widest font-medium mb-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Paystack Secured Checkout</span>
+                <span>Paystack Secured Payment</span>
               </div>
               <h2 className="font-serif font-bold text-2xl text-white">LoveWrapped Experience</h2>
               <div className="mt-3 inline-block bg-rose-500/10 border border-rose-500/30 px-5 py-1.5 rounded-full text-rose-300 font-bold text-2xl">
                 {amountText}
               </div>
-              <p className="text-[11px] text-rose-300/60 mt-2 font-mono">
-                Ref: {reference || DEFAULT_PAYMENT_REF}
-              </p>
+              {effectiveRef && (
+                <p className="text-[11px] text-rose-300/60 mt-2 font-mono">
+                  Ref: {effectiveRef}
+                </p>
+              )}
             </div>
 
-            {/* Payment Method Tabs */}
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-3 gap-2 bg-[#3a0d22] p-1 rounded-2xl text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`py-2 rounded-xl transition-all ${
-                    paymentMethod === 'card' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
-                  }`}
-                >
-                  Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('bank')}
-                  className={`py-2 rounded-xl transition-all ${
-                    paymentMethod === 'bank' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
-                  }`}
-                >
-                  Bank
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('ussd')}
-                  className={`py-2 rounded-xl transition-all ${
-                    paymentMethod === 'ussd' ? 'bg-rose-600 text-white font-semibold shadow-md' : 'text-rose-300/80 hover:text-white'
-                  }`}
-                >
-                  USSD
-                </button>
-              </div>
-
-              {/* Form details / Test card simulation info */}
-              <div className="p-4 rounded-2xl bg-[#3a0d22]/80 border border-rose-800/50 text-xs space-y-2">
-                <div className="flex items-center gap-2 font-medium text-white">
-                  <CreditCard className="w-4 h-4 text-rose-400" />
-                  <span>Test Environment Payment</span>
+            <div className="p-8 text-center space-y-6">
+              {isVerifying ? (
+                <div className="py-6 flex flex-col items-center justify-center gap-3">
+                  <RefreshCw className="w-8 h-8 text-rose-400 animate-spin" />
+                  <p className="text-sm font-medium text-white">
+                    Verifying your Paystack payment...
+                  </p>
+                  <p className="text-xs text-rose-300/70">
+                    Please wait a moment while we confirm your transaction.
+                  </p>
                 </div>
-                <p className="text-rose-200/80 leading-relaxed">
-                  Click below to simulate an instant Paystack payment confirmation.
-                </p>
-              </div>
-
-              {/* Action Button */}
-              <button
-                id="paystack-complete-button"
-                onClick={handleSimulatePayment}
-                disabled={isProcessing}
-                className="w-full py-4 px-6 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-base shadow-xl shadow-emerald-950/80 transition-all flex items-center justify-center gap-2 border border-emerald-400/20"
-              >
-                {isProcessing ? (
-                  <>
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>Verifying Paystack Payment...</span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-5 h-5" />
-                    <span>Confirm Payment ({amountText})</span>
-                  </>
-                )}
-              </button>
+              ) : errorMsg ? (
+                <div className="py-4 space-y-4">
+                  <div className="p-4 rounded-2xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-xs flex items-center gap-3 text-left">
+                    <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                  <button
+                    id="retry-verification-button"
+                    onClick={verifyPayment}
+                    className="w-full py-3.5 px-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Retry Verification</span>
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (

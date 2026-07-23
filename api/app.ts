@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import crypto from 'crypto';
 import express from 'express';
 import { CreateExperiencePayload, Experience, UserRecord } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
@@ -10,7 +11,14 @@ import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json({ limit: '10mb' }));
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 // In-memory data stores initialized with seed demo data
 const experiencesStore: Map<string, Experience> = new Map();
@@ -312,112 +320,219 @@ apiRouter.post('/experiences/:slug/react', async (req, res) => {
 
 // Initialize Paystack Payment
 apiRouter.post('/paystack/initialize', async (req, res) => {
-  const { experience_id } = req.body;
-  
-  let exp: Experience | undefined;
-  if (isSupabaseConfigured && supabase) {
-    const { data } = await supabase.from('experiences').select('*').eq('id', experience_id).single();
-    if (data) exp = data;
-  }
-
-  if (!exp) {
-    for (const item of experiencesStore.values()) {
-      if (item.id === experience_id) {
-        exp = item;
-        break;
-      }
+  try {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey) {
+      return res.status(500).json({ message: 'Paystack secret key (PAYSTACK_SECRET_KEY) is not configured on the server.' });
     }
-  }
 
-  if (!exp) {
-    return res.status(404).json({ message: 'Experience not found.' });
-  }
+    const { experience_id, email } = req.body;
 
-  const reference = `LW_PAY_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-  exp.payment_reference = reference;
-
-  if (isSupabaseConfigured && supabase) {
-    await supabase.from('experiences').update({ payment_reference: reference }).eq('id', exp.id);
-  }
-
-  experiencesStore.set(exp.slug, exp);
-
-  res.json({
-    authorization_url: `/pay?ref=${reference}&expId=${exp.id}`,
-    reference,
-    amount: PAID_PLAN_PRICE_KOBO, // ₦2,000 in kobo (200,000 kobo)
-  });
-});
-
-// Verify Paystack Payment
-apiRouter.post('/paystack/verify', async (req, res) => {
-  const { reference, experience_id } = req.body;
-
-  let exp: Experience | undefined;
-  if (isSupabaseConfigured && supabase) {
-    const { data } = await supabase
-      .from('experiences')
-      .select('*')
-      .or(`id.eq.${experience_id},payment_reference.eq.${reference}`)
-      .single();
-    if (data) exp = data;
-  }
-
-  if (!exp) {
-    for (const item of experiencesStore.values()) {
-      if (item.id === experience_id || item.payment_reference === reference) {
-        exp = item;
-        break;
-      }
+    let exp: Experience | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('experiences').select('*').eq('id', experience_id).single();
+      if (data) exp = data;
     }
-  }
 
-  if (!exp) {
-    return res.status(404).json({ message: 'Experience or transaction reference not found.' });
-  }
-
-  exp.is_paid = true;
-  exp.payment_reference = reference;
-
-  if (isSupabaseConfigured && supabase) {
-    await supabase
-      .from('experiences')
-      .update({ is_paid: true, payment_reference: reference })
-      .eq('id', exp.id);
-  }
-
-  experiencesStore.set(exp.slug, exp);
-
-  res.json({
-    success: true,
-    message: 'Payment verified successfully!',
-    experience: exp,
-  });
-});
-
-// Paystack Webhook endpoint
-apiRouter.post('/paystack/webhook', async (req, res) => {
-  const event = req.body;
-  if (event && event.event === 'charge.success') {
-    const reference = event.data?.reference;
-    if (reference) {
-      if (isSupabaseConfigured && supabase) {
-        await supabase
-          .from('experiences')
-          .update({ is_paid: true })
-          .eq('payment_reference', reference);
-      }
-
+    if (!exp) {
       for (const item of experiencesStore.values()) {
-        if (item.payment_reference === reference) {
-          item.is_paid = true;
-          experiencesStore.set(item.slug, item);
+        if (item.id === experience_id) {
+          exp = item;
           break;
         }
       }
     }
+
+    if (!exp) {
+      return res.status(404).json({ message: 'Experience not found.' });
+    }
+
+    const customerEmail = (email || exp.creator_email || '').trim();
+    if (!customerEmail || !customerEmail.includes('@')) {
+      return res.status(400).json({ message: 'A valid customer email address is required to initialize payment.' });
+    }
+
+    const reference = `LW_PAY_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+    // Determine domain for Paystack checkout redirect callback_url
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host || 'localhost:3000';
+    const reqOrigin = req.headers.origin;
+    const baseUrl = reqOrigin || `${protocol}://${host}`;
+    const callbackUrl = `${baseUrl}/pay?expId=${encodeURIComponent(exp.id)}`;
+
+    // Call Paystack's real Initialize Transaction API endpoint
+    const paystackRes = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${secretKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: customerEmail,
+        amount: PAID_PLAN_PRICE_KOBO,
+        reference,
+        callback_url: callbackUrl,
+      }),
+    });
+
+    const paystackData = await paystackRes.json();
+
+    if (!paystackRes.ok || !paystackData.status) {
+      console.error('Paystack initialize error:', paystackData);
+      return res.status(400).json({
+        message: paystackData.message || 'Failed to initialize Paystack transaction.',
+      });
+    }
+
+    const { authorization_url } = paystackData.data;
+
+    exp.payment_reference = reference;
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('experiences').update({ payment_reference: reference }).eq('id', exp.id);
+    }
+    experiencesStore.set(exp.slug, exp);
+
+    return res.json({
+      authorization_url,
+      reference,
+      amount: PAID_PLAN_PRICE_KOBO,
+    });
+  } catch (err: unknown) {
+    console.error('Initialize payment exception:', err);
+    const msg = err instanceof Error ? err.message : 'Internal server error initializing payment.';
+    return res.status(500).json({ message: msg });
   }
-  res.status(200).json({ status: 'success' });
+});
+
+// Verify Paystack Payment
+apiRouter.post('/paystack/verify', async (req, res) => {
+  try {
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey) {
+      return res.status(500).json({ message: 'Paystack secret key (PAYSTACK_SECRET_KEY) is not configured on the server.' });
+    }
+
+    const { reference, experience_id } = req.body;
+    if (!reference) {
+      return res.status(400).json({ message: 'Transaction reference is required.' });
+    }
+
+    // Call Paystack's real Verify Transaction API endpoint
+    const paystackRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${secretKey}`,
+      },
+    });
+
+    const paystackData = await paystackRes.json();
+
+    if (!paystackRes.ok || !paystackData.status) {
+      return res.status(400).json({
+        message: paystackData.message || 'Payment verification failed on Paystack.',
+      });
+    }
+
+    const txData = paystackData.data;
+
+    // Only set is_paid: true if data.status === 'success' AND data.amount === 200000 (PAID_PLAN_PRICE_KOBO)
+    if (txData.status !== 'success' || txData.amount !== PAID_PLAN_PRICE_KOBO) {
+      return res.status(400).json({
+        message: `Payment verification failed. Status: ${txData.status}, Amount: ${txData.amount}`,
+      });
+    }
+
+    let exp: Experience | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('experiences')
+        .select('*')
+        .or(`id.eq.${experience_id},payment_reference.eq.${reference}`)
+        .single();
+      if (data) exp = data;
+    }
+
+    if (!exp) {
+      for (const item of experiencesStore.values()) {
+        if (item.id === experience_id || item.payment_reference === reference) {
+          exp = item;
+          break;
+        }
+      }
+    }
+
+    if (!exp) {
+      return res.status(404).json({ message: 'Experience or transaction reference not found.' });
+    }
+
+    exp.is_paid = true;
+    exp.payment_reference = reference;
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase
+        .from('experiences')
+        .update({ is_paid: true, payment_reference: reference })
+        .eq('id', exp.id);
+    }
+
+    experiencesStore.set(exp.slug, exp);
+
+    return res.json({
+      success: true,
+      message: 'Payment verified successfully!',
+      experience: exp,
+    });
+  } catch (err: unknown) {
+    console.error('Verify payment exception:', err);
+    const msg = err instanceof Error ? err.message : 'Internal server error verifying payment.';
+    return res.status(500).json({ message: msg });
+  }
+});
+
+// Paystack Webhook endpoint with HMAC SHA512 signature verification
+apiRouter.post('/paystack/webhook', async (req, res) => {
+  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+  const signature = req.headers['x-paystack-signature'] as string;
+
+  if (!secretKey || !signature) {
+    return res.status(401).json({ message: 'Unauthorized: Missing signature or secret key.' });
+  }
+
+  // Compute HMAC SHA512 hash of raw request body
+  const rawBody = (req as any).rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
+  const hash = crypto.createHmac('sha512', secretKey).update(rawBody).digest('hex');
+
+  if (hash !== signature) {
+    return res.status(401).json({ message: 'Unauthorized: Invalid webhook signature.' });
+  }
+
+  const event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+
+  if (event && event.event === 'charge.success') {
+    const txData = event.data;
+    if (txData && txData.status === 'success' && txData.amount === PAID_PLAN_PRICE_KOBO) {
+      const reference = txData.reference;
+      if (reference) {
+        if (isSupabaseConfigured && supabase) {
+          await supabase
+            .from('experiences')
+            .update({ is_paid: true })
+            .eq('payment_reference', reference);
+        }
+
+        for (const item of experiencesStore.values()) {
+          if (item.payment_reference === reference) {
+            item.is_paid = true;
+            experiencesStore.set(item.slug, item);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  return res.status(200).json({ status: 'success' });
 });
 
 // Admin Middleware / Auth Check

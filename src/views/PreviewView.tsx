@@ -19,22 +19,36 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
   onProceedToPayment,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState(experience.creator_email || '');
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleConfirmAction = async () => {
+    setEmailError(null);
     setIsLoading(true);
 
     if (experience.tier === 'free') {
       onShareFree(experience);
     } else {
+      const targetEmail = (email || experience.creator_email || '').trim();
+      if (!targetEmail || !targetEmail.includes('@')) {
+        setEmailError('Please enter a valid email address to receive payment confirmation & story link.');
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const res = await initializePaymentApi(
-          experience.id,
-          'creator@lovewrapped.app'
-        );
-        onProceedToPayment(res.authorization_url, res.reference, experience.id);
-      } catch (err) {
+        const res = await initializePaymentApi(experience.id, targetEmail);
+        if (res.authorization_url) {
+          onProceedToPayment(res.authorization_url, res.reference, experience.id);
+          // Redirect browser directly to Paystack's real hosted checkout page
+          window.location.href = res.authorization_url;
+        } else {
+          throw new Error('No authorization URL returned from Paystack.');
+        }
+      } catch (err: unknown) {
         console.error('Payment initialization failed:', err);
-        alert('Failed to initialize payment. Please try again.');
+        const msg = err instanceof Error ? err.message : 'Failed to initialize Paystack payment. Please try again.';
+        alert(msg);
         setIsLoading(false);
       }
     }
@@ -64,6 +78,24 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
 
         {/* Action Controls Footer Bar */}
         <div className="max-w-md mx-auto glass-card p-6 rounded-3xl border border-rose-500/20 shadow-xl flex flex-col gap-3">
+          {experience.tier !== 'free' && !experience.creator_email && (
+            <div className="text-left mb-2">
+              <label className="block text-xs font-medium text-rose-200 mb-1">
+                Your Email (for receipt & experience management):
+              </label>
+              <input
+                type="email"
+                placeholder="your.email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-[#3a0d22] border border-rose-800/80 text-rose-100 text-xs focus:outline-none focus:border-rose-400"
+              />
+              {emailError && (
+                <p className="text-[11px] text-rose-400 mt-1 font-medium">{emailError}</p>
+              )}
+            </div>
+          )}
+
           <button
             id="preview-confirm-button"
             onClick={handleConfirmAction}
@@ -73,7 +105,7 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
             {isLoading ? (
               <>
                 <RefreshCw className="w-5 h-5 animate-spin" />
-                <span>Processing...</span>
+                <span>Redirecting to Paystack...</span>
               </>
             ) : experience.tier === 'free' ? (
               <>

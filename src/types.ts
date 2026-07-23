@@ -22,6 +22,7 @@ export interface Experience {
   image_count: number;
   is_paid: boolean;
   payment_reference: string | null;
+  creator_email?: string;
   views_count: number;
   reactions_count: number;
   created_at: string;
