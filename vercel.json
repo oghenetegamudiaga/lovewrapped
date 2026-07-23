@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/**/*.[jt]s": {
+      "includeFiles": "server**"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
