@@ -60,7 +60,79 @@ export const CreateView: React.FC<CreateViewProps> = ({
     );
   }, [senderName, receiverName, finalOccasion, message, selectedPlan, images]);
 
-  // Process files with 5MB client-side validation and direct client-to-Supabase Storage upload
+  // Offscreen canvas image compression helper
+  // Caps longest edge at ~1600px, re-encodes as JPEG starting at quality 0.8 down to ~0.15 until size <= 3MB
+  const compressImage = (file: File, maxDimension = 1600, maxSizeBytes = 3 * 1024 * 1024): Promise<File> => {
+    if (!file.type.startsWith('image/')) {
+      return Promise.resolve(file);
+    }
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          return resolve(file);
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let quality = 0.8;
+        const attemptCompression = () => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                return resolve(file);
+              }
+              if (blob.size <= maxSizeBytes || quality <= 0.15) {
+                const compressedFile = new File(
+                  [blob],
+                  file.name.replace(/\.[^/.]+$/, '') + '.jpg',
+                  { type: 'image/jpeg', lastModified: Date.now() }
+                );
+                return resolve(compressedFile);
+              }
+
+              quality -= 0.15;
+              attemptCompression();
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+
+        attemptCompression();
+      };
+
+      img.onerror = (err) => {
+        URL.revokeObjectURL(url);
+        reject(err);
+      };
+
+      img.src = url;
+    });
+  };
+
+  // Process files with client-side image compression and upload flow
   const processFiles = async (files: FileList | File[]) => {
     setImageError(null);
     setUploadError(null);
@@ -75,42 +147,37 @@ export const CreateView: React.FC<CreateViewProps> = ({
     }
 
     const filesToProcess = fileArray.slice(0, remainingSlots);
-
-    // Step 1: Pre-upload client validation (5MB size check per image)
-    const validFiles: File[] = [];
-    let oversizeCount = 0;
-
-    for (const file of filesToProcess) {
-      if (file.size > 5 * 1024 * 1024) {
-        oversizeCount++;
-      } else {
-        validFiles.push(file);
-      }
-    }
-
-    // Set inline validation error immediately if any file exceeds 5MB
-    if (oversizeCount > 0) {
-      setImageError('File too large — max 5MB per image');
-    }
-
-    if (validFiles.length === 0) return;
-
-    // Step 2: Upload in-progress state
     setIsUploading(true);
 
+    let oversizeCount = 0;
+
     try {
-      for (const file of validFiles) {
+      for (const file of filesToProcess) {
+        let fileToUpload: File;
+        try {
+          fileToUpload = await compressImage(file);
+        } catch (cErr) {
+          console.warn('Image compression failed, proceeding with original file:', cErr);
+          fileToUpload = file;
+        }
+
+        // Check if compressed file size is safely under 3MB (Vercel payload limit protection)
+        if (fileToUpload.size > 3 * 1024 * 1024) {
+          oversizeCount++;
+          continue;
+        }
+
         // Request signed upload URL or parameters from serverless endpoint (sends only tiny JSON metadata)
-        const uploadInfo = await getSignedUploadUrlApi(file.name, file.type || 'image/jpeg');
+        const uploadInfo = await getSignedUploadUrlApi(fileToUpload.name, fileToUpload.type || 'image/jpeg');
 
         if (uploadInfo.signedUrl) {
           // Direct browser-to-Supabase Storage PUT (bypasses serverless function entirely)
           const uploadRes = await fetch(uploadInfo.signedUrl, {
             method: 'PUT',
             headers: {
-              'Content-Type': file.type || 'image/jpeg',
+              'Content-Type': fileToUpload.type || 'image/jpeg',
             },
-            body: file,
+            body: fileToUpload,
           });
 
           if (!uploadRes.ok) {
@@ -126,7 +193,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
           const client = createClient(uploadInfo.supabaseUrl, uploadInfo.supabaseAnonKey);
           const { error: storageErr } = await client.storage
             .from('experience-images')
-            .upload(uploadInfo.path, file, { contentType: file.type || 'image/jpeg', upsert: true });
+            .upload(uploadInfo.path, fileToUpload, { contentType: fileToUpload.type || 'image/jpeg', upsert: true });
 
           if (storageErr) throw storageErr;
 
@@ -138,7 +205,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
             setImages((prev) => [...prev, pubData.publicUrl]);
           }
         } else {
-          // Local environment fallback (read as Data URL on client without API byte payload)
+          // Local environment fallback (read compressed file as Data URL on client without API byte payload)
           await new Promise<void>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -150,9 +217,13 @@ export const CreateView: React.FC<CreateViewProps> = ({
               }
             };
             reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(fileToUpload);
           });
         }
+      }
+
+      if (oversizeCount > 0) {
+        setImageError('File too large — could not compress photo under safe size limit');
       }
     } catch (err: unknown) {
       console.error('Direct image upload error:', err);
@@ -435,7 +506,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
                     {isUploading ? (
                       <>
                         <RefreshCw className="w-5 h-5 text-rose-300 animate-spin mb-1" />
-                        <span className="text-xs font-medium text-white">Uploading photo directly to storage...</span>
+                        <span className="text-xs font-medium text-white">Compressing & uploading photo memory...</span>
                         <span className="text-[11px] text-rose-300/70 mt-1">
                           JPEG, PNG, WebP · up to 5MB each
                         </span>
