@@ -15,8 +15,19 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
   });
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: 'Server error' }));
-    throw new Error(errorData.message || `Request failed with status ${res.status}`);
+    const text = await res.text().catch(() => '');
+    let errorMessage = `Server error (${res.status})`;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.message) {
+        errorMessage = parsed.message;
+      }
+    } catch {
+      if (text && text.length < 150) {
+        errorMessage = `Server error (${res.status}): ${text}`;
+      }
+    }
+    throw new Error(errorMessage);
   }
 
   return res.json();

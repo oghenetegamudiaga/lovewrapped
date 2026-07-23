@@ -98,9 +98,10 @@ usersStore.set('user-demo-1', {
   created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
 });
 
-// API Routes
+// API Router setup (supports dual mounting on '/api' and '/' for Vercel Serverless & Local)
+const apiRouter = express.Router();
 
-app.get('/api/health', (req, res) => {
+apiRouter.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'LoveWrapped API',
@@ -109,7 +110,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Image Upload Endpoint for Paid Plan
-app.post('/api/upload', async (req, res) => {
+apiRouter.post('/upload', async (req, res) => {
   try {
     const { imageBase64, fileName } = req.body;
     if (!imageBase64) {
@@ -149,88 +150,93 @@ app.post('/api/upload', async (req, res) => {
 });
 
 // Create new experience
-app.post('/api/experiences', async (req, res) => {
-  const payload: CreateExperiencePayload = req.body;
-  if (!payload.sender_name || !payload.receiver_name || !payload.message) {
-    return res.status(400).json({ message: 'Sender, receiver, and message are required.' });
-  }
-
-  const id = `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-  const slug = generateSlug(payload.sender_name, payload.receiver_name);
-  const tier = payload.tier || 'free';
-  const images = payload.images || [];
-
-  const generatedSlides = generateSlides(
-    payload.sender_name,
-    payload.receiver_name,
-    payload.occasion || 'Special Moment',
-    payload.message,
-    tier,
-    images
-  );
-
-  const experience: Experience = {
-    id,
-    slug,
-    sender_name: payload.sender_name,
-    receiver_name: payload.receiver_name,
-    occasion: payload.occasion || 'Special Moment',
-    tier,
-    image_count: images.length,
-    is_paid: tier === 'free', // Free tier is instantly active; Paid requires paystack step
-    payment_reference: null,
-    views_count: 0,
-    reactions_count: 0,
-    created_at: new Date().toISOString(),
-    slides: generatedSlides,
-  };
-
-  if (isSupabaseConfigured && supabase) {
-    const { error: expError } = await supabase.from('experiences').insert({
-      id: experience.id,
-      slug: experience.slug,
-      sender_name: experience.sender_name,
-      receiver_name: experience.receiver_name,
-      occasion: experience.occasion,
-      tier: experience.tier,
-      image_count: experience.image_count,
-      is_paid: experience.is_paid,
-      payment_reference: experience.payment_reference,
-      views_count: experience.views_count,
-      reactions_count: experience.reactions_count,
-      slides: experience.slides,
-      created_at: experience.created_at,
-    });
-
-    if (expError) {
-      console.error('Error inserting experience to Supabase:', expError);
+apiRouter.post('/experiences', async (req, res) => {
+  try {
+    const payload: CreateExperiencePayload = req.body;
+    if (!payload || !payload.sender_name || !payload.receiver_name || !payload.message) {
+      return res.status(400).json({ message: 'Sender, receiver, and message are required.' });
     }
 
+    const id = `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const slug = generateSlug(payload.sender_name, payload.receiver_name);
+    const tier = payload.tier || 'free';
+    const images = payload.images || [];
+
+    const generatedSlides = generateSlides(
+      payload.sender_name,
+      payload.receiver_name,
+      payload.occasion || 'Special Moment',
+      payload.message,
+      tier,
+      images
+    );
+
+    const experience: Experience = {
+      id,
+      slug,
+      sender_name: payload.sender_name,
+      receiver_name: payload.receiver_name,
+      occasion: payload.occasion || 'Special Moment',
+      tier,
+      image_count: images.length,
+      is_paid: tier === 'free', // Free tier is instantly active; Paid requires paystack step
+      payment_reference: null,
+      views_count: 0,
+      reactions_count: 0,
+      created_at: new Date().toISOString(),
+      slides: generatedSlides,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error: expError } = await supabase.from('experiences').insert({
+        id: experience.id,
+        slug: experience.slug,
+        sender_name: experience.sender_name,
+        receiver_name: experience.receiver_name,
+        occasion: experience.occasion,
+        tier: experience.tier,
+        image_count: experience.image_count,
+        is_paid: experience.is_paid,
+        payment_reference: experience.payment_reference,
+        views_count: experience.views_count,
+        reactions_count: experience.reactions_count,
+        slides: experience.slides,
+        created_at: experience.created_at,
+      });
+
+      if (expError) {
+        console.error('Error inserting experience to Supabase:', expError);
+      }
+
+      if (payload.creator_email) {
+        await supabase.from('users').insert({
+          email: payload.creator_email,
+          tier,
+        });
+      }
+    }
+
+    // Always sync to in-memory store for fast local access / fallback
+    experiencesStore.set(slug, experience);
     if (payload.creator_email) {
-      await supabase.from('users').insert({
+      const userId = `usr-${Date.now()}`;
+      usersStore.set(userId, {
+        id: userId,
         email: payload.creator_email,
         tier,
+        created_at: new Date().toISOString(),
       });
     }
-  }
 
-  // Always sync to in-memory store for fast local access / fallback
-  experiencesStore.set(slug, experience);
-  if (payload.creator_email) {
-    const userId = `usr-${Date.now()}`;
-    usersStore.set(userId, {
-      id: userId,
-      email: payload.creator_email,
-      tier,
-      created_at: new Date().toISOString(),
-    });
+    res.status(201).json(experience);
+  } catch (err: any) {
+    console.error('Error creating experience:', err);
+    res.status(500).json({ message: err.message || 'Failed to save experience.' });
   }
-
-  res.status(201).json(experience);
 });
 
 // Get experience by slug
-app.get('/api/experiences/:slug', async (req, res) => {
+apiRouter.get('/experiences/:slug', async (req, res) => {
   const slug = req.params.slug;
 
   if (isSupabaseConfigured && supabase) {
@@ -266,7 +272,7 @@ app.get('/api/experiences/:slug', async (req, res) => {
 });
 
 // React to experience (Heart reaction)
-app.post('/api/experiences/:slug/react', async (req, res) => {
+apiRouter.post('/experiences/:slug/react', async (req, res) => {
   const slug = req.params.slug;
 
   if (isSupabaseConfigured && supabase) {
@@ -301,7 +307,7 @@ app.post('/api/experiences/:slug/react', async (req, res) => {
 });
 
 // Initialize Paystack Payment
-app.post('/api/paystack/initialize', async (req, res) => {
+apiRouter.post('/paystack/initialize', async (req, res) => {
   const { experience_id } = req.body;
   
   let exp: Experience | undefined;
@@ -340,7 +346,7 @@ app.post('/api/paystack/initialize', async (req, res) => {
 });
 
 // Verify Paystack Payment
-app.post('/api/paystack/verify', async (req, res) => {
+apiRouter.post('/paystack/verify', async (req, res) => {
   const { reference, experience_id } = req.body;
 
   let exp: Experience | undefined;
@@ -386,7 +392,7 @@ app.post('/api/paystack/verify', async (req, res) => {
 });
 
 // Paystack Webhook endpoint
-app.post('/api/paystack/webhook', async (req, res) => {
+apiRouter.post('/paystack/webhook', async (req, res) => {
   const event = req.body;
   if (event && event.event === 'charge.success') {
     const reference = event.data?.reference;
@@ -423,7 +429,7 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 }
 
 // Admin API Routes
-app.get('/api/admin/metrics', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/metrics', requireAdmin, async (req, res) => {
   if (isSupabaseConfigured && supabase) {
     const { data: exps } = await supabase.from('experiences').select('*');
     const { data: users } = await supabase.from('users').select('*');
@@ -470,7 +476,7 @@ app.get('/api/admin/metrics', requireAdmin, async (req, res) => {
   });
 });
 
-app.get('/api/admin/users', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/users', requireAdmin, async (req, res) => {
   if (isSupabaseConfigured && supabase) {
     const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
     return res.json(users || []);
@@ -480,7 +486,7 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
   res.json(usersList);
 });
 
-app.get('/api/admin/experiences', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/experiences', requireAdmin, async (req, res) => {
   if (isSupabaseConfigured && supabase) {
     const { data: exps } = await supabase.from('experiences').select('*').order('created_at', { ascending: false });
     return res.json(exps || []);
@@ -492,7 +498,7 @@ app.get('/api/admin/experiences', requireAdmin, async (req, res) => {
   res.json(expsList);
 });
 
-app.delete('/api/admin/experiences/:id', requireAdmin, async (req, res) => {
+apiRouter.delete('/admin/experiences/:id', requireAdmin, async (req, res) => {
   const id = req.params.id;
 
   if (isSupabaseConfigured && supabase) {
@@ -517,6 +523,10 @@ app.delete('/api/admin/experiences/:id', requireAdmin, async (req, res) => {
 
   res.status(404).json({ message: 'Experience not found.' });
 });
+
+// Register API router on both /api prefix and root / prefix to guarantee routing under Vercel
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 // Start Express + Vite server setup locally when not running on Vercel
 if (!process.env.VERCEL) {
@@ -546,5 +556,3 @@ if (!process.env.VERCEL) {
 }
 
 export default app;
-
-
