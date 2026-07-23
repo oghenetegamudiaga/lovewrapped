@@ -1,7 +1,7 @@
 -- 💖 LoveWrapped Supabase Database Schema
 -- Version: 1.0
 
-CREATE EXTENSION IF NOT EXISTS uuid-ossp;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS public.users (
