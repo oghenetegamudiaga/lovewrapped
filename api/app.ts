@@ -99,6 +99,15 @@ const seedDemoExperience: Experience = {
   ],
 };
 
+// Startup check for Supabase persistence
+if (isSupabaseConfigured) {
+  console.log('✅ [LoveWrapped API] Supabase DB is CONFIGURED and CONNECTED. Story data persistence is active.');
+} else {
+  console.warn(
+    '⚠️ [LoveWrapped API] CRITICAL WARNING: Supabase credentials (SUPABASE_URL and/or SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY) are missing. Running on transient in-memory stores that WILL NOT PERSIST across Vercel serverless function instances!'
+  );
+}
+
 experiencesStore.set('demo', seedDemoExperience);
 
 // Seed initial users
@@ -116,7 +125,12 @@ apiRouter.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'LoveWrapped API',
-    database: isSupabaseConfigured ? 'supabase' : 'in-memory',
+    supabaseConfigured: isSupabaseConfigured,
+    database: isSupabaseConfigured ? 'supabase' : 'in-memory (transient)',
+    environment: process.env.NODE_ENV || 'development',
+    persistence: isSupabaseConfigured
+      ? 'Database persistent across serverless instances'
+      : 'WARNING: In-memory store active. Data will NOT persist across Vercel serverless function invocations!',
   });
 });
 
@@ -221,7 +235,7 @@ apiRouter.post('/experiences', async (req, res) => {
       });
 
       if (expError) {
-        console.error('Error inserting experience to Supabase:', expError);
+        console.error('CRITICAL: Error inserting experience to Supabase database:', expError);
       }
 
       if (payload.creator_email) {
@@ -230,6 +244,10 @@ apiRouter.post('/experiences', async (req, res) => {
           tier,
         });
       }
+    } else {
+      console.warn(
+        `⚠️ WARNING: [POST /experiences] Supabase is NOT configured. Created experience '${slug}' in transient in-memory store. It will NOT persist across Vercel serverless function invocations!`
+      );
     }
 
     // Always sync to in-memory store for fast local access / fallback
@@ -272,6 +290,14 @@ apiRouter.get('/experiences/:slug', async (req, res) => {
       expData.views_count = updatedViews;
       return res.json(expData);
     }
+
+    if (error && error.code !== 'PGRST116') {
+      console.error(`[GET /experiences/${slug}] Supabase query error:`, error);
+    }
+  } else {
+    console.warn(
+      `⚠️ WARNING: [GET /experiences/${slug}] Supabase is NOT configured. Fallback to transient in-memory store.`
+    );
   }
 
   // Fallback to in-memory store

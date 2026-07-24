@@ -66,7 +66,7 @@ export const WatchView: React.FC<WatchViewProps> = ({ slug, onNavigateToCreate }
         </div>
         <h2 className="font-serif font-bold text-2xl text-rose-100 mb-2">Story Not Found</h2>
         <p className="text-sm text-rose-300/80 max-w-xs mb-6">
-          This LoveWrapped link may have expired or is invalid.
+          {error && error !== 'Story card not found.' ? error : 'This LoveWrapped story card could not be found or the link is invalid.'}
         </p>
         <button
           onClick={onNavigateToCreate}

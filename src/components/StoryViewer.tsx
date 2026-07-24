@@ -253,7 +253,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
           />
         ) : (
           /* End Card Screen */
-          <div className="relative w-full h-full bg-gradient-to-br from-rose-950 via-slate-950 to-black text-white p-8 flex flex-col items-center justify-center text-center">
+          <div className="relative z-30 w-full h-full bg-gradient-to-br from-rose-950 via-slate-950 to-black text-white p-8 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center mb-6 shadow-lg shadow-rose-500/30 animate-bounce">
               <Heart className="w-8 h-8 fill-white" />
             </div>
@@ -298,27 +298,29 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
           </div>
         )}
 
-        {/* Tap zones for Left (30%) and Right (70%) navigation */}
-        <div className="absolute inset-0 z-20 flex pointer-events-auto">
-          <div
-            className="w-[30%] h-full group flex items-center justify-start pl-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePrev();
-            }}
-          >
-            <ChevronLeft className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
+        {/* Tap zones for Left (30%) and Right (70%) navigation (only rendered when story is playing) */}
+        {!isEndCard && (
+          <div className="absolute inset-0 z-20 flex pointer-events-auto">
+            <div
+              className="w-[30%] h-full group flex items-center justify-start pl-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrev();
+              }}
+            >
+              <ChevronLeft className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
+            </div>
+            <div
+              className="w-[70%] h-full group flex items-center justify-end pr-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNext();
+              }}
+            >
+              <ChevronRight className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
+            </div>
           </div>
-          <div
-            className="w-[70%] h-full group flex items-center justify-end pr-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNext();
-            }}
-          >
-            <ChevronRight className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Share Modal Popup */}
