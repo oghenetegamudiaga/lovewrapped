@@ -148,11 +148,16 @@ const seedDemoExperience: Experience = {
 };
 
 // Startup check for Supabase persistence
+const hasSupabaseUrl = Boolean(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL);
+const hasSupabaseKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY);
+
+console.log(`[LoveWrapped API Startup] isSupabaseConfigured: ${isSupabaseConfigured} (SUPABASE_URL set: ${hasSupabaseUrl}, SUPABASE_SERVICE_ROLE_KEY/ANON_KEY set: ${hasSupabaseKey})`);
+
 if (isSupabaseConfigured) {
-  console.log('✅ [LoveWrapped API] Supabase DB is CONFIGURED and CONNECTED. Story data persistence is active.');
+  console.log('✅ [LoveWrapped API] Supabase DB is CONFIGURED and CONNECTED. Story data & links persist indefinitely with no TTL.');
 } else {
   console.warn(
-    '⚠️ [LoveWrapped API] CRITICAL WARNING: Supabase credentials (SUPABASE_URL and/or SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY) are missing. Running on transient in-memory stores that WILL NOT PERSIST across Vercel serverless function instances!'
+    '⚠️ [LoveWrapped API] CRITICAL WARNING: Supabase credentials (SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY) are missing. Running on transient in-memory stores that WILL NOT PERSIST across Vercel serverless function instances!'
   );
 }
 
@@ -177,7 +182,7 @@ apiRouter.get('/health', (req, res) => {
     database: isSupabaseConfigured ? 'supabase' : 'in-memory (transient)',
     environment: process.env.NODE_ENV || 'development',
     persistence: isSupabaseConfigured
-      ? 'Database persistent across serverless instances'
+      ? 'Database persistent across serverless instances - links persist indefinitely (no TTL)'
       : 'WARNING: In-memory store active. Data will NOT persist across Vercel serverless function invocations!',
   });
 });

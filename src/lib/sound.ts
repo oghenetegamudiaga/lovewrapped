@@ -28,7 +28,7 @@ class RomanticAudioSynthesizer {
     }
   }
 
-  public playNote(freq: number, duration = 3.5, volume = 0.08) {
+  public playNote(freq: number, duration = 3.5, volume = 0.2) {
     if (!this.ctx) return;
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
@@ -66,7 +66,7 @@ class RomanticAudioSynthesizer {
     this.isPlaying = true;
 
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+    this.masterGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
     this.masterGain.connect(this.ctx.destination);
 
     // Play an opening gentle arpeggio
@@ -85,9 +85,9 @@ class RomanticAudioSynthesizer {
     const f2 = this.frequencies[2 + Math.floor(Math.random() * 2)]; // 5th / 7th
     const f3 = this.frequencies[4 + Math.floor(Math.random() * 2)]; // High tone
 
-    this.playNote(f1, 4.0, 0.09);
-    setTimeout(() => this.playNote(f2, 3.8, 0.07), 400);
-    setTimeout(() => this.playNote(f3, 3.5, 0.06), 900);
+    this.playNote(f1, 4.0, 0.22);
+    setTimeout(() => this.playNote(f2, 3.8, 0.18), 400);
+    setTimeout(() => this.playNote(f3, 3.5, 0.15), 900);
   }
 
   public stop() {
