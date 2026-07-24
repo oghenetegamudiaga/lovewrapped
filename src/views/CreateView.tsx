@@ -317,8 +317,8 @@ export const CreateView: React.FC<CreateViewProps> = ({
     <div className="min-h-screen bg-[#2b0818] text-[#fce7f3] py-12 px-4 sm:px-6 font-sans">
       <div className="max-w-5xl mx-auto">
         {/* Step Header */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-6 border-b border-rose-900/40">
-          <div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-10 pb-6 border-b border-rose-900/40 text-center">
+          <div className="flex flex-col items-center">
             <div className="eyebrow-pill mb-2">
               <span />
               Your LoveWrapped

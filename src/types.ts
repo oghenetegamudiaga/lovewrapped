@@ -68,3 +68,30 @@ export interface SlideBudgetInfo {
   isOverflow: boolean;
   overflowMessage?: string;
 }
+
+/* ==================== CRM & Live Site Content Types ==================== */
+
+export type CRMContactType = 'lead' | 'support';
+export type CRMContactStatus = 'new' | 'contacted' | 'in_progress' | 'converted' | 'closed' | 'lost';
+
+export interface CRMContact {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  type: CRMContactType;
+  status: CRMContactStatus;
+  source: string;
+  notes?: string | null;
+  related_experience_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SiteContentItem {
+  key: string;
+  value: string;
+  updated_at?: string;
+}
+
+export type SiteContentMap = Record<string, string>;

@@ -1,39 +1,44 @@
 import React from 'react';
 import { Heart, ArrowUpRight, Check, Mail } from 'lucide-react';
 import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
+import { useSiteContent } from '../lib/useSiteContent.js';
 
 interface LandingViewProps {
   onNavigate: (path: string) => void;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
+  const { getContent } = useSiteContent();
+
   return (
     <div className="flex flex-col min-h-screen bg-[#2b0818] text-[#fce7f3] font-sans selection:bg-rose-500 selection:text-white">
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 px-4 sm:px-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         {/* Left Copy Column */}
-        <div className="lg:col-span-7 flex flex-col items-start z-10">
+        <div className="lg:col-span-7 flex flex-col items-center text-center z-10">
           <div className="eyebrow-pill mb-6">
             <span />
-            Made for your favourite person
+            {getContent('hero_eyebrow', 'Made for your favourite person')}
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.12] mb-6">
-            Turn your love into<br />
-            <em className="italic font-normal text-rose-300">an experience.</em>
+            {getContent('hero_title_prefix', 'Turn your love into')}<br />
+            <em className="italic font-normal text-rose-300">
+              {getContent('hero_title_highlight', 'an experience.')}
+            </em>
           </h1>
 
           <p className="text-lg sm:text-xl text-rose-100/80 max-w-xl mb-8 font-normal leading-relaxed">
-            A few memories. A few honest words. One beautiful story she’ll want to replay.
+            {getContent('hero_subtitle', 'A few memories. A few honest words. One beautiful story she’ll want to replay.')}
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 mb-6 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-6 w-full sm:w-auto">
             <button
               id="hero-create-yours-button"
               onClick={() => onNavigate('/pricing')}
               className="px-8 py-4 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-base shadow-xl shadow-rose-950/80 hover:shadow-rose-900/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-rose-400/20"
             >
-              <span>Create yours</span>
+              <span>{getContent('hero_cta_create', 'Create yours')}</span>
               <ArrowUpRight className="w-5 h-5" />
             </button>
 
@@ -42,12 +47,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
               onClick={() => onNavigate('/w/demo')}
               className="px-6 py-4 rounded-full bg-rose-950/60 hover:bg-rose-900/50 text-rose-100 border border-rose-800/60 font-medium text-base transition-all flex items-center justify-center gap-2 hover:border-rose-600/50"
             >
-              <span>Watch the demo</span>
+              <span>{getContent('hero_cta_view_demo', 'Watch the demo')}</span>
             </button>
           </div>
 
           <p className="text-xs text-rose-300/60 font-medium tracking-wide">
-            No app. No account. Just something unforgettable.
+            {getContent('hero_tagline', 'No app. No account. Just something unforgettable.')}
           </p>
         </div>
 

@@ -6,7 +6,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import { sealData, unsealData } from 'iron-session';
-import { CreateExperiencePayload, Experience, UserRecord } from '../src/types.js';
+import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } from '../src/constants.js';
@@ -27,6 +27,54 @@ app.use(
 // In-memory data stores initialized with seed demo data
 const experiencesStore: Map<string, Experience> = new Map();
 const usersStore: Map<string, UserRecord> = new Map();
+const crmContactsStore: Map<string, CRMContact> = new Map();
+const siteContentStore: Map<string, string> = new Map([
+  ['hero_eyebrow', 'Made for your favourite person'],
+  ['hero_title_prefix', 'Turn your love into'],
+  ['hero_title_highlight', 'an experience.'],
+  ['hero_subtitle', 'A few memories. A few honest words. One beautiful story she’ll want to replay.'],
+  ['hero_cta_create', 'Create yours'],
+  ['hero_cta_view_demo', 'Watch the demo'],
+  ['hero_tagline', 'No app. No account. Just something unforgettable.'],
+  ['pricing_badge', 'Simple, Transparent Pricing'],
+  ['pricing_title', 'Choose how you want to share your story'],
+  ['pricing_free_title', 'Free Story'],
+  ['pricing_free_desc', 'Perfect for a quick, heartfelt surprise with interactive slides & music.'],
+  ['pricing_paid_title', 'Paid Story'],
+  ['pricing_paid_desc', 'For unforgettable anniversaries, birthdays & grand romantic gestures.'],
+]);
+
+// Seed Demo CRM Contacts
+const seedContact1: CRMContact = {
+  id: 'crm-demo-1',
+  name: 'Amaka Okafor',
+  email: 'amaka.o@example.com',
+  phone: '+234 803 123 4567',
+  type: 'lead',
+  status: 'new',
+  source: 'Landing Page CTA',
+  notes: 'Interested in a custom anniversary card package.',
+  related_experience_id: null,
+  created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+  updated_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+};
+
+const seedContact2: CRMContact = {
+  id: 'crm-demo-2',
+  name: 'Tunde Bakare',
+  email: 'tunde@example.com',
+  phone: '+234 802 987 6543',
+  type: 'support',
+  status: 'in_progress',
+  source: 'Checkout Help',
+  notes: 'Asked about custom song upload option.',
+  related_experience_id: 'exp-demo-001',
+  created_at: new Date(Date.now() - 86400000 * 4).toISOString(),
+  updated_at: new Date(Date.now() - 86400000 * 1).toISOString(),
+};
+
+crmContactsStore.set(seedContact1.id, seedContact1);
+crmContactsStore.set(seedContact2.id, seedContact2);
 
 // Helper to generate slug
 function generateSlug(sender: string, receiver: string): string {
@@ -845,6 +893,187 @@ apiRouter.delete('/admin/experiences/:id', requireAdmin, async (req, res) => {
   }
 
   res.status(404).json({ message: 'Experience not found.' });
+});
+
+/* ==================== Public Site Content (CMS) Endpoint ==================== */
+
+apiRouter.get('/content', async (req, res) => {
+  try {
+    const result: Record<string, string> = {};
+
+    // Populate defaults from in-memory map
+    for (const [k, v] of siteContentStore.entries()) {
+      result[k] = v;
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('site_content').select('*');
+      if (data && !error) {
+        for (const row of data) {
+          if (row.key && row.value !== undefined) {
+            result[row.key] = row.value;
+          }
+        }
+      }
+    }
+
+    res.json(result);
+  } catch (err: unknown) {
+    console.error('Error fetching site content:', err);
+    const fallback: Record<string, string> = {};
+    for (const [k, v] of siteContentStore.entries()) {
+      fallback[k] = v;
+    }
+    res.json(fallback);
+  }
+});
+
+// Admin Live Content Editing (CMS) Endpoint
+apiRouter.patch('/admin/content', requireAdmin, async (req, res) => {
+  try {
+    const { key, value } = req.body;
+
+    if (!key || typeof value !== 'string') {
+      return res.status(400).json({ message: 'Key and value strings are required.' });
+    }
+
+    const updatedAt = new Date().toISOString();
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase
+        .from('site_content')
+        .upsert({ key, value, updated_at: updatedAt });
+
+      if (error) {
+        console.error('Supabase site_content upsert error:', error);
+      }
+    }
+
+    siteContentStore.set(key, value);
+
+    return res.json({ success: true, key, value, updated_at: updatedAt });
+  } catch (err: unknown) {
+    console.error('Error updating site content:', err);
+    res.status(500).json({ message: 'Failed to update site content.' });
+  }
+});
+
+/* ==================== Admin CRM Contact Routes ==================== */
+
+apiRouter.get('/admin/crm', requireAdmin, async (req, res) => {
+  try {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('crm_contacts')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (data && !error) {
+        return res.json(data);
+      }
+    }
+
+    const contacts = Array.from(crmContactsStore.values()).sort(
+      (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    );
+    res.json(contacts);
+  } catch (err: unknown) {
+    console.error('Error fetching CRM contacts:', err);
+    res.status(500).json({ message: 'Failed to fetch CRM contacts.' });
+  }
+});
+
+apiRouter.post('/admin/crm', requireAdmin, async (req, res) => {
+  try {
+    const { name, email, phone, type, status, source, notes, related_experience_id } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Name and email are required.' });
+    }
+
+    const now = new Date().toISOString();
+    const contact: CRMContact = {
+      id: `crm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name,
+      email,
+      phone: phone || null,
+      type: type || 'lead',
+      status: status || 'new',
+      source: source || 'Admin Manual Add',
+      notes: notes || null,
+      related_experience_id: related_experience_id || null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('crm_contacts').insert(contact);
+      if (error) {
+        console.error('Supabase crm_contacts insert error:', error);
+      }
+    }
+
+    crmContactsStore.set(contact.id, contact);
+
+    res.status(201).json(contact);
+  } catch (err: unknown) {
+    console.error('Error creating CRM contact:', err);
+    res.status(500).json({ message: 'Failed to create CRM contact.' });
+  }
+});
+
+apiRouter.patch('/admin/crm/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updates = req.body;
+    const updatedAt = new Date().toISOString();
+
+    let updatedContact: CRMContact | undefined;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('crm_contacts')
+        .update({ ...updates, updated_at: updatedAt })
+        .eq('id', id)
+        .select()
+        .single();
+      if (data) updatedContact = data;
+    }
+
+    for (const [cId, item] of crmContactsStore.entries()) {
+      if (item.id === id) {
+        const merged = { ...item, ...updates, updated_at: updatedAt };
+        crmContactsStore.set(cId, merged);
+        if (!updatedContact) updatedContact = merged;
+        break;
+      }
+    }
+
+    if (!updatedContact) {
+      return res.status(404).json({ message: 'CRM contact not found.' });
+    }
+
+    res.json(updatedContact);
+  } catch (err: unknown) {
+    console.error('Error updating CRM contact:', err);
+    res.status(500).json({ message: 'Failed to update CRM contact.' });
+  }
+});
+
+apiRouter.delete('/admin/crm/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('crm_contacts').delete().eq('id', id);
+    }
+
+    crmContactsStore.delete(id);
+    res.json({ success: true, message: 'CRM contact deleted.' });
+  } catch (err: unknown) {
+    console.error('Error deleting CRM contact:', err);
+    res.status(500).json({ message: 'Failed to delete CRM contact.' });
+  }
 });
 
 // Register API router on both /api prefix and root / prefix to guarantee routing under Vercel

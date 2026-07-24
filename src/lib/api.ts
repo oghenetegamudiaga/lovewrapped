@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord } from '../types.js';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap } from '../types.js';
 
 const API_BASE = '/api';
 
@@ -143,5 +143,40 @@ export async function updateAdminExperiencePaymentStatusApi(id: string, isPaid: 
 export async function deleteAdminExperienceApi(id: string): Promise<{ success: boolean }> {
   return apiFetch<{ success: boolean }>(`/admin/experiences/${id}`, {
     method: 'DELETE',
+  });
+}
+
+/* ==================== CRM Admin Endpoints ==================== */
+
+export async function getAdminCrmContactsApi(): Promise<CRMContact[]> {
+  return apiFetch<CRMContact[]>('/admin/crm');
+}
+
+export async function createAdminCrmContactApi(contact: Partial<CRMContact>): Promise<CRMContact> {
+  return apiFetch<CRMContact>('/admin/crm', {
+    method: 'POST',
+    body: JSON.stringify(contact),
+  });
+}
+
+export async function updateAdminCrmContactApi(id: string, updates: Partial<CRMContact>): Promise<CRMContact> {
+  return apiFetch<CRMContact>(`/admin/crm/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteAdminCrmContactApi(id: string): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(`/admin/crm/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/* ==================== Site Content CMS Endpoints ==================== */
+
+export async function updateSiteContentApi(key: string, value: string): Promise<{ success: boolean; key: string; value: string }> {
+  return apiFetch<{ success: boolean; key: string; value: string }>('/admin/content', {
+    method: 'PATCH',
+    body: JSON.stringify({ key, value }),
   });
 }

@@ -2,12 +2,15 @@ import React from 'react';
 import { Sparkles, ArrowUpRight, Check, Heart, Mail } from 'lucide-react';
 import { PlanTier } from '../types';
 import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
+import { useSiteContent } from '../lib/useSiteContent.js';
 
 interface PricingViewProps {
   onSelectPlan: (plan: PlanTier) => void;
 }
 
 export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
+  const { getContent } = useSiteContent();
+
   return (
     <div className="min-h-[85vh] bg-[#2b0818] text-[#fce7f3] py-16 px-4 sm:px-6 flex flex-col justify-center">
       <div className="max-w-5xl mx-auto w-full">
@@ -15,11 +18,10 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="eyebrow-pill mb-3 justify-center">
             <span />
-            First, choose your experience
+            {getContent('pricing_badge', 'Simple, Transparent Pricing')}
           </div>
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
-            How do you want<br />
-            <em className="italic font-normal text-rose-300">to tell your story?</em>
+            {getContent('pricing_title', 'Choose how you want to share your story')}
           </h1>
           <p className="text-rose-200/80 text-base leading-relaxed">
             Start with the option that feels right. You can see exactly what is included before creating anything.
