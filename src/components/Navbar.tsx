@@ -16,7 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#2b0818]/90 backdrop-blur-md border-b border-rose-900/40 transition-all">
+    <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur-md border-b border-cream-border transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Brand */}
         <button
@@ -24,11 +24,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           onClick={() => handleMobileNav('/')}
           className="flex items-center gap-2 group focus:outline-none text-left"
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-rose-950/50 group-hover:scale-105 transition-transform">
-            <Heart className="w-4 h-4 fill-white" />
+          <div className="w-8 h-8 rounded-full bg-coral flex items-center justify-center text-cream shadow-sm group-hover:scale-105 transition-transform">
+            <Heart className="w-4 h-4 fill-cream" />
           </div>
-          <span className="font-serif font-bold text-2xl tracking-tight text-white group-hover:text-rose-200 transition-colors">
-            Love<span className="text-rose-400">Wrapped</span>
+          <span className="font-serif font-bold text-2xl tracking-tight text-maroon group-hover:text-coral transition-colors">
+            Love<span className="text-coral">Wrapped</span>
           </span>
         </button>
 
@@ -39,8 +39,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             onClick={() => onNavigate('/w/demo')}
             className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
               currentPath === '/w/demo'
-                ? 'bg-rose-900/60 text-rose-200 border border-rose-700/50'
-                : 'text-rose-200/80 hover:text-white hover:bg-rose-900/30'
+                ? 'bg-cream-card text-maroon border border-cream-border'
+                : 'text-mauve hover:text-maroon hover:bg-cream-card'
             }`}
           >
             Watch demo
@@ -49,10 +49,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           <button
             id="nav-tiers-button"
             onClick={() => onNavigate('/pricing')}
-            className="group flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white font-medium text-xs sm:text-sm shadow-lg shadow-rose-950/60 transition-all active:scale-95 border border-rose-400/20"
+            className="group flex items-center gap-1.5 px-4 py-2 rounded-full bg-maroon hover:bg-maroon-light text-cream font-medium text-xs sm:text-sm shadow-md transition-all active:scale-95 border border-maroon/20"
           >
             <span>Choose a tier</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-coral" />
           </button>
         </div>
 
@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             id="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="p-2 rounded-xl text-rose-200 hover:text-white bg-rose-950/80 border border-rose-800/60 focus:outline-none"
+            className="p-2 rounded-xl text-maroon hover:text-coral bg-cream-card border border-cream-border focus:outline-none"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -78,37 +78,37 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="sm:hidden bg-[#250614] border-b border-rose-900/60 overflow-hidden"
+            className="sm:hidden bg-cream border-b border-cream-border overflow-hidden"
           >
             <div className="px-4 py-6 flex flex-col gap-3">
               <button
                 type="button"
                 id="mobile-nav-home"
                 onClick={() => handleMobileNav('/')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-[#3a0d22]/50 border border-rose-800/40 text-rose-100 font-medium text-sm flex items-center justify-between"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
               >
                 <span>Home</span>
-                <Heart className="w-4 h-4 text-rose-400" />
+                <Heart className="w-4 h-4 text-coral" />
               </button>
 
               <button
                 type="button"
                 id="mobile-nav-demo"
                 onClick={() => handleMobileNav('/w/demo')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-[#3a0d22]/50 border border-rose-800/40 text-rose-100 font-medium text-sm flex items-center justify-between"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
               >
                 <span>Watch demo</span>
-                <PlayCircle className="w-4 h-4 text-rose-400" />
+                <PlayCircle className="w-4 h-4 text-coral" />
               </button>
 
               <button
                 type="button"
                 id="mobile-nav-tiers"
                 onClick={() => handleMobileNav('/pricing')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 text-white font-semibold text-sm flex items-center justify-between shadow-lg"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-maroon text-cream font-semibold text-sm flex items-center justify-between shadow-md"
               >
                 <span>Choose a tier</span>
-                <Layers className="w-4 h-4 text-white" />
+                <Layers className="w-4 h-4 text-coral" />
               </button>
             </div>
           </motion.div>
@@ -117,5 +117,3 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
     </header>
   );
 };
-
-

@@ -97,7 +97,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-rose-50/30 text-rose-950 font-sans antialiased">
+    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans antialiased">
       {/* Hide standard navbar on fullscreen recipient viewer /w/[slug] */}
       {!currentPath.startsWith('/w/') && (
         <Navbar currentPath={currentPath} onNavigate={navigate} />

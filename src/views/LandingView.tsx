@@ -11,7 +11,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
   const { getContent } = useSiteContent();
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#2b0818] text-[#fce7f3] font-sans selection:bg-rose-500 selection:text-white">
+    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 px-4 sm:px-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         {/* Left Copy Column */}
@@ -21,14 +21,14 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             {getContent('hero_eyebrow', 'Made for your favourite person')}
           </div>
 
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.12] mb-6">
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6">
             {getContent('hero_title_prefix', 'Turn your love into')}<br />
-            <em className="italic font-normal text-rose-300">
+            <em className="italic font-normal text-coral">
               {getContent('hero_title_highlight', 'an experience.')}
             </em>
           </h1>
 
-          <p className="text-lg sm:text-xl text-rose-100/80 max-w-xl mb-8 font-normal leading-relaxed">
+          <p className="text-lg sm:text-xl text-mauve max-w-xl mb-8 font-normal leading-relaxed">
             {getContent('hero_subtitle', 'A few memories. A few honest words. One beautiful story she’ll want to replay.')}
           </p>
 
@@ -36,22 +36,22 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             <button
               id="hero-create-yours-button"
               onClick={() => onNavigate('/pricing')}
-              className="px-8 py-4 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-base shadow-xl shadow-rose-950/80 hover:shadow-rose-900/50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-rose-400/20"
+              className="px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-md hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20"
             >
               <span>{getContent('hero_cta_create', 'Create yours')}</span>
-              <ArrowUpRight className="w-5 h-5" />
+              <ArrowUpRight className="w-5 h-5 text-coral" />
             </button>
 
             <button
               id="hero-watch-demo-button"
               onClick={() => onNavigate('/w/demo')}
-              className="px-6 py-4 rounded-full bg-rose-950/60 hover:bg-rose-900/50 text-rose-100 border border-rose-800/60 font-medium text-base transition-all flex items-center justify-center gap-2 hover:border-rose-600/50"
+              className="px-6 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-medium text-base transition-all flex items-center justify-center gap-2"
             >
               <span>{getContent('hero_cta_view_demo', 'Watch the demo')}</span>
             </button>
           </div>
 
-          <p className="text-xs text-rose-300/60 font-medium tracking-wide">
+          <p className="text-xs text-mauve/80 font-medium tracking-wide">
             {getContent('hero_tagline', 'No app. No account. Just something unforgettable.')}
           </p>
         </div>
@@ -61,10 +61,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="glow-one" />
           <div className="glow-two" />
 
-          {/* Interactive Phone Card */}
+          {/* Interactive Phone Card - Keeps dark maroon theme for story preview mockup */}
           <div
             onClick={() => onNavigate('/w/demo')}
-            className="relative w-full max-w-[320px] aspect-[9/16] rounded-[38px] bg-gradient-to-b from-[#4a102b] via-[#3a0d22] to-[#250614] p-6 border border-rose-500/30 phone-card-shadow flex flex-col justify-between cursor-pointer group hover:border-rose-400/60 transition-all transform hover:-translate-y-1"
+            className="relative w-full max-w-[320px] aspect-[9/16] rounded-[38px] bg-gradient-to-b from-[#4a102b] via-[#3a0d22] to-[#250614] p-6 border border-coral/40 phone-card-shadow flex flex-col justify-between cursor-pointer group hover:border-coral transition-all transform hover:-translate-y-1"
           >
             {/* Top status bar dots */}
             <div className="flex items-center justify-center gap-1.5 opacity-60 mb-4">
@@ -103,28 +103,28 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           </div>
 
           {/* Floating Pills */}
-          <div className="absolute top-12 -left-4 sm:-left-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-rose-200 shadow-xl border border-rose-500/30 flex items-center gap-1.5 animate-bounce-slow">
+          <div className="absolute top-12 -left-4 sm:-left-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-maroon shadow-md border border-cream-border flex items-center gap-1.5 animate-bounce-slow">
             <span>made with love</span>
-            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
+            <Heart className="w-3.5 h-3.5 text-coral fill-coral" />
           </div>
 
-          <div className="absolute bottom-16 -right-4 sm:-right-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-rose-200 shadow-xl border border-rose-500/30">
+          <div className="absolute bottom-16 -right-4 sm:-right-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-maroon shadow-md border border-cream-border">
             your story, your way
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 md:py-28 px-4 sm:px-6 bg-[#250614] border-y border-rose-950" id="how-it-works">
+      <section className="py-20 md:py-28 px-4 sm:px-6 bg-cream-card border-y border-cream-border" id="how-it-works">
         <div className="max-w-5xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <div className="eyebrow-pill mb-3 justify-center">
               <span />
               Simple, really
             </div>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
               Something meaningful,<br />
-              <em className="italic font-normal text-rose-300">in three little steps.</em>
+              <em className="italic font-normal text-coral">in three little steps.</em>
             </h2>
           </div>
 
@@ -132,9 +132,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             {/* Step 01 */}
             <article className="glass-card p-8 rounded-3xl glass-card-hover flex flex-col justify-between">
               <div>
-                <b className="block text-2xl font-serif font-bold text-rose-400 mb-4 opacity-90">01</b>
-                <h3 className="font-serif font-bold text-xl text-white mb-3">Tell us about her</h3>
-                <p className="text-sm text-rose-200/80 leading-relaxed font-normal">
+                <b className="block text-2xl font-serif font-bold text-coral mb-4 opacity-90">01</b>
+                <h3 className="font-serif font-bold text-xl text-maroon mb-3">Tell us about her</h3>
+                <p className="text-sm text-mauve leading-relaxed font-normal">
                   Share a memory, your favourite things about her, and what you want to say.
                 </p>
               </div>
@@ -143,9 +143,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             {/* Step 02 */}
             <article className="glass-card p-8 rounded-3xl glass-card-hover flex flex-col justify-between">
               <div>
-                <b className="block text-2xl font-serif font-bold text-rose-400 mb-4 opacity-90">02</b>
-                <h3 className="font-serif font-bold text-xl text-white mb-3">Make it yours</h3>
-                <p className="text-sm text-rose-200/80 leading-relaxed font-normal">
+                <b className="block text-2xl font-serif font-bold text-coral mb-4 opacity-90">02</b>
+                <h3 className="font-serif font-bold text-xl text-maroon mb-3">Make it yours</h3>
+                <p className="text-sm text-mauve leading-relaxed font-normal">
                   We shape your words into a beautiful story—ready for your personal touch.
                 </p>
               </div>
@@ -154,9 +154,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             {/* Step 03 */}
             <article className="glass-card p-8 rounded-3xl glass-card-hover flex flex-col justify-between">
               <div>
-                <b className="block text-2xl font-serif font-bold text-rose-400 mb-4 opacity-90">03</b>
-                <h3 className="font-serif font-bold text-xl text-white mb-3">Send the feeling</h3>
-                <p className="text-sm text-rose-200/80 leading-relaxed font-normal">
+                <b className="block text-2xl font-serif font-bold text-coral mb-4 opacity-90">03</b>
+                <h3 className="font-serif font-bold text-xl text-maroon mb-3">Send the feeling</h3>
+                <p className="text-sm text-mauve leading-relaxed font-normal">
                   Get a private link she can open anywhere, anytime. No downloads needed.
                 </p>
               </div>
@@ -172,31 +172,31 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             <span />
             Available Plans
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
             Pick the right tier<br />
-            <em className="italic font-normal text-rose-300">for your moment.</em>
+            <em className="italic font-normal text-coral">for your moment.</em>
           </h2>
         </div>
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch max-w-4xl mx-auto">
           {/* Free Tier */}
-          <div className="glass-card p-8 rounded-3xl text-left flex flex-col justify-between relative border border-rose-500/20">
+          <div className="glass-card p-8 rounded-3xl text-left flex flex-col justify-between relative border border-cream-border">
             <div>
-              <b className="block text-xs font-semibold uppercase tracking-wider text-rose-300/80 mb-2">Free Plan</b>
-              <strong className="block text-4xl font-serif font-bold text-white mb-3">₦0</strong>
-              <span className="block text-lg font-medium text-rose-100 mb-2">Essential Digital Story</span>
-              <ul className="text-xs text-rose-200/70 space-y-2 mb-8 font-normal">
+              <b className="block text-xs font-semibold uppercase tracking-wider text-dustyRose mb-2">Free Plan</b>
+              <strong className="block text-4xl font-serif font-bold text-maroon mb-3">₦0</strong>
+              <span className="block text-lg font-medium text-maroon mb-2">Essential Digital Story</span>
+              <ul className="text-xs text-mauve space-y-2 mb-8 font-normal">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Up to 5 animated text slides</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Romantic typography & theme</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Instant shareable web link</span>
                 </li>
               </ul>
@@ -204,43 +204,43 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             <button
               id="landing-free-plan-cta"
               onClick={() => onNavigate('/create?plan=free')}
-              className="w-full py-3.5 px-4 rounded-full bg-rose-950/80 hover:bg-rose-900/60 text-rose-100 font-semibold text-xs border border-rose-800/60 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon font-semibold text-xs border border-cream-border transition-all flex items-center justify-center gap-2"
             >
               <span>Get Started Free</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="w-4 h-4 text-coral" />
             </button>
           </div>
 
           {/* Paid Premium Tier */}
-          <div className="p-8 rounded-3xl bg-gradient-to-b from-[#4a102b] via-[#3a0d22] to-[#250614] text-left flex flex-col justify-between relative border-2 border-rose-500 shadow-xl shadow-rose-950/80">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-bold uppercase tracking-widest px-3.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
-              <Heart className="w-3 h-3 fill-white" />
+          <div className="p-8 rounded-3xl bg-cream-card text-left flex flex-col justify-between relative border-2 border-coral shadow-md">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-coral text-cream text-[10px] font-bold uppercase tracking-widest px-3.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
+              <Heart className="w-3 h-3 fill-cream text-cream" />
               <span>Most Loved</span>
             </div>
 
             <div>
-              <b className="block text-xs font-semibold uppercase tracking-wider text-rose-300 mb-2 pt-1">Premium Story</b>
-              <strong className="block text-4xl font-serif font-bold text-white mb-3">{PAID_PLAN_PRICE_FORMATTED}</strong>
-              <span className="block text-lg font-medium text-rose-100 mb-2">Message + Photo Memories</span>
-              <ul className="text-xs text-rose-200/90 space-y-2 mb-8 font-normal">
+              <b className="block text-xs font-semibold uppercase tracking-wider text-dustyRose mb-2 pt-1">Premium Story</b>
+              <strong className="block text-4xl font-serif font-bold text-maroon mb-3">{PAID_PLAN_PRICE_FORMATTED}</strong>
+              <span className="block text-lg font-medium text-maroon mb-2">Message + Photo Memories</span>
+              <ul className="text-xs text-mauve space-y-2 mb-8 font-normal">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Up to 12 animated slides</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Upload up to 5 photo memories</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Ambient romantic background music</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Interactive heart reactions & analytics</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-rose-400 shrink-0" />
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>No LoveWrapped watermark</span>
                 </li>
               </ul>
@@ -248,55 +248,53 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             <button
               id="landing-paid-plan-cta"
               onClick={() => onNavigate('/create?plan=paid')}
-              className="w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 text-white font-semibold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md transition-all flex items-center justify-center gap-2"
             >
               <span>Create Paid Story ({PAID_PLAN_PRICE_FORMATTED})</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="w-4 h-4 text-coral" />
             </button>
           </div>
 
           {/* Custom Tier */}
-          <div className="glass-card p-8 rounded-3xl text-left flex flex-col justify-between relative border border-rose-500/20">
+          <div className="glass-card p-8 rounded-3xl text-left flex flex-col justify-between relative border border-cream-border">
             <div>
-              <b className="block text-xs font-semibold uppercase tracking-wider text-rose-300/80 mb-2">Custom Request</b>
-              <strong className="block text-3xl font-serif font-bold text-white mb-3">Let’s talk</strong>
-              <span className="block text-lg font-medium text-rose-100 mb-2">Bespoke Experience</span>
-              <p className="text-xs text-rose-300/60 leading-relaxed mb-8">
+              <b className="block text-xs font-semibold uppercase tracking-wider text-dustyRose mb-2">Custom Request</b>
+              <strong className="block text-3xl font-serif font-bold text-maroon mb-3">Let’s talk</strong>
+              <span className="block text-lg font-medium text-maroon mb-2">Bespoke Experience</span>
+              <p className="text-xs text-mauve leading-relaxed mb-8">
                 Need extra slides, custom audio tracks, or special interactive features for weddings or proposals? Reach out directly.
               </p>
             </div>
             <a
               id="landing-custom-plan-cta"
               href="mailto:hello@lovewrapped.app?subject=Customized%20LoveWrapped%20request"
-              className="w-full py-3.5 px-4 rounded-full bg-rose-950/80 hover:bg-rose-900/60 text-rose-100 font-semibold text-xs border border-rose-800/60 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon font-semibold text-xs border border-cream-border transition-all flex items-center justify-center gap-2"
             >
-              <Mail className="w-4 h-4" />
+              <Mail className="w-4 h-4 text-coral" />
               <span>Contact Us</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="w-4 h-4 text-coral" />
             </a>
           </div>
         </div>
       </section>
 
       {/* Closing CTA Section */}
-      <section className="py-24 px-4 sm:px-6 bg-gradient-to-b from-[#2b0818] via-[#3a0d22] to-[#250614] text-center border-t border-rose-950">
+      <section className="py-24 px-4 sm:px-6 bg-cream-card text-center border-t border-cream-border">
         <div className="max-w-3xl mx-auto flex flex-col items-center">
-          <p className="font-serif text-2xl sm:text-3xl md:text-4xl text-rose-100 font-bold mb-8 tracking-tight">
+          <p className="font-serif text-2xl sm:text-3xl md:text-4xl text-maroon font-bold mb-8 tracking-tight">
             Some feelings deserve more than a text.
           </p>
 
           <button
             id="closing-create-story-button"
             onClick={() => onNavigate('/pricing')}
-            className="px-9 py-4 rounded-full bg-rose-100 hover:bg-white text-rose-950 font-bold text-base shadow-xl hover:shadow-rose-300/30 transition-all flex items-center justify-center gap-2 group"
+            className="px-9 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-bold text-base shadow-md transition-all flex items-center justify-center gap-2 group"
           >
             <span>Create your story</span>
-            <ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            <ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform text-coral" />
           </button>
         </div>
       </section>
     </div>
   );
 };
-
-

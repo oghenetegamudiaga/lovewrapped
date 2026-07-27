@@ -55,7 +55,7 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#2b0818] text-[#fce7f3] py-12 px-4 sm:px-6 font-sans">
+    <div className="min-h-screen bg-cream text-maroon py-12 px-4 sm:px-6 font-sans">
       <div className="max-w-4xl mx-auto">
         {/* Step Indicator Header */}
         <div className="text-center max-w-lg mx-auto mb-8">
@@ -63,24 +63,24 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
             <span />
             Preview Your Story
           </div>
-          <h1 className="font-serif font-bold text-3xl sm:text-4xl text-white">
+          <h1 className="font-serif font-bold text-3xl sm:text-4xl text-maroon">
             Story Preview for {experience.receiver_name}
           </h1>
-          <p className="text-rose-200/80 text-xs sm:text-sm mt-2">
+          <p className="text-mauve text-xs sm:text-sm mt-2">
             Tap the story cards below to test transitions before sharing with {experience.receiver_name}.
           </p>
         </div>
 
-        {/* Embedded Interactive Story Player */}
+        {/* Embedded Interactive Story Player - Keeps dark maroon theme internally */}
         <div className="my-6">
           <StoryViewer experience={experience} isPreview={true} />
         </div>
 
         {/* Action Controls Footer Bar */}
-        <div className="max-w-md mx-auto glass-card p-6 rounded-3xl border border-rose-500/20 shadow-xl flex flex-col gap-3">
+        <div className="max-w-md mx-auto glass-card p-6 rounded-3xl border border-cream-border shadow-md flex flex-col gap-3">
           {experience.tier !== 'free' && !experience.creator_email && (
             <div className="text-left mb-2">
-              <label className="block text-xs font-medium text-rose-200 mb-1">
+              <label className="block text-xs font-medium text-mauve mb-1">
                 Your Email (for receipt & experience management):
               </label>
               <input
@@ -88,10 +88,10 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
                 placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#3a0d22] border border-rose-800/80 text-rose-100 text-xs focus:outline-none focus:border-rose-400"
+                className="w-full px-4 py-2.5 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
               />
               {emailError && (
-                <p className="text-[11px] text-rose-400 mt-1 font-medium">{emailError}</p>
+                <p className="text-[11px] text-coral mt-1 font-medium">{emailError}</p>
               )}
             </div>
           )}
@@ -100,7 +100,7 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
             id="preview-confirm-button"
             onClick={handleConfirmAction}
             disabled={isLoading}
-            className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-rose-500 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-base shadow-xl shadow-rose-950/80 transition-all flex items-center justify-center gap-2 border border-rose-400/20"
+            className="w-full py-4 px-6 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-md transition-all flex items-center justify-center gap-2 border border-maroon/20"
           >
             {isLoading ? (
               <>
@@ -109,15 +109,15 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
               </>
             ) : experience.tier === 'free' ? (
               <>
-                <CheckCircle2 className="w-5 h-5" />
+                <CheckCircle2 className="w-5 h-5 text-coral" />
                 <span>Get Shareable Link (Free)</span>
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight className="w-4 h-4 text-coral" />
               </>
             ) : (
               <>
-                <Heart className="w-5 h-5 fill-white" />
+                <Heart className="w-5 h-5 fill-cream text-cream" />
                 <span>Complete Story & Pay {PAID_PLAN_PRICE_FORMATTED}</span>
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight className="w-4 h-4 text-coral" />
               </>
             )}
           </button>
@@ -126,9 +126,9 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
             id="preview-edit-button"
             onClick={onEditStory}
             disabled={isLoading}
-            className="w-full py-3 px-4 rounded-full bg-rose-950/60 hover:bg-rose-900/50 text-rose-200 font-medium text-sm border border-rose-800/60 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon font-medium text-sm border border-cream-border transition-colors flex items-center justify-center gap-2"
           >
-            <Edit3 className="w-4 h-4 text-rose-300" />
+            <Edit3 className="w-4 h-4 text-coral" />
             <span>Edit Messages & Photos</span>
           </button>
         </div>
@@ -136,4 +136,3 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
     </div>
   );
 };
-
