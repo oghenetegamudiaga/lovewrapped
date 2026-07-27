@@ -268,16 +268,18 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
             </p>
 
             <div className="flex flex-col gap-3 w-full max-w-xs">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShareModalOpen(true);
-                }}
-                className="w-full py-3 px-4 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg transition-all border border-rose-400/20"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Share Story Link</span>
-              </button>
+              {!isPreview && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShareModalOpen(true);
+                  }}
+                  className="w-full py-3 px-4 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg transition-all border border-rose-400/20"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Share Story Link</span>
+                </button>
+              )}
 
               <button
                 onClick={handleRestart}
