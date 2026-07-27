@@ -11,13 +11,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
         {/* Brand */}
         <div className="flex flex-col items-center md:items-start gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-coral/15 border border-coral/30 flex items-center justify-center text-coral">
-              <Heart className="w-4 h-4 fill-coral text-coral" />
-            </div>
-            <span className="font-serif font-bold text-xl text-maroon tracking-tight">
-              Love<span className="text-coral">Wrapped</span>
-            </span>
+          <div className="flex items-center">
+            <img
+              src="/logo.png"
+              alt="LoveWrapped"
+              className="h-7 w-auto object-contain"
+            />
           </div>
           <p className="text-xs text-mauve/80 max-w-xs font-normal">
             Turn your feelings into a story she’ll want to replay.

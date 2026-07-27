@@ -22,14 +22,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
         <button
           id="nav-logo-button"
           onClick={() => handleMobileNav('/')}
-          className="flex items-center gap-2 group focus:outline-none text-left"
+          className="flex items-center group focus:outline-none text-left"
         >
-          <div className="w-8 h-8 rounded-full bg-coral flex items-center justify-center text-cream shadow-sm group-hover:scale-105 transition-transform">
-            <Heart className="w-4 h-4 fill-cream" />
-          </div>
-          <span className="font-serif font-bold text-2xl tracking-tight text-maroon group-hover:text-coral transition-colors">
-            Love<span className="text-coral">Wrapped</span>
-          </span>
+          <img
+            src="/logo.png"
+            alt="LoveWrapped"
+            className="h-8 sm:h-9 w-auto object-contain group-hover:opacity-90 transition-opacity"
+          />
         </button>
 
         {/* Desktop Links & CTA */}

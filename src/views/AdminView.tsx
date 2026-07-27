@@ -421,12 +421,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
     return (
       <div className="min-h-[85vh] bg-cream text-maroon py-12 px-4 flex items-center justify-center font-sans">
         <div className="glass-card p-8 rounded-3xl border border-cream-border max-w-sm w-full shadow-md text-center space-y-6">
-          <div className="w-12 h-12 rounded-full bg-cream-card border border-cream-border text-coral flex items-center justify-center mx-auto">
-            <Shield className="w-6 h-6" />
+          <div className="flex justify-center mb-2">
+            <img src="/logo.png" alt="LoveWrapped" className="h-8 w-auto object-contain" />
           </div>
 
           <div>
-            <h1 className="font-serif font-bold text-2xl text-maroon">LoveWrapped Admin</h1>
+            <h1 className="font-serif font-bold text-xl text-maroon">Admin Portal</h1>
             <p className="text-xs text-mauve mt-1">Sign in with your admin credentials.</p>
           </div>
 
