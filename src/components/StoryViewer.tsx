@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { Heart, Volume2, VolumeX, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Share2, Copy, Check, X, Send } from 'lucide-react';
+import { Heart, Volume2, VolumeX, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Share2, Copy, Check, X, Send, ArrowUpRight } from 'lucide-react';
 import { Experience } from '../types';
 import { SlideCard } from './SlideCard';
 import { soundSynth } from '../lib/sound';
@@ -11,6 +11,7 @@ interface StoryViewerProps {
   isPreview?: boolean;
   autoOpenShare?: boolean;
   onNavigateToCreate?: () => void;
+  onRequestPayment?: () => void;
 }
 
 export const StoryViewer: React.FC<StoryViewerProps> = ({
@@ -18,6 +19,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   isPreview = false,
   autoOpenShare = false,
   onNavigateToCreate,
+  onRequestPayment,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -268,7 +270,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
             </p>
 
             <div className="flex flex-col gap-3 w-full max-w-xs">
-              {!isPreview && (
+              {!isPreview ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -279,7 +281,20 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                   <Share2 className="w-4 h-4" />
                   <span>Share Story Link</span>
                 </button>
-              )}
+              ) : experience.tier !== 'free' ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onRequestPayment) {
+                      onRequestPayment();
+                    }
+                  }}
+                  className="w-full py-3 px-4 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg transition-all border border-rose-400/20"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>Proceed to Payment</span>
+                </button>
+              ) : null}
 
               <button
                 onClick={handleRestart}

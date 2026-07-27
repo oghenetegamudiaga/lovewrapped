@@ -54,6 +54,13 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
     }
   };
 
+  const handleScrollToPayment = () => {
+    const btn = document.getElementById('preview-confirm-button');
+    if (btn) {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-cream text-maroon py-12 px-4 sm:px-6 font-sans">
       <div className="max-w-4xl mx-auto">
@@ -73,7 +80,11 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
 
         {/* Embedded Interactive Story Player - Keeps dark maroon theme internally */}
         <div className="my-6">
-          <StoryViewer experience={experience} isPreview={true} />
+          <StoryViewer
+            experience={experience}
+            isPreview={true}
+            onRequestPayment={handleScrollToPayment}
+          />
         </div>
 
         {/* Action Controls Footer Bar */}
