@@ -19,7 +19,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             />
           </div>
           <p className="text-xs text-mauve/80 max-w-xs font-normal">
-            Turn your feelings into a story she’ll want to replay.
+            Turn your feelings into a story they’ll want to replay.
           </p>
         </div>
 

@@ -32,7 +32,7 @@ const siteContentStore: Map<string, string> = new Map([
   ['hero_eyebrow', 'Made for your favourite person'],
   ['hero_title_prefix', 'Turn your love into'],
   ['hero_title_highlight', 'an experience.'],
-  ['hero_subtitle', 'A few memories. A few honest words. One beautiful story she’ll want to replay.'],
+  ['hero_subtitle', 'A few memories. A few honest words. One beautiful story they’ll want to replay.'],
   ['hero_cta_create', 'Create yours'],
   ['hero_cta_view_demo', 'Watch the demo'],
   ['hero_tagline', 'No app. No account. Just something unforgettable.'],

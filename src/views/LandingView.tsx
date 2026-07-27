@@ -29,7 +29,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           </h1>
 
           <p className="text-lg sm:text-xl text-mauve max-w-xl mb-8 font-normal leading-relaxed">
-            {getContent('hero_subtitle', 'A few memories. A few honest words. One beautiful story she’ll want to replay.')}
+            {getContent('hero_subtitle', 'A few memories. A few honest words. One beautiful story they’ll want to replay.')}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 mb-6 w-full sm:w-auto">
@@ -133,9 +133,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             <article className="glass-card p-8 rounded-3xl glass-card-hover flex flex-col justify-between">
               <div>
                 <b className="block text-2xl font-serif font-bold text-coral mb-4 opacity-90">01</b>
-                <h3 className="font-serif font-bold text-xl text-maroon mb-3">Tell us about her</h3>
+                <h3 className="font-serif font-bold text-xl text-maroon mb-3">Tell us about your special one</h3>
                 <p className="text-sm text-mauve leading-relaxed font-normal">
-                  Share a memory, your favourite things about her, and what you want to say.
+                  Share a memory, your favourite things about them, and what you want to say.
                 </p>
               </div>
             </article>
@@ -157,7 +157,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                 <b className="block text-2xl font-serif font-bold text-coral mb-4 opacity-90">03</b>
                 <h3 className="font-serif font-bold text-xl text-maroon mb-3">Send the feeling</h3>
                 <p className="text-sm text-mauve leading-relaxed font-normal">
-                  Get a private link she can open anywhere, anytime. No downloads needed.
+                  Get a private link they can open anywhere, anytime. No downloads needed.
                 </p>
               </div>
             </article>

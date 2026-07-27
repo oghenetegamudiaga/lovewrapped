@@ -212,16 +212,18 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShareModalOpen(true);
-            }}
-            className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-rose-300 hover:text-white transition-colors"
-            title="Share story link"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+          {!isPreview && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShareModalOpen(true);
+              }}
+              className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-rose-300 hover:text-white transition-colors"
+              title="Share story link"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          )}
 
           <button
             onClick={toggleSound}

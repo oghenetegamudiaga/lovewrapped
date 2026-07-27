@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Heart, Sparkles, Upload, Trash2, ArrowUpRight, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { PlanTier, CreateExperiencePayload, Experience } from '../types.js';
 import { calculateSlideBudget, generateSlides } from '../lib/slideEngine.js';
@@ -23,6 +23,8 @@ const OCCASIONS = [
   'Custom Occasion',
 ];
 
+const DRAFT_STORAGE_KEY = 'lovewrapped_create_draft';
+
 export const CreateView: React.FC<CreateViewProps> = ({
   selectedPlan,
   onChangePlan,
@@ -41,6 +43,61 @@ export const CreateView: React.FC<CreateViewProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Restore form draft on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.senderName) setSenderName(draft.senderName);
+        if (draft.receiverName) setReceiverName(draft.receiverName);
+        if (draft.occasion) setOccasion(draft.occasion);
+        if (draft.customOccasion) setCustomOccasion(draft.customOccasion);
+        if (draft.message) setMessage(draft.message);
+        if (draft.creatorEmail) setCreatorEmail(draft.creatorEmail);
+        if (Array.isArray(draft.images)) setImages(draft.images);
+      }
+    } catch (err) {
+      console.warn('Failed to load draft from sessionStorage:', err);
+    }
+  }, []);
+
+  // Auto-save form draft debounced at 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          senderName,
+          receiverName,
+          occasion,
+          customOccasion,
+          message,
+          creatorEmail,
+          images,
+        };
+        sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch (err) {
+        try {
+          const nonBase64Images = images.filter((img) => img.startsWith('http://') || img.startsWith('https://'));
+          const draftFallback = {
+            senderName,
+            receiverName,
+            occasion,
+            customOccasion,
+            message,
+            creatorEmail,
+            images: nonBase64Images,
+          };
+          sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftFallback));
+        } catch (e) {
+          console.warn('Failed to save create draft to sessionStorage:', e);
+        }
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [senderName, receiverName, occasion, customOccasion, message, creatorEmail, images]);
 
   const finalOccasion = occasion === 'Custom Occasion' ? customOccasion || 'Special Moment' : occasion;
 
@@ -279,6 +336,11 @@ export const CreateView: React.FC<CreateViewProps> = ({
       };
 
       const created = await createExperienceApi(payload);
+      try {
+        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch (e) {
+        // ignore
+      }
       onExperienceCreated(created);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create experience. Please try again.';
