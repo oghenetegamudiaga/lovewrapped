@@ -240,7 +240,7 @@ apiRouter.post('/experiences', async (req, res) => {
       return res.status(400).json({ message: 'Sender, receiver, and message are required.' });
     }
 
-    const id = `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const id = crypto.randomUUID();
     const slug = generateSlug(payload.sender_name, payload.receiver_name);
     const tier = payload.tier || 'free';
     const images = payload.images || [];
@@ -289,13 +289,19 @@ apiRouter.post('/experiences', async (req, res) => {
 
       if (expError) {
         console.error('CRITICAL: Error inserting experience to Supabase database:', expError);
+        return res.status(500).json({ message: 'Failed to save experience. Please try again.' });
       }
 
       if (payload.creator_email) {
-        await supabase.from('users').insert({
+        const { error: userError } = await supabase.from('users').insert({
           email: payload.creator_email,
           tier,
         });
+
+        if (userError) {
+          console.error('CRITICAL: Error inserting user to Supabase database:', userError);
+          return res.status(500).json({ message: 'Failed to save experience. Please try again.' });
+        }
       }
     } else {
       console.warn(
