@@ -24,7 +24,7 @@ if (!process.env.VERCEL) {
     }
 
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`💖 LoveWrapped server running on http://0.0.0.0:${PORT}`);
+      console.log(`💖 Amorah server running on http://0.0.0.0:${PORT}`);
     });
   }
 

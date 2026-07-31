@@ -151,13 +151,13 @@ const seedDemoExperience: Experience = {
 const hasSupabaseUrl = Boolean(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL);
 const hasSupabaseKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY);
 
-console.log(`[LoveWrapped API Startup] isSupabaseConfigured: ${isSupabaseConfigured} (SUPABASE_URL set: ${hasSupabaseUrl}, SUPABASE_SERVICE_ROLE_KEY/ANON_KEY set: ${hasSupabaseKey})`);
+console.log(`[Amorah API Startup] isSupabaseConfigured: ${isSupabaseConfigured} (SUPABASE_URL set: ${hasSupabaseUrl}, SUPABASE_SERVICE_ROLE_KEY/ANON_KEY set: ${hasSupabaseKey})`);
 
 if (isSupabaseConfigured) {
-  console.log('✅ [LoveWrapped API] Supabase DB is CONFIGURED and CONNECTED. Story data & links persist indefinitely with no TTL.');
+  console.log('✅ [Amorah API] Supabase DB is CONFIGURED and CONNECTED. Story data & links persist indefinitely with no TTL.');
 } else {
   console.warn(
-    '⚠️ [LoveWrapped API] CRITICAL WARNING: Supabase credentials (SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY) are missing. Running on transient in-memory stores that WILL NOT PERSIST across Vercel serverless function instances!'
+    '⚠️ [Amorah API] CRITICAL WARNING: Supabase credentials (SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY) are missing. Running on transient in-memory stores that WILL NOT PERSIST across Vercel serverless function instances!'
   );
 }
 
@@ -177,7 +177,7 @@ const apiRouter = express.Router();
 apiRouter.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'LoveWrapped API',
+    service: 'Amorah API',
     supabaseConfigured: isSupabaseConfigured,
     database: isSupabaseConfigured ? 'supabase' : 'in-memory (transient)',
     environment: process.env.NODE_ENV || 'development',
@@ -232,6 +232,64 @@ apiRouter.post('/upload-url', async (req, res) => {
   }
 });
 
+// Dedicated Voice Message Upload Endpoint for Paid Tier
+apiRouter.post('/upload-voice', async (req, res) => {
+  try {
+    const { audioData, fileName, contentType } = req.body;
+    if (!audioData) {
+      return res.status(400).json({ message: 'Audio data is required.' });
+    }
+
+    const cleanFileName = `voice_${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${(fileName || 'recording.webm').replace(/[^a-zA-Z0-9._-]/g, '')}`;
+    const mimeType = contentType || 'audio/webm';
+
+    if (isSupabaseConfigured && supabase) {
+      let audioBuffer: Buffer;
+      if (typeof audioData === 'string' && audioData.startsWith('data:')) {
+        const base64Content = audioData.split(',')[1] || audioData;
+        audioBuffer = Buffer.from(base64Content, 'base64');
+      } else if (typeof audioData === 'string') {
+        audioBuffer = Buffer.from(audioData, 'base64');
+      } else {
+        audioBuffer = Buffer.from(audioData);
+      }
+
+      const { error } = await supabase.storage
+        .from('voice-messages')
+        .upload(cleanFileName, audioBuffer, {
+          contentType: mimeType,
+          upsert: true,
+        });
+
+      if (error) {
+        console.error('Error uploading voice message to Supabase storage:', error);
+        return res.status(500).json({ message: 'Failed to upload voice message to storage.' });
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('voice-messages')
+        .getPublicUrl(cleanFileName);
+
+      return res.json({
+        url: publicUrlData.publicUrl,
+        publicUrl: publicUrlData.publicUrl,
+        path: cleanFileName,
+      });
+    }
+
+    // Fallback when Supabase storage is not configured
+    res.json({
+      url: audioData,
+      publicUrl: audioData,
+      path: cleanFileName,
+      fallback: true,
+    });
+  } catch (err: any) {
+    console.error('Voice upload error:', err);
+    res.status(500).json({ message: err.message || 'Failed to process voice upload' });
+  }
+});
+
 // Create new experience
 apiRouter.post('/experiences', async (req, res) => {
   try {
@@ -264,6 +322,7 @@ apiRouter.post('/experiences', async (req, res) => {
       image_count: images.length,
       is_paid: tier === 'free', // Free tier is instantly active; Paid requires paystack step
       payment_reference: null,
+      voice_message_url: payload.voice_message_url || null,
       views_count: 0,
       reactions_count: 0,
       created_at: new Date().toISOString(),
@@ -281,6 +340,7 @@ apiRouter.post('/experiences', async (req, res) => {
         image_count: experience.image_count,
         is_paid: experience.is_paid,
         payment_reference: experience.payment_reference,
+        voice_message_url: experience.voice_message_url,
         views_count: experience.views_count,
         reactions_count: experience.reactions_count,
         slides: experience.slides,

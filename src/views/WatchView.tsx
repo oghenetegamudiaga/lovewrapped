@@ -53,7 +53,7 @@ export const WatchView: React.FC<WatchViewProps> = ({ slug, onNavigateToCreate }
         <div className="w-12 h-12 rounded-full bg-cream-card flex items-center justify-center mb-4 border border-cream-border">
           <RefreshCw className="w-6 h-6 text-coral animate-spin" />
         </div>
-        <p className="font-serif text-lg text-maroon">Opening LoveWrapped Story...</p>
+        <p className="font-serif text-lg text-maroon">Opening Amorah Story...</p>
       </div>
     );
   }
@@ -66,7 +66,7 @@ export const WatchView: React.FC<WatchViewProps> = ({ slug, onNavigateToCreate }
         </div>
         <h2 className="font-serif font-bold text-2xl text-maroon mb-2">Story Not Found</h2>
         <p className="text-sm text-mauve max-w-xs mb-6">
-          {error && error !== 'Story card not found.' ? error : 'This LoveWrapped story card could not be found or the link is invalid.'}
+          {error && error !== 'Story card not found.' ? error : 'This Amorah story card could not be found or the link is invalid.'}
         </p>
         <button
           onClick={onNavigateToCreate}

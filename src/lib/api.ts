@@ -61,6 +61,17 @@ export async function getSignedUploadUrlApi(
   });
 }
 
+export async function uploadVoiceApi(
+  audioData: string,
+  fileName: string,
+  contentType: string
+): Promise<{ url: string; publicUrl: string; path: string }> {
+  return apiFetch('/upload-voice', {
+    method: 'POST',
+    body: JSON.stringify({ audioData, fileName, contentType }),
+  });
+}
+
 export async function createExperienceApi(payload: CreateExperiencePayload): Promise<Experience> {
   return apiFetch<Experience>('/experiences', {
     method: 'POST',

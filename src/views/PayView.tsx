@@ -79,7 +79,7 @@ export const PayView: React.FC<PayViewProps> = ({
   const handleWhatsAppShare = () => {
     const url = getShareableUrl();
     const text = encodeURIComponent(
-      `💖 I created a special LoveWrapped story card for ${experience?.receiver_name || 'you'}! Tap here to view: ${url}`
+      `💖 I created a special Amorah story card for ${experience?.receiver_name || 'you'}! Tap here to view: ${url}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -98,7 +98,7 @@ export const PayView: React.FC<PayViewProps> = ({
                 <ShieldCheck className="w-4 h-4 text-emerald-700" />
                 <span>Paystack Secured Payment</span>
               </div>
-              <h2 className="font-serif font-bold text-2xl text-maroon">LoveWrapped Experience</h2>
+              <h2 className="font-serif font-bold text-2xl text-maroon">Amorah Experience</h2>
               <div className="mt-3 inline-block bg-cream-border/60 border border-cream-border px-5 py-1.5 rounded-full text-maroon font-bold text-2xl">
                 {amountText}
               </div>
@@ -202,7 +202,7 @@ export const PayView: React.FC<PayViewProps> = ({
                   onClick={() => {
                     const url = getShareableUrl();
                     navigator.share({
-                      title: `LoveWrapped for ${experience?.receiver_name || 'You'}`,
+                      title: `Amorah for ${experience?.receiver_name || 'You'}`,
                       text: `💖 Check out this special story card created for ${experience?.receiver_name || 'you'}!`,
                       url: url,
                     }).catch(() => {});

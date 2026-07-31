@@ -63,6 +63,9 @@ CREATE POLICY "Allow read of user records"
   ON public.users FOR SELECT
   USING (true);
 
+-- Migration: Add voice_message_url to experiences
+ALTER TABLE public.experiences ADD COLUMN IF NOT EXISTS voice_message_url TEXT;
+
 -- Storage Bucket Setup for Experience Images (Paid plan)
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('experience-images', 'experience-images', true)
@@ -75,3 +78,16 @@ CREATE POLICY "Public read access for experience images"
 CREATE POLICY "Public upload access for experience images"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'experience-images');
+
+-- Storage Bucket Setup for Voice Messages (Paid plan)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('voice-messages', 'voice-messages', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public read access for voice messages"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'voice-messages');
+
+CREATE POLICY "Public upload access for voice messages"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'voice-messages');

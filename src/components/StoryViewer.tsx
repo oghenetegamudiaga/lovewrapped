@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Heart, Volume2, VolumeX, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Share2, Copy, Check, X, Send, ArrowUpRight } from 'lucide-react';
-import { Experience } from '../types';
+import { Heart, Volume2, VolumeX, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Share2, Copy, Check, X, Send, ArrowUpRight, Mic, Play, Pause } from 'lucide-react';
+import { Experience, Slide } from '../types';
 import { SlideCard } from './SlideCard';
 import { soundSynth } from '../lib/sound';
 import { reactToExperienceApi } from '../lib/api';
@@ -28,11 +28,35 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   const [reactionsCount, setReactionsCount] = useState(experience.reactions_count || 0);
   const [isEndCard, setIsEndCard] = useState(false);
 
+  // Voice playback states
+  const [isPlayingVoice, setIsPlayingVoice] = useState(false);
+  const voiceAudioRef = useRef<HTMLAudioElement | null>(null);
+
   // Share Modal states
   const [shareModalOpen, setShareModalOpen] = useState(autoOpenShare);
   const [copied, setCopied] = useState(false);
 
-  const slides = experience.slides || [];
+  const slides = useMemo(() => {
+    const baseSlides = experience.slides || [];
+    if (experience.voice_message_url) {
+      const voiceSlide: Slide = {
+        id: 'voice-message-slide',
+        type: 'voice' as any,
+        content: `Voice Message from ${experience.sender_name || 'Someone'}`,
+        order: 99,
+      };
+      if (baseSlides.length > 1) {
+        return [
+          ...baseSlides.slice(0, baseSlides.length - 1),
+          voiceSlide,
+          baseSlides[baseSlides.length - 1],
+        ];
+      }
+      return [...baseSlides, voiceSlide];
+    }
+    return baseSlides;
+  }, [experience.slides, experience.voice_message_url, experience.sender_name]);
+
   const totalSlides = slides.length;
   const timerRef = useRef<number | null>(null);
 
@@ -56,7 +80,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     if (e) e.stopPropagation();
     const url = getShareableUrl();
     const text = encodeURIComponent(
-      `💖 I created a special LoveWrapped story card for ${experience.receiver_name || 'you'}! Tap here to view: ${url}`
+      `💖 I created a special Amorah story card for ${experience.receiver_name || 'you'}! Tap here to view: ${url}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -67,7 +91,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `LoveWrapped for ${experience.receiver_name || 'You'}`,
+          title: `Amorah for ${experience.receiver_name || 'You'}`,
           text: `💖 Check out this special story card created for ${experience.receiver_name || 'you'}!`,
           url: url,
         });
@@ -112,9 +136,21 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
     setIsPaused(false);
   };
 
-  // Timer loop for slide progress
+  const toggleVoicePlayback = () => {
+    if (!voiceAudioRef.current) return;
+    if (isPlayingVoice) {
+      voiceAudioRef.current.pause();
+      setIsPlayingVoice(false);
+    } else {
+      voiceAudioRef.current.play().then(() => {
+        setIsPlayingVoice(true);
+      }).catch(() => setIsPlayingVoice(false));
+    }
+  };
+
+  // Timer loop for slide progress (paused when playing voice message)
   useEffect(() => {
-    if (isPaused || isEndCard || totalSlides === 0) return;
+    if (isPaused || isEndCard || totalSlides === 0 || isPlayingVoice) return;
 
     timerRef.current = window.setInterval(() => {
       setProgress((prev) => {
@@ -132,11 +168,15 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         clearInterval(timerRef.current);
       }
     };
-  }, [isPaused, isEndCard, handleNext, totalSlides]);
+  }, [isPaused, isEndCard, handleNext, totalSlides, isPlayingVoice]);
 
-  // Reset progress when index changes
+  // Reset progress & pause voice playback when slide index changes
   useEffect(() => {
     setProgress(0);
+    if (voiceAudioRef.current && isPlayingVoice) {
+      voiceAudioRef.current.pause();
+      setIsPlayingVoice(false);
+    }
   }, [currentIndex]);
 
   // Sound toggle
@@ -246,15 +286,94 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         onTouchEnd={() => setIsPaused(false)}
       >
         {!isEndCard ? (
-          <SlideCard
-            slide={slides[currentIndex]}
-            senderName={experience.sender_name}
-            receiverName={experience.receiver_name}
-            occasion={experience.occasion}
-            tier={experience.tier}
-            totalSlides={totalSlides}
-            currentSlideIndex={currentIndex}
-          />
+          (slides[currentIndex] as any)?.type === 'voice' && experience.voice_message_url ? (
+            <div className="relative w-full h-full bg-gradient-to-br from-rose-950 via-pink-950 to-slate-950 text-white p-6 sm:p-8 flex flex-col justify-between items-center text-center overflow-hidden">
+              <div className="absolute -top-20 -right-20 w-64 h-64 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 pt-4 flex flex-col items-center gap-1">
+                <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-rose-300 font-semibold bg-white/10 px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
+                  <Mic className="w-3.5 h-3.5 text-rose-400" />
+                  Voice Message
+                </span>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-rose-100 mt-2">
+                  Listen to {experience.sender_name || 'Someone'}’s Voice 💖
+                </h3>
+              </div>
+
+              <div className="relative z-10 my-auto flex flex-col items-center justify-center space-y-6">
+                <div className="relative flex items-center justify-center">
+                  {isPlayingVoice && (
+                    <>
+                      <div className="absolute w-36 h-36 rounded-full bg-rose-500/20 animate-ping" />
+                      <div className="absolute w-28 h-28 rounded-full bg-pink-500/30 animate-pulse" />
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleVoicePlayback();
+                    }}
+                    className="relative z-20 w-20 h-20 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 text-white flex items-center justify-center shadow-xl shadow-rose-900/60 border-2 border-white/30 hover:scale-105 active:scale-95 transition-all"
+                    title={isPlayingVoice ? 'Pause voice message' : 'Play voice message'}
+                  >
+                    {isPlayingVoice ? (
+                      <Pause className="w-8 h-8 fill-white" />
+                    ) : (
+                      <Play className="w-8 h-8 fill-white ml-1" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-end justify-center gap-1.5 h-8">
+                  {[40, 70, 30, 90, 50, 80, 40, 100, 60, 35].map((height, i) => (
+                    <div
+                      key={i}
+                      className={`w-1.5 rounded-full bg-rose-400 transition-all duration-300 ${
+                        isPlayingVoice ? 'animate-bounce' : 'opacity-40'
+                      }`}
+                      style={{
+                        height: isPlayingVoice ? `${height}%` : '20%',
+                        animationDelay: `${i * 100}ms`,
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <audio
+                  ref={voiceAudioRef}
+                  src={experience.voice_message_url}
+                  onEnded={() => {
+                    setIsPlayingVoice(false);
+                    handleNext();
+                  }}
+                  onPause={() => setIsPlayingVoice(false)}
+                  onPlay={() => setIsPlayingVoice(true)}
+                  className="hidden"
+                />
+
+                <p className="text-xs text-rose-200/80 font-medium">
+                  {isPlayingVoice ? 'Playing voice message...' : 'Tap play to listen'}
+                </p>
+              </div>
+
+              <div className="relative z-10 pb-2 text-[11px] text-rose-300/60 uppercase tracking-wider font-medium">
+                Personal voice memo for {experience.receiver_name || 'you'}
+              </div>
+            </div>
+          ) : (
+            <SlideCard
+              slide={slides[currentIndex]}
+              senderName={experience.sender_name}
+              receiverName={experience.receiver_name}
+              occasion={experience.occasion}
+              tier={experience.tier}
+              totalSlides={totalSlides}
+              currentSlideIndex={currentIndex}
+            />
+          )
         ) : (
           /* End Card Screen */
           <div className="relative z-30 w-full h-full bg-gradient-to-br from-rose-950 via-slate-950 to-black text-white p-8 flex flex-col items-center justify-center text-center">
@@ -310,7 +429,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                   className="w-full py-3 px-4 rounded-full bg-white/10 hover:bg-white/20 text-rose-100 font-medium text-sm border border-white/20 flex items-center justify-center gap-2 backdrop-blur-sm transition-all"
                 >
                   <Sparkles className="w-4 h-4 text-rose-300" />
-                  <span>Create Your Own LoveWrapped</span>
+                  <span>Create Your Own Amorah</span>
                 </button>
               )}
             </div>
@@ -441,7 +560,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
       {experience.tier === 'free' && (
         <div className="absolute bottom-0 inset-x-0 z-30 py-2 px-3 bg-black/85 text-center text-[10px] text-rose-300/90 font-medium border-t border-rose-900/40 backdrop-blur-md flex items-center justify-center gap-1">
           <Heart className="w-3 h-3 text-rose-400 fill-rose-400" />
-          <span>Created with <strong>LoveWrapped</strong> • Create your own free story</span>
+          <span>Created with <strong>Amorah</strong> • Create your own free story</span>
         </div>
       )}
     </div>

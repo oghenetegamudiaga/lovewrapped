@@ -1,5 +1,5 @@
 /**
- * Web Audio API ambient audio synthesizer for LoveWrapped stories.
+ * Web Audio API ambient audio synthesizer for Amorah stories.
  * Generates gentle, soothing romantic chord progressions using FM/Sine synthesis.
  */
 

@@ -380,7 +380,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `lovewrapped_experiences_${Date.now()}.csv`);
+    link.setAttribute('download', `amorah_experiences_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -403,7 +403,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `lovewrapped_creators_${Date.now()}.csv`);
+    link.setAttribute('download', `amorah_creators_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -422,7 +422,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
       <div className="min-h-[85vh] bg-cream text-maroon py-12 px-4 flex items-center justify-center font-sans">
         <div className="glass-card p-8 rounded-3xl border border-cream-border max-w-sm w-full shadow-md text-center space-y-6">
           <div className="flex justify-center mb-2">
-            <img src="/logo.png" alt="LoveWrapped" className="h-8 w-auto object-contain" />
+            <img src="/logo.png" alt="Amorah" className="h-8 w-auto object-contain" />
           </div>
 
           <div>
@@ -444,7 +444,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
                 <input
                   type="email"
                   required
-                  placeholder="admin@lovewrapped.app"
+                  placeholder="admin@amorah.xyz"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"

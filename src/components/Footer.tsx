@@ -14,7 +14,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="flex items-center">
             <img
               src="/logo.png"
-              alt="LoveWrapped"
+              alt="Amorah"
               className="h-7 w-auto object-contain"
             />
           </div>
@@ -53,7 +53,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <p className="flex items-center gap-1">
             Made with <Heart className="w-3 h-3 text-coral fill-coral inline" /> for your favourite person
           </p>
-          <p>© {new Date().getFullYear()} LoveWrapped. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Amorah. All rights reserved.</p>
         </div>
       </div>
     </footer>

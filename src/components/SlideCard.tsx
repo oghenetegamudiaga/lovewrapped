@@ -76,7 +76,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
       <div className="relative z-10 flex items-center justify-between text-rose-300/80 text-xs font-medium uppercase tracking-widest">
         <span className="flex items-center gap-1">
           <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
-          {occasion || 'LoveWrapped'}
+          {occasion || 'Amorah'}
         </span>
         <Quote className="w-5 h-5 text-rose-400/40" />
       </div>

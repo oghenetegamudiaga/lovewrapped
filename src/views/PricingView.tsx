@@ -91,11 +91,15 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-coral shrink-0" />
+                  <span>Personal voice message recording (max 45s)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Interactive heart reactions & analytics</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-coral shrink-0" />
-                  <span>No LoveWrapped watermark</span>
+                  <span>No Amorah watermark</span>
                 </li>
               </ul>
             </div>
@@ -108,7 +112,7 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
           {/* Custom Tier */}
           <a
             id="tier-custom-button"
-            href="mailto:hello@lovewrapped.app?subject=Customized%20LoveWrapped%20request"
+            href="mailto:hello@amorah.xyz?subject=Customized%20Amorah%20request"
             className="glass-card p-8 rounded-3xl glass-card-hover text-left flex flex-col justify-between group relative border border-cream-border focus:outline-none focus:ring-2 focus:ring-coral"
           >
             <div>

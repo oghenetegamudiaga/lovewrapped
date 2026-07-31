@@ -237,11 +237,15 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-coral shrink-0" />
+                  <span>Voice message recording (up to 45s)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-coral shrink-0" />
                   <span>Interactive heart reactions & analytics</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-coral shrink-0" />
-                  <span>No LoveWrapped watermark</span>
+                  <span>No Amorah watermark</span>
                 </li>
               </ul>
             </div>
@@ -267,7 +271,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             </div>
             <a
               id="landing-custom-plan-cta"
-              href="mailto:hello@lovewrapped.app?subject=Customized%20LoveWrapped%20request"
+              href="mailto:hello@amorah.xyz?subject=Customized%20Amorah%20request"
               className="w-full py-3.5 px-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon font-semibold text-xs border border-cream-border transition-all flex items-center justify-center gap-2"
             >
               <Mail className="w-4 h-4 text-coral" />

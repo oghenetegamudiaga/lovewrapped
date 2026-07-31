@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Heart, Sparkles, Upload, Trash2, ArrowUpRight, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Heart, Sparkles, Upload, Trash2, ArrowUpRight, AlertCircle, RefreshCw, CheckCircle2, Mic, Square, Play, Pause, Volume2, Music } from 'lucide-react';
 import { PlanTier, CreateExperiencePayload, Experience } from '../types.js';
 import { calculateSlideBudget, generateSlides } from '../lib/slideEngine.js';
-import { createExperienceApi, getSignedUploadUrlApi } from '../lib/api.js';
+import { createExperienceApi, getSignedUploadUrlApi, uploadVoiceApi } from '../lib/api.js';
 import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
 
 interface CreateViewProps {
@@ -43,6 +43,155 @@ export const CreateView: React.FC<CreateViewProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Voice Message State (Paid plan feature)
+  const [voiceMode, setVoiceMode] = useState<'record' | 'upload'>('record');
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [voicePreviewUrl, setVoicePreviewUrl] = useState<string | null>(null);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [isPlayingVoicePreview, setIsPlayingVoicePreview] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const voiceTimerRef = useRef<number | null>(null);
+  const voiceAudioPreviewRef = useRef<HTMLAudioElement | null>(null);
+
+  const MAX_VOICE_DURATION = 45; // 45s cap
+  const MAX_VOICE_SIZE_BYTES = 3 * 1024 * 1024; // 3MB limit
+
+  const startRecording = async () => {
+    setVoiceError(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setVoiceError('Audio recording is not supported in this browser environment.');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+
+        if (audioBlob.size > MAX_VOICE_SIZE_BYTES) {
+          setVoiceError('Voice recording exceeds the 3MB size limit.');
+          return;
+        }
+
+        setVoiceBlob(audioBlob);
+        const url = URL.createObjectURL(audioBlob);
+        setVoicePreviewUrl(url);
+      };
+
+      recorder.start(100);
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      voiceTimerRef.current = window.setInterval(() => {
+        setRecordingSeconds((prev) => {
+          if (prev >= MAX_VOICE_DURATION - 1) {
+            stopRecording();
+            return MAX_VOICE_DURATION;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err: any) {
+      console.error('Microphone error:', err);
+      setVoiceError('Microphone permission denied or audio recording failed.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (voiceTimerRef.current !== null) {
+      clearInterval(voiceTimerRef.current);
+      voiceTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const handleVoiceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVoiceError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/webm', 'audio/m4a', 'audio/x-m4a', 'audio/mp4'];
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const isExtensionValid = ['mp3', 'm4a', 'wav', 'webm'].includes(ext || '');
+
+    if (!validTypes.includes(file.type) && !isExtensionValid) {
+      setVoiceError('Unsupported audio format. Please upload .mp3, .m4a, .wav, or .webm.');
+      return;
+    }
+
+    if (file.size > MAX_VOICE_SIZE_BYTES) {
+      setVoiceError(`Audio file exceeds ${Math.round(MAX_VOICE_SIZE_BYTES / (1024 * 1024))}MB limit.`);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const tempAudio = new Audio();
+    tempAudio.src = objectUrl;
+
+    tempAudio.onloadedmetadata = () => {
+      if (tempAudio.duration > MAX_VOICE_DURATION + 1) {
+        setVoiceError(`Voice message duration (${Math.round(tempAudio.duration)}s) exceeds 45-second limit.`);
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      setVoiceBlob(file);
+      setVoicePreviewUrl(objectUrl);
+    };
+
+    tempAudio.onerror = () => {
+      setVoiceError('Failed to load audio file. Please select a valid audio file.');
+      URL.revokeObjectURL(objectUrl);
+    };
+  };
+
+  const clearVoiceMessage = () => {
+    if (isRecording) stopRecording();
+    if (voiceAudioPreviewRef.current) {
+      voiceAudioPreviewRef.current.pause();
+    }
+    setVoiceBlob(null);
+    if (voicePreviewUrl) {
+      URL.revokeObjectURL(voicePreviewUrl);
+    }
+    setVoicePreviewUrl(null);
+    setVoiceError(null);
+    setIsPlayingVoicePreview(false);
+  };
+
+  const togglePlayVoicePreview = () => {
+    if (!voicePreviewUrl) return;
+    if (!voiceAudioPreviewRef.current) {
+      const audio = new Audio(voicePreviewUrl);
+      voiceAudioPreviewRef.current = audio;
+      audio.onended = () => setIsPlayingVoicePreview(false);
+    }
+    if (isPlayingVoicePreview) {
+      voiceAudioPreviewRef.current.pause();
+      setIsPlayingVoicePreview(false);
+    } else {
+      voiceAudioPreviewRef.current.play().then(() => {
+        setIsPlayingVoicePreview(true);
+      }).catch(() => setIsPlayingVoicePreview(false));
+    }
+  };
 
   // Restore form draft on mount
   useEffect(() => {
@@ -325,6 +474,30 @@ export const CreateView: React.FC<CreateViewProps> = ({
     setIsSubmitting(true);
 
     try {
+      let uploadedVoiceUrl: string | null = null;
+      if (selectedPlan === 'paid' && voiceBlob) {
+        try {
+          const base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(voiceBlob);
+          });
+
+          const voiceRes = await uploadVoiceApi(
+            base64Data,
+            voiceBlob instanceof File ? voiceBlob.name : 'voice_message.webm',
+            voiceBlob.type || 'audio/webm'
+          );
+
+          if (voiceRes && (voiceRes.publicUrl || voiceRes.url)) {
+            uploadedVoiceUrl = voiceRes.publicUrl || voiceRes.url;
+          }
+        } catch (err) {
+          console.warn('Voice message upload warning:', err);
+        }
+      }
+
       const payload: CreateExperiencePayload = {
         sender_name: senderName.trim(),
         receiver_name: receiverName.trim(),
@@ -332,6 +505,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
         message: message.trim(),
         tier: selectedPlan,
         images,
+        voice_message_url: uploadedVoiceUrl,
         creator_email: creatorEmail.trim() || undefined,
       };
 
@@ -358,7 +532,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
           <div className="flex flex-col items-center">
             <div className="eyebrow-pill mb-2">
               <span />
-              Your LoveWrapped
+              Your Amorah
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-maroon tracking-tight">
               Let’s make it <em className="italic font-normal text-coral">personal.</em>
@@ -409,7 +583,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-mauve">Music & Watermark:</span>
             <b className={selectedPlan === 'paid' ? 'text-emerald-700 font-semibold' : 'text-mauve/60'}>
-              {selectedPlan === 'paid' ? 'Music included • No watermark' : 'LoveWrapped watermark'}
+              {selectedPlan === 'paid' ? 'Music • Voice message • No watermark' : 'Amorah watermark'}
             </b>
           </div>
         </div>
@@ -592,6 +766,144 @@ export const CreateView: React.FC<CreateViewProps> = ({
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Voice Message (Paid Plan feature) */}
+            {selectedPlan === 'paid' && (
+              <div className="pt-4 border-t border-cream-border/60">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-maroon flex items-center gap-1.5">
+                    <Mic className="w-4 h-4 text-coral" />
+                    <span>Personal Voice Message (Paid Feature)</span>
+                  </label>
+                  <span className="text-[10px] bg-coral/10 text-coral font-bold px-2 py-0.5 rounded-full border border-coral/20">
+                    Max 45s • Capped at 3MB
+                  </span>
+                </div>
+                <p className="text-xs text-mauve mb-3">
+                  Record a short personal voice message or upload an audio file to play in your story.
+                </p>
+
+                {voiceError && (
+                  <div className="mb-3 p-3 rounded-xl bg-coral/10 border border-coral/40 text-maroon text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-coral shrink-0" />
+                    <span>{voiceError}</span>
+                  </div>
+                )}
+
+                {/* Sub-tabs: Record or Upload */}
+                {!voicePreviewUrl ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 p-1 rounded-xl bg-cream-card border border-cream-border w-fit text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVoiceMode('record');
+                          setVoiceError(null);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                          voiceMode === 'record'
+                            ? 'bg-maroon text-cream shadow-sm'
+                            : 'text-mauve hover:text-maroon'
+                        }`}
+                      >
+                        Record Audio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVoiceMode('upload');
+                          setVoiceError(null);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                          voiceMode === 'upload'
+                            ? 'bg-maroon text-cream shadow-sm'
+                            : 'text-mauve hover:text-maroon'
+                        }`}
+                      >
+                        Upload Audio File
+                      </button>
+                    </div>
+
+                    {voiceMode === 'record' ? (
+                      <div className="p-4 rounded-2xl bg-cream-card border border-cream-border flex flex-col items-center justify-center text-center space-y-3">
+                        {isRecording ? (
+                          <div className="space-y-3 flex flex-col items-center">
+                            <div className="flex items-center gap-2 text-rose-600 font-bold text-sm animate-pulse">
+                              <span className="w-3 h-3 rounded-full bg-rose-600 animate-ping" />
+                              <span>Recording Voice Message... ({recordingSeconds}s / 45s)</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={stopRecording}
+                              className="px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-2 shadow-md transition-all"
+                            >
+                              <Square className="w-4 h-4 fill-white" />
+                              <span>Stop Recording</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 flex flex-col items-center">
+                            <button
+                              type="button"
+                              onClick={startRecording}
+                              className="p-4 rounded-full bg-coral/10 hover:bg-coral/20 text-coral border border-coral/30 transition-all hover:scale-105 active:scale-95"
+                              title="Start Recording Voice Message"
+                            >
+                              <Mic className="w-6 h-6" />
+                            </button>
+                            <span className="text-xs font-medium text-maroon">Tap microphone to start recording</span>
+                            <span className="text-[11px] text-mauve">Up to 45 seconds max</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-cream-border hover:border-coral bg-cream-card cursor-pointer transition-all text-center">
+                        <Upload className="w-5 h-5 text-coral mb-1" />
+                        <span className="text-xs font-medium text-maroon">Click to select an audio file</span>
+                        <span className="text-[11px] text-mauve/80 mt-1">
+                          .mp3, .m4a, .wav, .webm · up to 45s & 3MB
+                        </span>
+                        <input
+                          type="file"
+                          accept=".mp3,.m4a,.wav,.webm,audio/mpeg,audio/wav,audio/webm,audio/mp4"
+                          onChange={handleVoiceFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                ) : (
+                  /* Audio Preview Player */
+                  <div className="p-4 rounded-2xl bg-cream-card border border-cream-border flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={togglePlayVoicePreview}
+                        className="p-3 rounded-full bg-coral text-white hover:bg-coral-dark transition-all shrink-0"
+                      >
+                        {isPlayingVoicePreview ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
+                      </button>
+                      <div>
+                        <span className="text-xs font-bold text-maroon block">Voice Message Ready</span>
+                        <span className="text-[11px] text-mauve flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 inline" />
+                          Attached to story
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={clearVoiceMessage}
+                      className="p-2 text-mauve hover:text-rose-600 transition-colors"
+                      title="Remove voice message"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
               </div>

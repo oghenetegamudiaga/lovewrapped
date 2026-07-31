@@ -23,6 +23,7 @@ export interface Experience {
   is_paid: boolean;
   payment_reference: string | null;
   creator_email?: string;
+  voice_message_url?: string | null;
   views_count: number;
   reactions_count: number;
   created_at: string;
@@ -53,6 +54,7 @@ export interface CreateExperiencePayload {
   tier: PlanTier;
   images?: string[]; // Data URLs or uploaded URLs
   creator_email?: string;
+  voice_message_url?: string | null;
 }
 
 export interface SlideBudgetInfo {
