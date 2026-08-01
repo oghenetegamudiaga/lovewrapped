@@ -673,7 +673,12 @@ apiRouter.post('/paystack/webhook', async (req, res) => {
 });
 
 // Admin Authentication & Session Management using iron-session
-const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET || 'lovewrapped_admin_session_secret_32chars_min!';
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
+
+if (!SESSION_SECRET) {
+  console.error('🚨 FATAL: SESSION_SECRET (or ADMIN_SESSION_SECRET) environment variable is not set.');
+  throw new Error('SESSION_SECRET environment variable is required and must be set in production.');
+}
 
 async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
   try {
@@ -699,19 +704,18 @@ async function requireAdmin(req: express.Request, res: express.Response, next: e
 // POST /api/admin/login
 apiRouter.post('/admin/login', async (req, res) => {
   try {
+    const targetHash = process.env.ADMIN_PASSWORD_HASH;
+    if (!targetHash) {
+      console.error('🚨 FATAL: ADMIN_PASSWORD_HASH environment variable is not set. Admin login is disabled until this is configured.');
+      return res.status(503).json({ message: 'Admin login is not configured. Contact the system administrator.' });
+    }
+
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
     const expectedEmail = (process.env.ADMIN_EMAIL || 'admin@lovewrapped.app').trim().toLowerCase();
-    let targetHash = process.env.ADMIN_PASSWORD_HASH;
-
-    if (!targetHash) {
-      // Fallback hash for 'lovewrapped2026' if ADMIN_PASSWORD_HASH env var is not provided
-      targetHash = bcrypt.hashSync('lovewrapped2026', 10);
-    }
-
     const emailMatches = email.trim().toLowerCase() === expectedEmail;
     const passwordMatches = bcrypt.compareSync(password, targetHash);
 
