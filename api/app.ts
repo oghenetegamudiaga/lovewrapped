@@ -327,7 +327,7 @@ apiRouter.post('/upload-voice', async (req, res) => {
     });
   } catch (err: any) {
     console.error('Voice upload error:', err);
-    res.status(500).json({ message: err.message || 'Failed to process voice upload' });
+    res.status(500).json({ message: 'Failed to process voice upload. Please try again.' });
   }
 });
 
@@ -336,19 +336,60 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
   try {
     const payload: CreateExperiencePayload = req.body;
     if (!payload || !payload.sender_name || !payload.receiver_name || !payload.message) {
-      return res.status(400).json({ message: 'Sender, receiver, and message are required.' });
+      return res.status(400).json({ message: 'Sender name, receiver name, and message are required.' });
+    }
+
+    const sender_name = payload.sender_name.trim();
+    const receiver_name = payload.receiver_name.trim();
+    const occasion = (payload.occasion || 'Special Moment').trim();
+    const message = payload.message.trim();
+    const creator_email = payload.creator_email ? payload.creator_email.trim() : undefined;
+
+    if (!sender_name) {
+      return res.status(400).json({ message: 'Sender name cannot be empty.' });
+    }
+    if (sender_name.length > 60) {
+      return res.status(400).json({ message: 'Sender name must be under 60 characters.' });
+    }
+
+    if (!receiver_name) {
+      return res.status(400).json({ message: 'Receiver name cannot be empty.' });
+    }
+    if (receiver_name.length > 60) {
+      return res.status(400).json({ message: 'Receiver name must be under 60 characters.' });
+    }
+
+    if (occasion.length > 60) {
+      return res.status(400).json({ message: 'Occasion must be under 60 characters.' });
+    }
+
+    if (!message) {
+      return res.status(400).json({ message: 'Message cannot be empty.' });
+    }
+    if (message.length > 2000) {
+      return res.status(400).json({ message: 'Message must be under 2000 characters.' });
+    }
+
+    if (creator_email) {
+      if (creator_email.length > 255) {
+        return res.status(400).json({ message: 'Creator email must be under 255 characters.' });
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(creator_email)) {
+        return res.status(400).json({ message: 'Please provide a valid creator email address.' });
+      }
     }
 
     const id = crypto.randomUUID();
-    const slug = generateSlug(payload.sender_name, payload.receiver_name);
+    const slug = generateSlug(sender_name, receiver_name);
     const tier = payload.tier || 'free';
     const images = payload.images || [];
 
     const generatedSlides = generateSlides(
-      payload.sender_name,
-      payload.receiver_name,
-      payload.occasion || 'Special Moment',
-      payload.message,
+      sender_name,
+      receiver_name,
+      occasion,
+      message,
       tier,
       images
     );
@@ -356,9 +397,9 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
     const experience: Experience = {
       id,
       slug,
-      sender_name: payload.sender_name,
-      receiver_name: payload.receiver_name,
-      occasion: payload.occasion || 'Special Moment',
+      sender_name,
+      receiver_name,
+      occasion,
       tier,
       image_count: images.length,
       is_paid: tier === 'free', // Free tier is instantly active; Paid requires paystack step
@@ -393,9 +434,9 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
         return res.status(500).json({ message: 'Failed to save experience. Please try again.' });
       }
 
-      if (payload.creator_email) {
+      if (creator_email) {
         const { error: userError } = await supabase.from('users').insert({
-          email: payload.creator_email,
+          email: creator_email,
           tier,
         });
 
@@ -412,11 +453,11 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
 
     // Always sync to in-memory store for fast local access / fallback
     experiencesStore.set(slug, experience);
-    if (payload.creator_email) {
+    if (creator_email) {
       const userId = `usr-${Date.now()}`;
       usersStore.set(userId, {
         id: userId,
-        email: payload.creator_email,
+        email: creator_email,
         tier,
         created_at: new Date().toISOString(),
       });
@@ -425,7 +466,7 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
     res.status(201).json(experience);
   } catch (err: any) {
     console.error('Error creating experience:', err);
-    res.status(500).json({ message: err.message || 'Failed to save experience.' });
+    res.status(500).json({ message: 'Failed to save experience. Please try again.' });
   }
 });
 
@@ -571,7 +612,7 @@ apiRouter.post('/paystack/initialize', paystackInitializeLimiter, async (req, re
     if (!paystackRes.ok || !paystackData.status) {
       console.error('Paystack initialize error:', paystackData);
       return res.status(400).json({
-        message: paystackData.message || 'Failed to initialize Paystack transaction.',
+        message: 'Failed to initialize payment transaction. Please try again.',
       });
     }
 
@@ -590,8 +631,7 @@ apiRouter.post('/paystack/initialize', paystackInitializeLimiter, async (req, re
     });
   } catch (err: unknown) {
     console.error('Initialize payment exception:', err);
-    const msg = err instanceof Error ? err.message : 'Internal server error initializing payment.';
-    return res.status(500).json({ message: msg });
+    return res.status(500).json({ message: 'Failed to initialize payment. Please try again.' });
   }
 });
 
@@ -619,8 +659,9 @@ apiRouter.post('/paystack/verify', async (req, res) => {
     const paystackData = await paystackRes.json();
 
     if (!paystackRes.ok || !paystackData.status) {
+      console.error('Paystack verify API error response:', paystackData);
       return res.status(400).json({
-        message: paystackData.message || 'Payment verification failed on Paystack.',
+        message: 'Payment verification failed. Please try again.',
       });
     }
 
@@ -628,8 +669,9 @@ apiRouter.post('/paystack/verify', async (req, res) => {
 
     // Only set is_paid: true if data.status === 'success' AND data.amount === 200000 (PAID_PLAN_PRICE_KOBO)
     if (txData.status !== 'success' || txData.amount !== PAID_PLAN_PRICE_KOBO) {
+      console.error(`Paystack verify failed status/amount check: status=${txData.status}, amount=${txData.amount}`);
       return res.status(400).json({
-        message: `Payment verification failed. Status: ${txData.status}, Amount: ${txData.amount}`,
+        message: 'Payment verification failed. Invalid transaction status or amount.',
       });
     }
 
@@ -675,8 +717,7 @@ apiRouter.post('/paystack/verify', async (req, res) => {
     });
   } catch (err: unknown) {
     console.error('Verify payment exception:', err);
-    const msg = err instanceof Error ? err.message : 'Internal server error verifying payment.';
-    return res.status(500).json({ message: msg });
+    return res.status(500).json({ message: 'Payment verification failed. Please try again.' });
   }
 });
 
@@ -870,8 +911,7 @@ apiRouter.post('/admin/login', adminLoginLimiter, async (req, res) => {
     });
   } catch (err: unknown) {
     console.error('Admin login error:', err);
-    const msg = err instanceof Error ? err.message : 'Login failed.';
-    return res.status(500).json({ message: msg });
+    return res.status(500).json({ message: 'Login failed. Please try again.' });
   }
 });
 
@@ -1094,8 +1134,7 @@ apiRouter.patch('/admin/experiences/:id/payment-status', requireRole(['super_adm
     return res.json({ success: true, experience: sanitizedExp });
   } catch (err: unknown) {
     console.error('Error updating payment status:', err);
-    const msg = err instanceof Error ? err.message : 'Failed to update payment status.';
-    return res.status(500).json({ message: msg });
+    return res.status(500).json({ message: 'Failed to update payment status. Please try again.' });
   }
 });
 
