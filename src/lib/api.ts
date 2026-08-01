@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap } from '../types.js';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord } from '../types.js';
 
 const API_BASE = '/api';
 
@@ -124,8 +124,8 @@ export async function adminLogoutApi(): Promise<{ success: boolean }> {
   });
 }
 
-export async function getAdminMeApi(): Promise<{ authenticated: boolean; email: string }> {
-  return apiFetch<{ authenticated: boolean; email: string }>('/admin/me');
+export async function getAdminMeApi(): Promise<{ authenticated: boolean; email: string; role: AdminRole; isRootAdmin: boolean }> {
+  return apiFetch<{ authenticated: boolean; email: string; role: AdminRole; isRootAdmin: boolean }>('/admin/me');
 }
 
 export async function getAdminMetricsApi(): Promise<AdminMetrics> {
@@ -189,5 +189,48 @@ export async function updateSiteContentApi(key: string, value: string): Promise<
   return apiFetch<{ success: boolean; key: string; value: string }>('/admin/content', {
     method: 'PATCH',
     body: JSON.stringify({ key, value }),
+  });
+}
+
+/* ==================== Sub-Admin & Settings Endpoints ==================== */
+
+export async function getAdminSubAdminsApi(): Promise<AdminRecord[]> {
+  return apiFetch<AdminRecord[]>('/admin/settings/admins');
+}
+
+export async function createAdminSubAdminApi(payload: {
+  email: string;
+  password: string;
+  role: AdminRole;
+}): Promise<AdminRecord> {
+  return apiFetch<AdminRecord>('/admin/settings/admins', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminSubAdminRoleApi(
+  id: string,
+  role: AdminRole
+): Promise<{ success: boolean; admin: AdminRecord }> {
+  return apiFetch<{ success: boolean; admin: AdminRecord }>(`/admin/settings/admins/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
+}
+
+export async function deleteAdminSubAdminApi(id: string): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(`/admin/settings/admins/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function changeAdminPasswordApi(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ success: boolean; message: string }> {
+  return apiFetch<{ success: boolean; message: string }>('/admin/settings/password', {
+    method: 'PATCH',
+    body: JSON.stringify({ currentPassword, newPassword }),
   });
 }

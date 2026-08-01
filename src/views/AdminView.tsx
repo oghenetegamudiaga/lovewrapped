@@ -6,7 +6,8 @@ import {
   DollarSign,
   Heart,
   Trash2,
-  Copy,
+  Settings,
+  Key,
   RefreshCw,
   Mail,
   Lock,
@@ -38,7 +39,7 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType } from '../types';
+import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType, AdminRole, AdminRecord } from '../types';
 import {
   getAdminMeApi,
   adminLoginApi,
@@ -54,6 +55,11 @@ import {
   updateAdminCrmContactApi,
   deleteAdminCrmContactApi,
   updateSiteContentApi,
+  getAdminSubAdminsApi,
+  createAdminSubAdminApi,
+  updateAdminSubAdminRoleApi,
+  deleteAdminSubAdminApi,
+  changeAdminPasswordApi,
   AdminTimeseriesPoint,
 } from '../lib/api';
 import { fetchSiteContentApi, invalidateSiteContentCache } from '../lib/useSiteContent';
@@ -91,16 +97,35 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [crmContacts, setCrmContacts] = useState<CRMContact[]>([]);
   const [siteContent, setSiteContent] = useState<Record<string, string>>({});
   
-  const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users' | 'crm'>('metrics');
+  const [adminRole, setAdminRole] = useState<AdminRole>('super_admin');
+  const [isRootAdmin, setIsRootAdmin] = useState(false);
+  const [subAdmins, setSubAdmins] = useState<AdminRecord[]>([]);
+
+  const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users' | 'crm' | 'settings'>('metrics');
   const [crmSubTab, setCrmSubTab] = useState<'contacts' | 'cms'>('contacts');
   
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState<'all' | 'free' | 'paid'>('all');
   const [crmStatusFilter, setCrmStatusFilter] = useState<'all' | CRMContactStatus>('all');
   const [crmTypeFilter, setCrmTypeFilter] = useState<'all' | CRMContactType>('all');
+
+  // Sub-Admin Management State
+  const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState<AdminRole>('admin');
+  const [subAdminError, setSubAdminError] = useState<string | null>(null);
+  const [subAdminSuccess, setSubAdminSuccess] = useState<string | null>(null);
+
+  // Change Password State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // CRM Add Contact Modal State
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
@@ -127,29 +152,43 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [notesText, setNotesText] = useState('');
   const [savedKey, setSavedKey] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (role: AdminRole = adminRole) => {
     setIsLoading(true);
     try {
-      const [m, t, u, e, c, cms] = await Promise.all([
-        getAdminMetricsApi(),
-        getAdminTimeseriesApi(),
-        getAdminUsersApi(),
-        getAdminExperiencesApi(),
-        getAdminCrmContactsApi(),
-        fetchSiteContentApi(),
-      ]);
-      setMetrics(m);
-      setTimeseries(t);
-      setUsers(u);
-      setExperiences(e);
-      setCrmContacts(c);
-      setSiteContent(cms);
+      if (role === 'support') {
+        const [e, c] = await Promise.all([
+          getAdminExperiencesApi(),
+          getAdminCrmContactsApi(),
+        ]);
+        setExperiences(e);
+        setCrmContacts(c);
+      } else {
+        const [m, t, u, e, c, cms] = await Promise.all([
+          getAdminMetricsApi(),
+          getAdminTimeseriesApi(),
+          getAdminUsersApi(),
+          getAdminExperiencesApi(),
+          getAdminCrmContactsApi(),
+          fetchSiteContentApi(),
+        ]);
+        setMetrics(m);
+        setTimeseries(t);
+        setUsers(u);
+        setExperiences(e);
+        setCrmContacts(c);
+        setSiteContent(cms);
+
+        if (role === 'super_admin') {
+          const admins = await getAdminSubAdminsApi().catch(() => []);
+          setSubAdmins(admins);
+        }
+      }
     } catch (err: unknown) {
       console.error('Failed to load admin data:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [adminRole]);
 
   useEffect(() => {
     async function checkSession() {
@@ -158,7 +197,13 @@ export const AdminView: React.FC<AdminViewProps> = () => {
         if (me.authenticated) {
           setIsAuthenticated(true);
           setAdminEmail(me.email);
-          await loadData();
+          const r = me.role || 'super_admin';
+          setAdminRole(r);
+          setIsRootAdmin(Boolean(me.isRootAdmin));
+          if (r === 'support') {
+            setActiveTab('experiences');
+          }
+          await loadData(r);
         }
       } catch (err) {
         setIsAuthenticated(false);
@@ -179,7 +224,14 @@ export const AdminView: React.FC<AdminViewProps> = () => {
       if (res.success) {
         setIsAuthenticated(true);
         setAdminEmail(res.email);
-        await loadData();
+        const r = (res as any).role || 'super_admin';
+        const root = Boolean((res as any).isRootAdmin);
+        setAdminRole(r);
+        setIsRootAdmin(root);
+        if (r === 'support') {
+          setActiveTab('experiences');
+        }
+        await loadData(r);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
@@ -299,12 +351,107 @@ export const AdminView: React.FC<AdminViewProps> = () => {
     }
   };
 
-  const handleCopyLink = (slug: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const url = `${origin}/w/${slug}`;
-    navigator.clipboard.writeText(url);
-    setCopiedSlug(slug);
-    setTimeout(() => setCopiedSlug(null), 2000);
+  /* Settings Handlers */
+  const handleAddSubAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubAdminError(null);
+    setSubAdminSuccess(null);
+
+    if (!newAdminEmail || !newAdminEmail.includes('@')) {
+      setSubAdminError('Please enter a valid email address.');
+      return;
+    }
+    if (!newAdminPassword || newAdminPassword.length < 8) {
+      setSubAdminError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    try {
+      const created = await createAdminSubAdminApi({
+        email: newAdminEmail.trim(),
+        password: newAdminPassword,
+        role: newAdminRole,
+      });
+      setSubAdmins((prev) => [created, ...prev]);
+      setNewAdminEmail('');
+      setNewAdminPassword('');
+      setNewAdminRole('admin');
+      setIsAddAdminOpen(false);
+      setSubAdminSuccess(`Sub-admin ${created.email} created successfully.`);
+      setTimeout(() => setSubAdminSuccess(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create sub-admin.';
+      setSubAdminError(msg);
+    }
+  };
+
+  const handleUpdateSubAdminRole = async (id: string, role: AdminRole) => {
+    setSubAdminError(null);
+    try {
+      const res = await updateAdminSubAdminRoleApi(id, role);
+      if (res.success) {
+        setSubAdmins((prev) => prev.map((a) => (a.id === id ? { ...a, role } : a)));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update role.';
+      alert(msg);
+    }
+  };
+
+  const handleDeleteSubAdmin = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this sub-admin?')) return;
+    setSubAdminError(null);
+
+    try {
+      await deleteAdminSubAdminApi(id);
+      setSubAdmins((prev) => prev.filter((a) => a.id !== id));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to remove sub-admin.';
+      alert(msg);
+    }
+  };
+
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (isRootAdmin) {
+      setPasswordError('Root admin password is set via environment variables and cannot be changed here.');
+      return;
+    }
+
+    if (!currentPassword) {
+      setPasswordError('Current password is required.');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long.');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const res = await changeAdminPasswordApi(currentPassword, newPassword);
+      if (res.success) {
+        setPasswordSuccess('Password changed successfully.');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setTimeout(() => setPasswordSuccess(null), 4000);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to change password.';
+      setPasswordError(msg);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   // Client-side filtering for Experiences
@@ -491,20 +638,33 @@ export const AdminView: React.FC<AdminViewProps> = () => {
               Platform Overview & Management
             </h1>
             {adminEmail && (
-              <p className="text-xs text-mauve mt-1">Logged in as {adminEmail}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-mauve">Logged in as {adminEmail}</p>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  adminRole === 'super_admin'
+                    ? 'bg-purple-100 text-purple-800 border-purple-200'
+                    : adminRole === 'admin'
+                    ? 'bg-blue-100 text-blue-800 border-blue-200'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                }`}>
+                  {adminRole.replace('_', ' ')}
+                </span>
+              </div>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5 p-1 rounded-full bg-cream-card border border-cream-border text-xs font-medium">
-              <button
-                onClick={() => setActiveTab('metrics')}
-                className={`px-4 py-2 rounded-full transition-all ${
-                  activeTab === 'metrics' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
-                }`}
-              >
-                Metrics
-              </button>
+              {adminRole !== 'support' && (
+                <button
+                  onClick={() => setActiveTab('metrics')}
+                  className={`px-4 py-2 rounded-full transition-all ${
+                    activeTab === 'metrics' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
+                  }`}
+                >
+                  Metrics
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('experiences')}
                 className={`px-4 py-2 rounded-full transition-all ${
@@ -513,14 +673,16 @@ export const AdminView: React.FC<AdminViewProps> = () => {
               >
                 Experiences ({experiences.length})
               </button>
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`px-4 py-2 rounded-full transition-all ${
-                  activeTab === 'users' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
-                }`}
-              >
-                Creators ({users.length})
-              </button>
+              {adminRole !== 'support' && (
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`px-4 py-2 rounded-full transition-all ${
+                    activeTab === 'users' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
+                  }`}
+                >
+                  Creators ({users.length})
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('crm')}
                 className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
@@ -529,6 +691,15 @@ export const AdminView: React.FC<AdminViewProps> = () => {
               >
                 <span>CRM & CMS</span>
                 <span className="bg-cream-border px-1.5 py-0.5 rounded-full text-[10px] text-maroon">{crmContacts.length}</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
+                  activeTab === 'settings' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
+                }`}
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Settings</span>
               </button>
             </div>
 
@@ -756,13 +927,6 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                         {new Date(exp.created_at).toLocaleDateString()}
                       </td>
                       <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => handleCopyLink(exp.slug)}
-                          className="p-1.5 rounded-lg bg-cream-card text-maroon hover:bg-cream-border"
-                          title="Copy Public Link"
-                        >
-                          {copiedSlug === exp.slug ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <Copy className="w-3.5 h-3.5 text-coral" />}
-                        </button>
                         <button
                           onClick={() => handleDeleteExperience(exp.id)}
                           className="p-1.5 rounded-lg bg-rose-100 text-coral hover:bg-rose-200 border border-coral/30"
@@ -1184,6 +1348,247 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Settings Tab Content */}
+        {activeTab === 'settings' && (
+          <div className="space-y-8">
+            {/* Sub-Admin Management Section (super_admin only) */}
+            {adminRole === 'super_admin' && (
+              <div className="bg-cream-card rounded-2xl p-6 border border-cream-border shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="font-serif font-bold text-xl text-maroon flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-coral" />
+                      Sub-Admin Management
+                    </h2>
+                    <p className="text-xs text-mauve mt-1">
+                      Add team members and assign role-based access permissions.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsAddAdminOpen(!isAddAdminOpen);
+                      setSubAdminError(null);
+                    }}
+                    className="px-4 py-2 bg-maroon text-cream rounded-xl text-xs font-semibold hover:bg-maroon/90 transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>{isAddAdminOpen ? 'Cancel' : 'Add Sub-Admin'}</span>
+                  </button>
+                </div>
+
+                {subAdminSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{subAdminSuccess}</span>
+                  </div>
+                )}
+
+                {/* Add Sub-Admin Form */}
+                {isAddAdminOpen && (
+                  <form onSubmit={handleAddSubAdmin} className="p-4 bg-white rounded-xl border border-cream-border space-y-4">
+                    <h3 className="font-medium text-sm text-maroon">Create New Admin Account</h3>
+                    {subAdminError && (
+                      <div className="p-2.5 bg-rose-50 border border-rose-200 text-coral text-xs rounded-lg flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{subAdminError}</span>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-mauve mb-1">Email Address</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="admin@example.com"
+                          value={newAdminEmail}
+                          onChange={(e) => setNewAdminEmail(e.target.value)}
+                          className="w-full px-3 py-2 bg-cream-card border border-cream-border rounded-lg text-xs focus:outline-none focus:border-maroon"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-mauve mb-1">Temporary Password</label>
+                        <input
+                          type="password"
+                          required
+                          minLength={8}
+                          placeholder="At least 8 characters"
+                          value={newAdminPassword}
+                          onChange={(e) => setNewAdminPassword(e.target.value)}
+                          className="w-full px-3 py-2 bg-cream-card border border-cream-border rounded-lg text-xs focus:outline-none focus:border-maroon"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-mauve mb-1">Assigned Role</label>
+                        <select
+                          value={newAdminRole}
+                          onChange={(e) => setNewAdminRole(e.target.value as AdminRole)}
+                          className="w-full px-3 py-2 bg-cream-card border border-cream-border rounded-lg text-xs focus:outline-none focus:border-maroon"
+                        >
+                          <option value="super_admin">Super Admin (Full Access & Settings)</option>
+                          <option value="admin">Admin (All tabs except Settings)</option>
+                          <option value="support">Support (Read-only Experiences & CRM)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddAdminOpen(false)}
+                        className="px-3 py-1.5 text-xs text-mauve hover:text-maroon"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 bg-maroon text-cream rounded-lg text-xs font-semibold hover:bg-maroon/90"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Sub-Admins Table */}
+                <div className="overflow-x-auto rounded-xl border border-cream-border">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-cream border-b border-cream-border text-mauve font-semibold uppercase tracking-wider">
+                      <tr>
+                        <th className="p-3.5">Admin Email</th>
+                        <th className="p-3.5">Role</th>
+                        <th className="p-3.5">Created Date</th>
+                        <th className="p-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-cream-border bg-white">
+                      {subAdmins.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="p-6 text-center text-mauve">
+                            No sub-admin accounts created yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        subAdmins.map((admin) => (
+                          <tr key={admin.id} className="hover:bg-cream/50 transition-colors">
+                            <td className="p-3.5 font-medium text-maroon">{admin.email}</td>
+                            <td className="p-3.5">
+                              <select
+                                value={admin.role}
+                                onChange={(e) => handleUpdateSubAdminRole(admin.id, e.target.value as AdminRole)}
+                                className="px-2 py-1 bg-cream-card border border-cream-border rounded-lg text-xs font-medium focus:outline-none focus:border-maroon"
+                              >
+                                <option value="super_admin">Super Admin</option>
+                                <option value="admin">Admin</option>
+                                <option value="support">Support</option>
+                              </select>
+                            </td>
+                            <td className="p-3.5 text-mauve">
+                              {new Date(admin.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <button
+                                onClick={() => handleDeleteSubAdmin(admin.id)}
+                                className="p-1.5 rounded-lg bg-rose-100 text-coral hover:bg-rose-200 transition-colors"
+                                title="Remove Sub-Admin"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Change Password Section */}
+            <div className="bg-cream-card rounded-2xl p-6 border border-cream-border shadow-sm space-y-6">
+              <div>
+                <h2 className="font-serif font-bold text-xl text-maroon flex items-center gap-2">
+                  <Key className="w-5 h-5 text-coral" />
+                  Change Password
+                </h2>
+                <p className="text-xs text-mauve mt-1">
+                  Update your login password securely.
+                </p>
+              </div>
+
+              {isRootAdmin ? (
+                <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold mb-0.5">Root Admin Account</p>
+                    <p>
+                      Root admin password is set via environment variables (<code className="bg-amber-100 px-1 py-0.5 rounded">ADMIN_PASSWORD_HASH</code>) and cannot be modified through the web interface.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleChangePasswordSubmit} className="max-w-md space-y-4">
+                  {passwordError && (
+                    <div className="p-3 bg-rose-50 border border-rose-200 text-coral text-xs rounded-xl flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{passwordError}</span>
+                    </div>
+                  )}
+
+                  {passwordSuccess && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{passwordSuccess}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-medium text-mauve mb-1">Current Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-cream-border rounded-xl text-xs focus:outline-none focus:border-maroon"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-mauve mb-1">New Password</label>
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      placeholder="Minimum 8 characters"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-cream-border rounded-xl text-xs focus:outline-none focus:border-maroon"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-mauve mb-1">Confirm New Password</label>
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-cream-border rounded-xl text-xs focus:outline-none focus:border-maroon"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="px-5 py-2.5 bg-maroon text-cream rounded-xl text-xs font-semibold hover:bg-maroon/90 transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {isChangingPassword ? 'Updating Password...' : 'Update Password'}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         )}
       </div>

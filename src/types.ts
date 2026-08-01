@@ -36,6 +36,16 @@ export interface UserRecord {
   created_at: string;
 }
 
+export type AdminRole = 'super_admin' | 'admin' | 'support';
+
+export interface AdminRecord {
+  id: string;
+  email: string;
+  role: AdminRole;
+  created_at: string;
+  created_by?: string | null;
+}
+
 export interface AdminMetrics {
   totalUsers: number;
   totalExperiences: number;

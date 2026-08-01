@@ -91,3 +91,23 @@ CREATE POLICY "Public read access for voice messages"
 CREATE POLICY "Public upload access for voice messages"
   ON storage.objects FOR INSERT
   WITH CHECK (bucket_id = 'voice-messages');
+
+-- ==================== Migration: Admins Table for Multi-Admin Support & Roles ====================
+-- Run this block in Supabase SQL Editor to support sub-admin creation and role-based permissions.
+
+CREATE TABLE IF NOT EXISTS public.admins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('super_admin', 'admin', 'support')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by UUID REFERENCES public.admins(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_admins_email ON public.admins(email);
+
+-- Enable Row Level Security (RLS) to lock down public access (Server / Service Role access only)
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
+
+-- Note: No public RLS policies are created for public.admins.
+-- All admin management is performed server-side via Supabase Service Role key or API endpoints.

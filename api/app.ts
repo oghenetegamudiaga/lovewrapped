@@ -25,9 +25,19 @@ app.use(
 );
 
 // In-memory data stores initialized with seed demo data
+interface AdminRecordInternal {
+  id: string;
+  email: string;
+  password_hash: string;
+  role: 'super_admin' | 'admin' | 'support';
+  created_at: string;
+  created_by?: string | null;
+}
+
 const experiencesStore: Map<string, Experience> = new Map();
 const usersStore: Map<string, UserRecord> = new Map();
 const crmContactsStore: Map<string, CRMContact> = new Map();
+const adminsStore: Map<string, AdminRecordInternal> = new Map();
 const siteContentStore: Map<string, string> = new Map([
   ['hero_eyebrow', 'Made for your favourite person'],
   ['hero_title_prefix', 'Turn your love into'],
@@ -680,64 +690,141 @@ if (!SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable is required and must be set in production.');
 }
 
-async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
-  try {
-    const sessionCookie = req.cookies?.admin_session;
-    if (!sessionCookie) {
-      return res.status(401).json({ message: 'Unauthorized. Admin session required.' });
-    }
+function requireRole(allowedRoles: Array<'super_admin' | 'admin' | 'support'>) {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const sessionCookie = req.cookies?.admin_session;
+      if (!sessionCookie) {
+        return res.status(401).json({ message: 'Unauthorized. Admin session required.' });
+      }
 
-    const session = await unsealData<{ isAdmin?: boolean; email?: string }>(sessionCookie, {
-      password: SESSION_SECRET,
-    });
+      const session = await unsealData<{
+        isAdmin?: boolean;
+        email?: string;
+        role?: 'super_admin' | 'admin' | 'support';
+        isRootAdmin?: boolean;
+      }>(sessionCookie, { password: SESSION_SECRET });
 
-    if (session && session.isAdmin) {
-      next();
-    } else {
+      if (session && session.isAdmin) {
+        const userRole = session.role || 'super_admin';
+        if (allowedRoles.includes(userRole)) {
+          (req as any).adminSession = { ...session, role: userRole };
+          return next();
+        }
+        return res.status(403).json({ message: 'Forbidden. Insufficient permissions for this action.' });
+      }
+
       return res.status(401).json({ message: 'Unauthorized. Invalid or expired session.' });
+    } catch (err) {
+      return res.status(401).json({ message: 'Unauthorized. Invalid session token.' });
     }
-  } catch (err) {
-    return res.status(401).json({ message: 'Unauthorized. Invalid session token.' });
-  }
+  };
+}
+
+async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  return requireRole(['super_admin', 'admin', 'support'])(req, res, next);
 }
 
 // POST /api/admin/login
 apiRouter.post('/admin/login', async (req, res) => {
   try {
-    const targetHash = process.env.ADMIN_PASSWORD_HASH;
-    if (!targetHash) {
-      console.error('🚨 FATAL: ADMIN_PASSWORD_HASH environment variable is not set. Admin login is disabled until this is configured.');
-      return res.status(503).json({ message: 'Admin login is not configured. Contact the system administrator.' });
-    }
-
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-    const expectedEmail = (process.env.ADMIN_EMAIL || 'admin@lovewrapped.app').trim().toLowerCase();
-    const emailMatches = email.trim().toLowerCase() === expectedEmail;
-    const passwordMatches = bcrypt.compareSync(password, targetHash);
+    const cleanEmail = email.trim().toLowerCase();
+    const rootEmail = (process.env.ADMIN_EMAIL || 'admin@lovewrapped.app').trim().toLowerCase();
+    const rootHash = process.env.ADMIN_PASSWORD_HASH;
 
-    if (!emailMatches || !passwordMatches) {
+    if (cleanEmail === rootEmail) {
+      if (!rootHash) {
+        console.error('🚨 FATAL: ADMIN_PASSWORD_HASH environment variable is not set. Admin login is disabled until this is configured.');
+        return res.status(503).json({ message: 'Admin login is not configured. Contact the system administrator.' });
+      }
+
+      const passwordMatches = bcrypt.compareSync(password, rootHash);
+      if (!passwordMatches) {
+        return res.status(401).json({ message: 'Invalid admin email or password.' });
+      }
+
+      const sessionData = {
+        isAdmin: true,
+        email: rootEmail,
+        role: 'super_admin' as const,
+        isRootAdmin: true,
+        loggedInAt: Date.now(),
+      };
+
+      const sealedCookie = await sealData(sessionData, {
+        password: SESSION_SECRET,
+        ttl: 7 * 24 * 60 * 60, // 7 days
+      });
+
+      res.cookie('admin_session', sealedCookie, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
+      return res.json({ success: true, message: 'Admin login successful.', email: rootEmail, role: 'super_admin', isRootAdmin: true });
+    }
+
+    // Check database & in-memory store for sub-admin
+    let adminRecord: AdminRecordInternal | null = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('admins').select('*').eq('email', cleanEmail).single();
+      if (data) adminRecord = data;
+    }
+
+    if (!adminRecord) {
+      for (const a of adminsStore.values()) {
+        if (a.email.toLowerCase() === cleanEmail) {
+          adminRecord = a;
+          break;
+        }
+      }
+    }
+
+    if (!adminRecord) {
       return res.status(401).json({ message: 'Invalid admin email or password.' });
     }
 
-    const sessionData = { isAdmin: true, email: expectedEmail, loggedInAt: Date.now() };
+    const passwordMatches = bcrypt.compareSync(password, adminRecord.password_hash);
+    if (!passwordMatches) {
+      return res.status(401).json({ message: 'Invalid admin email or password.' });
+    }
+
+    const sessionData = {
+      isAdmin: true,
+      email: adminRecord.email,
+      role: adminRecord.role,
+      isRootAdmin: false,
+      loggedInAt: Date.now(),
+    };
+
     const sealedCookie = await sealData(sessionData, {
       password: SESSION_SECRET,
-      ttl: 7 * 24 * 60 * 60, // 7 days
+      ttl: 7 * 24 * 60 * 60,
     });
 
     res.cookie('admin_session', sealedCookie, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     });
 
-    return res.json({ success: true, message: 'Admin login successful.', email: expectedEmail });
+    return res.json({
+      success: true,
+      message: 'Admin login successful.',
+      email: adminRecord.email,
+      role: adminRecord.role,
+      isRootAdmin: false,
+    });
   } catch (err: unknown) {
     console.error('Admin login error:', err);
     const msg = err instanceof Error ? err.message : 'Login failed.';
@@ -747,7 +834,13 @@ apiRouter.post('/admin/login', async (req, res) => {
 
 // GET /api/admin/me (Check Session)
 apiRouter.get('/admin/me', requireAdmin, (req, res) => {
-  res.json({ authenticated: true, email: process.env.ADMIN_EMAIL || 'admin@lovewrapped.app' });
+  const session = (req as any).adminSession || {};
+  res.json({
+    authenticated: true,
+    email: session.email || 'admin@lovewrapped.app',
+    role: session.role || 'super_admin',
+    isRootAdmin: Boolean(session.isRootAdmin),
+  });
 });
 
 // POST /api/admin/logout
@@ -757,7 +850,7 @@ apiRouter.post('/admin/logout', (req, res) => {
 });
 
 // Admin API Routes
-apiRouter.get('/admin/metrics', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/metrics', requireRole(['super_admin', 'admin']), async (req, res) => {
   if (isSupabaseConfigured && supabase) {
     const { data: exps } = await supabase.from('experiences').select('*');
     const { data: users } = await supabase.from('users').select('*');
@@ -805,7 +898,7 @@ apiRouter.get('/admin/metrics', requireAdmin, async (req, res) => {
 });
 
 // GET /api/admin/metrics/timeseries - Daily revenue & signups trend over last 30 days
-apiRouter.get('/admin/metrics/timeseries', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/metrics/timeseries', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
     let allExperiences: Experience[] = [];
     let allUsers: UserRecord[] = [];
@@ -867,7 +960,7 @@ apiRouter.get('/admin/metrics/timeseries', requireAdmin, async (req, res) => {
   }
 });
 
-apiRouter.get('/admin/users', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/users', requireRole(['super_admin', 'admin']), async (req, res) => {
   if (isSupabaseConfigured && supabase) {
     const { data: users } = await supabase.from('users').select('*').order('created_at', { ascending: false });
     return res.json(users || []);
@@ -877,7 +970,7 @@ apiRouter.get('/admin/users', requireAdmin, async (req, res) => {
   res.json(usersList);
 });
 
-apiRouter.get('/admin/experiences', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/experiences', requireRole(['super_admin', 'admin', 'support']), async (req, res) => {
   if (isSupabaseConfigured && supabase) {
     const { data: exps } = await supabase
       .from('experiences')
@@ -906,7 +999,7 @@ apiRouter.get('/admin/experiences', requireAdmin, async (req, res) => {
 });
 
 // PATCH /api/admin/experiences/:id/payment-status - Manual paid/refund toggle
-apiRouter.patch('/admin/experiences/:id/payment-status', requireAdmin, async (req, res) => {
+apiRouter.patch('/admin/experiences/:id/payment-status', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
     const id = req.params.id;
     const { is_paid } = req.body;
@@ -963,7 +1056,7 @@ apiRouter.patch('/admin/experiences/:id/payment-status', requireAdmin, async (re
   }
 });
 
-apiRouter.delete('/admin/experiences/:id', requireAdmin, async (req, res) => {
+apiRouter.delete('/admin/experiences/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
   const id = req.params.id;
 
   if (isSupabaseConfigured && supabase) {
@@ -1023,7 +1116,7 @@ apiRouter.get('/content', async (req, res) => {
 });
 
 // Admin Live Content Editing (CMS) Endpoint
-apiRouter.patch('/admin/content', requireAdmin, async (req, res) => {
+apiRouter.patch('/admin/content', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
     const { key, value } = req.body;
 
@@ -1054,7 +1147,7 @@ apiRouter.patch('/admin/content', requireAdmin, async (req, res) => {
 
 /* ==================== Admin CRM Contact Routes ==================== */
 
-apiRouter.get('/admin/crm', requireAdmin, async (req, res) => {
+apiRouter.get('/admin/crm', requireRole(['super_admin', 'admin', 'support']), async (req, res) => {
   try {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
@@ -1077,7 +1170,7 @@ apiRouter.get('/admin/crm', requireAdmin, async (req, res) => {
   }
 });
 
-apiRouter.post('/admin/crm', requireAdmin, async (req, res) => {
+apiRouter.post('/admin/crm', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
     const { name, email, phone, type, status, source, notes, related_experience_id } = req.body;
 
@@ -1116,7 +1209,7 @@ apiRouter.post('/admin/crm', requireAdmin, async (req, res) => {
   }
 });
 
-apiRouter.patch('/admin/crm/:id', requireAdmin, async (req, res) => {
+apiRouter.patch('/admin/crm/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
     const id = req.params.id;
     const updates = req.body;
@@ -1154,7 +1247,7 @@ apiRouter.patch('/admin/crm/:id', requireAdmin, async (req, res) => {
   }
 });
 
-apiRouter.delete('/admin/crm/:id', requireAdmin, async (req, res) => {
+apiRouter.delete('/admin/crm/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -1167,6 +1260,331 @@ apiRouter.delete('/admin/crm/:id', requireAdmin, async (req, res) => {
   } catch (err: unknown) {
     console.error('Error deleting CRM contact:', err);
     res.status(500).json({ message: 'Failed to delete CRM contact.' });
+  }
+});
+
+/* ==================== Admin Settings & Sub-Admin Routes ==================== */
+
+// GET /api/admin/settings/admins — list sub-admins
+apiRouter.get('/admin/settings/admins', requireRole(['super_admin']), async (req, res) => {
+  try {
+    let list: any[] = [];
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('id, email, role, created_at, created_by')
+        .order('created_at', { ascending: false });
+
+      if (data && !error) {
+        list = data;
+      }
+    }
+
+    if (list.length === 0) {
+      list = Array.from(adminsStore.values()).map((a) => ({
+        id: a.id,
+        email: a.email,
+        role: a.role,
+        created_at: a.created_at,
+        created_by: a.created_by,
+      }));
+    }
+
+    res.json(list);
+  } catch (err: unknown) {
+    console.error('Error fetching admins:', err);
+    res.status(500).json({ message: 'Failed to fetch sub-admins.' });
+  }
+});
+
+// POST /api/admin/settings/admins — create new sub-admin
+apiRouter.post('/admin/settings/admins', requireRole(['super_admin']), async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ message: 'A valid email address is required.' });
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
+    }
+
+    const validRoles = ['super_admin', 'admin', 'support'];
+    if (!role || !validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Valid role is required (super_admin, admin, or support).' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const rootEmail = (process.env.ADMIN_EMAIL || 'admin@lovewrapped.app').trim().toLowerCase();
+
+    if (cleanEmail === rootEmail) {
+      return res.status(400).json({ message: 'An admin account with this email already exists.' });
+    }
+
+    // Check existing email
+    if (isSupabaseConfigured && supabase) {
+      const { data: existing } = await supabase.from('admins').select('id').eq('email', cleanEmail).single();
+      if (existing) {
+        return res.status(400).json({ message: 'An admin account with this email already exists.' });
+      }
+    }
+
+    for (const a of adminsStore.values()) {
+      if (a.email.toLowerCase() === cleanEmail) {
+        return res.status(400).json({ message: 'An admin account with this email already exists.' });
+      }
+    }
+
+    const creatorSession = (req as any).adminSession;
+    const password_hash = bcrypt.hashSync(password, 10);
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    const newAdminRecord: AdminRecordInternal = {
+      id,
+      email: cleanEmail,
+      password_hash,
+      role,
+      created_at: now,
+      created_by: creatorSession?.email || null,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('admins').insert({
+        id: newAdminRecord.id,
+        email: newAdminRecord.email,
+        password_hash: newAdminRecord.password_hash,
+        role: newAdminRecord.role,
+        created_at: newAdminRecord.created_at,
+      });
+
+      if (error) {
+        console.error('Supabase admin insert error:', error);
+        return res.status(500).json({ message: 'Failed to create sub-admin in database.' });
+      }
+    }
+
+    adminsStore.set(id, newAdminRecord);
+
+    const publicRecord = {
+      id,
+      email: cleanEmail,
+      role,
+      created_at: now,
+      created_by: creatorSession?.email || null,
+    };
+
+    res.status(201).json(publicRecord);
+  } catch (err: unknown) {
+    console.error('Error creating sub-admin:', err);
+    res.status(500).json({ message: 'Failed to create sub-admin.' });
+  }
+});
+
+// PATCH /api/admin/settings/admins/:id — update role
+apiRouter.patch('/admin/settings/admins/:id', requireRole(['super_admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    const validRoles = ['super_admin', 'admin', 'support'];
+    if (!role || !validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Valid role is required (super_admin, admin, or support).' });
+    }
+
+    // Demotion check: ensure at least one super_admin exists
+    if (role !== 'super_admin') {
+      let superAdminCount = 1; // Count implicit root admin
+      if (isSupabaseConfigured && supabase) {
+        const { data: superAdmins } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('role', 'super_admin')
+          .neq('id', id);
+
+        superAdminCount += superAdmins?.length || 0;
+      } else {
+        for (const [aId, a] of adminsStore.entries()) {
+          if (aId !== id && a.role === 'super_admin') {
+            superAdminCount++;
+          }
+        }
+      }
+
+      if (superAdminCount < 1) {
+        return res.status(400).json({ message: 'Cannot demote admin: system must have at least one super admin.' });
+      }
+    }
+
+    let updatedAdmin: any = null;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('admins')
+        .update({ role })
+        .eq('id', id)
+        .select('id, email, role, created_at, created_by')
+        .single();
+
+      if (error) {
+        console.error('Supabase admin role update error:', error);
+      } else if (data) {
+        updatedAdmin = data;
+      }
+    }
+
+    for (const [aId, item] of adminsStore.entries()) {
+      if (item.id === id) {
+        item.role = role;
+        adminsStore.set(aId, item);
+        if (!updatedAdmin) {
+          updatedAdmin = {
+            id: item.id,
+            email: item.email,
+            role: item.role,
+            created_at: item.created_at,
+            created_by: item.created_by,
+          };
+        }
+        break;
+      }
+    }
+
+    if (!updatedAdmin) {
+      return res.status(404).json({ message: 'Sub-admin not found.' });
+    }
+
+    return res.json({ success: true, admin: updatedAdmin });
+  } catch (err: unknown) {
+    console.error('Error updating sub-admin role:', err);
+    res.status(500).json({ message: 'Failed to update sub-admin role.' });
+  }
+});
+
+// DELETE /api/admin/settings/admins/:id — delete sub-admin
+apiRouter.delete('/admin/settings/admins/:id', requireRole(['super_admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if target is a super_admin and ensure at least one super_admin remains
+    let targetIsSuperAdmin = false;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: target } = await supabase.from('admins').select('role').eq('id', id).single();
+      if (target?.role === 'super_admin') targetIsSuperAdmin = true;
+    } else {
+      const target = adminsStore.get(id);
+      if (target?.role === 'super_admin') targetIsSuperAdmin = true;
+    }
+
+    if (targetIsSuperAdmin) {
+      let superAdminCount = 1; // Count root admin
+      if (isSupabaseConfigured && supabase) {
+        const { data: superAdmins } = await supabase
+          .from('admins')
+          .select('id')
+          .eq('role', 'super_admin')
+          .neq('id', id);
+
+        superAdminCount += superAdmins?.length || 0;
+      } else {
+        for (const [aId, a] of adminsStore.entries()) {
+          if (aId !== id && a.role === 'super_admin') {
+            superAdminCount++;
+          }
+        }
+      }
+
+      if (superAdminCount < 1) {
+        return res.status(400).json({ message: 'Cannot remove sub-admin: system must have at least one super admin.' });
+      }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('admins').delete().eq('id', id);
+    }
+
+    adminsStore.delete(id);
+
+    return res.json({ success: true, message: 'Sub-admin removed successfully.' });
+  } catch (err: unknown) {
+    console.error('Error deleting sub-admin:', err);
+    res.status(500).json({ message: 'Failed to remove sub-admin.' });
+  }
+});
+
+// PATCH /api/admin/settings/password — change logged-in admin password
+apiRouter.patch('/admin/settings/password', requireRole(['super_admin', 'admin', 'support']), async (req, res) => {
+  try {
+    const session = (req as any).adminSession;
+    if (!session) {
+      return res.status(401).json({ message: 'Unauthorized.' });
+    }
+
+    if (session.isRootAdmin) {
+      return res.status(400).json({
+        message: 'Root admin password is set via environment variables (ADMIN_PASSWORD_HASH) and cannot be changed here.',
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required.' });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+      return res.status(400).json({ message: 'New password must be at least 8 characters long.' });
+    }
+
+    const adminEmail = session.email;
+    let targetAdmin: AdminRecordInternal | null = null;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('admins').select('*').eq('email', adminEmail).single();
+      if (data) targetAdmin = data;
+    }
+
+    if (!targetAdmin) {
+      for (const a of adminsStore.values()) {
+        if (a.email.toLowerCase() === adminEmail.toLowerCase()) {
+          targetAdmin = a;
+          break;
+        }
+      }
+    }
+
+    if (!targetAdmin) {
+      return res.status(404).json({ message: 'Admin account not found.' });
+    }
+
+    const passwordValid = bcrypt.compareSync(currentPassword, targetAdmin.password_hash);
+    if (!passwordValid) {
+      return res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+
+    const newHash = bcrypt.hashSync(newPassword, 10);
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase
+        .from('admins')
+        .update({ password_hash: newHash })
+        .eq('id', targetAdmin.id);
+
+      if (error) {
+        console.error('Supabase password update error:', error);
+        return res.status(500).json({ message: 'Failed to update password.' });
+      }
+    }
+
+    targetAdmin.password_hash = newHash;
+    adminsStore.set(targetAdmin.id, targetAdmin);
+
+    return res.json({ success: true, message: 'Password changed successfully.' });
+  } catch (err: unknown) {
+    console.error('Error changing password:', err);
+    res.status(500).json({ message: 'Failed to change password.' });
   }
 });
 
