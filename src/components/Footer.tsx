@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Instagram } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (path: string) => void;
@@ -46,6 +46,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           >
             Watch demo
           </button>
+        </div>
+
+        {/* Social Links */}
+        <div className="flex items-center gap-3 text-mauve">
+          <a
+            href="https://www.instagram.com/getamorah"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Amorah on Instagram"
+            className="p-1.5 rounded-full hover:text-maroon hover:bg-cream-border/50 transition-colors"
+          >
+            <Instagram className="w-4 h-4" />
+          </a>
         </div>
 
         {/* Copyright */}

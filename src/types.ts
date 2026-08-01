@@ -17,7 +17,7 @@ export interface Experience {
   sender_name: string;
   receiver_name: string;
   occasion: string; // 'Anniversary' | 'Birthday' | 'Romantic Surprise' | 'Just Because' | 'Appreciation' | 'Valentine' | string
-  slides: Slide[];
+  slides?: Slide[];
   tier: PlanTier;
   image_count: number;
   is_paid: boolean;

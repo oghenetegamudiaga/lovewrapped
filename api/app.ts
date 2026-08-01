@@ -875,13 +875,29 @@ apiRouter.get('/admin/users', requireAdmin, async (req, res) => {
 
 apiRouter.get('/admin/experiences', requireAdmin, async (req, res) => {
   if (isSupabaseConfigured && supabase) {
-    const { data: exps } = await supabase.from('experiences').select('*').order('created_at', { ascending: false });
+    const { data: exps } = await supabase
+      .from('experiences')
+      .select('id, slug, sender_name, receiver_name, occasion, tier, is_paid, payment_reference, image_count, views_count, reactions_count, created_at')
+      .order('created_at', { ascending: false });
     return res.json(exps || []);
   }
 
-  const expsList = Array.from(experiencesStore.values()).sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  const expsList = Array.from(experiencesStore.values())
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .map((exp) => ({
+      id: exp.id,
+      slug: exp.slug,
+      sender_name: exp.sender_name,
+      receiver_name: exp.receiver_name,
+      occasion: exp.occasion,
+      tier: exp.tier,
+      is_paid: exp.is_paid,
+      payment_reference: exp.payment_reference,
+      image_count: exp.image_count,
+      views_count: exp.views_count,
+      reactions_count: exp.reactions_count,
+      created_at: exp.created_at,
+    }));
   res.json(expsList);
 });
 
@@ -902,7 +918,7 @@ apiRouter.patch('/admin/experiences/:id/payment-status', requireAdmin, async (re
         .from('experiences')
         .update({ is_paid })
         .eq('id', id)
-        .select()
+        .select('id, slug, sender_name, receiver_name, occasion, tier, is_paid, payment_reference, image_count, views_count, reactions_count, created_at')
         .single();
       if (data) updatedExp = data;
     }
@@ -920,7 +936,22 @@ apiRouter.patch('/admin/experiences/:id/payment-status', requireAdmin, async (re
       return res.status(404).json({ message: 'Experience not found.' });
     }
 
-    return res.json({ success: true, experience: updatedExp });
+    const sanitizedExp = {
+      id: updatedExp.id,
+      slug: updatedExp.slug,
+      sender_name: updatedExp.sender_name,
+      receiver_name: updatedExp.receiver_name,
+      occasion: updatedExp.occasion,
+      tier: updatedExp.tier,
+      is_paid: updatedExp.is_paid,
+      payment_reference: updatedExp.payment_reference,
+      image_count: updatedExp.image_count,
+      views_count: updatedExp.views_count,
+      reactions_count: updatedExp.reactions_count,
+      created_at: updatedExp.created_at,
+    };
+
+    return res.json({ success: true, experience: sanitizedExp });
   } catch (err: unknown) {
     console.error('Error updating payment status:', err);
     const msg = err instanceof Error ? err.message : 'Failed to update payment status.';

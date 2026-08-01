@@ -140,7 +140,7 @@ export default function App() {
         )}
 
         {currentPath === '/admin' && (
-          <AdminView onPreviewExperience={(slug) => navigate(`/w/${slug}`)} />
+          <AdminView />
         )}
       </main>
 

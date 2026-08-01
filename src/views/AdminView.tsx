@@ -6,7 +6,6 @@ import {
   DollarSign,
   Heart,
   Trash2,
-  Eye,
   Copy,
   RefreshCw,
   Mail,
@@ -59,9 +58,7 @@ import {
 } from '../lib/api';
 import { fetchSiteContentApi, invalidateSiteContentCache } from '../lib/useSiteContent';
 
-interface AdminViewProps {
-  onPreviewExperience: (slug: string) => void;
-}
+interface AdminViewProps {}
 
 const DEFAULT_CMS_FIELDS: Array<{ key: string; label: string; section: 'hero' | 'pricing'; type: 'input' | 'textarea' }> = [
   { key: 'hero_eyebrow', label: 'Hero Eyebrow Pill', section: 'hero', type: 'input' },
@@ -80,7 +77,7 @@ const DEFAULT_CMS_FIELDS: Array<{ key: string; label: string; section: 'hero' | 
   { key: 'pricing_paid_desc', label: 'Paid Plan Description', section: 'pricing', type: 'textarea' },
 ];
 
-export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => {
+export const AdminView: React.FC<AdminViewProps> = () => {
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -759,13 +756,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onPreviewExperience }) => 
                         {new Date(exp.created_at).toLocaleDateString()}
                       </td>
                       <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => onPreviewExperience(exp.slug)}
-                          className="p-1.5 rounded-lg bg-cream-card text-maroon hover:bg-cream-border"
-                          title="Preview Story Card"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-coral" />
-                        </button>
                         <button
                           onClick={() => handleCopyLink(exp.slug)}
                           className="p-1.5 rounded-lg bg-cream-card text-maroon hover:bg-cream-border"
