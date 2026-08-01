@@ -211,24 +211,12 @@ apiRouter.post('/upload-url', async (req, res) => {
           publicUrl: publicUrlData.publicUrl,
         });
       }
-
-      // If signed upload URL is not supported by bucket config, provide Supabase client parameters for direct upload
-      return res.json({
-        path: cleanFileName,
-        publicUrl: publicUrlData.publicUrl,
-        supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-        supabaseAnonKey: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
-      });
     }
 
-    // Fallback if Supabase storage is not configured locally
-    res.json({
-      fallback: true,
-      path: cleanFileName,
-    });
+    return res.status(500).json({ message: 'Failed to generate upload URL. Please try again.' });
   } catch (err: any) {
     console.error('Signed upload URL error:', err);
-    res.status(500).json({ message: err.message || 'Failed to generate upload URL' });
+    res.status(500).json({ message: 'Failed to generate upload URL. Please try again.' });
   }
 });
 
