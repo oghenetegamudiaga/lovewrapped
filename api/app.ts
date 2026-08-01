@@ -11,8 +11,26 @@ import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } from '../src/constants.js';
 
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
 const app = express();
 const PORT = 3000;
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        'style-src': ["'self'", "'unsafe-inline'", 'https:'],
+        'img-src': ["'self'", 'data:', 'blob:', 'https:'],
+        'connect-src': ["'self'", 'https:', 'wss:'],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 app.use(cookieParser());
 app.use(
@@ -23,6 +41,31 @@ app.use(
     },
   })
 );
+
+// Shared rate limiting configurations
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: { message: 'Too many login attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const createExperienceLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20,
+  message: { message: 'Too many experiences created from this IP. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const paystackInitializeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { message: 'Too many payment initialization requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // In-memory data stores initialized with seed demo data
 interface AdminRecordInternal {
@@ -86,11 +129,11 @@ const seedContact2: CRMContact = {
 crmContactsStore.set(seedContact1.id, seedContact1);
 crmContactsStore.set(seedContact2.id, seedContact2);
 
-// Helper to generate slug
+// Helper to generate slug with cryptographically secure random entropy (~64 bits)
 function generateSlug(sender: string, receiver: string): string {
   const cleanSender = (sender || 'someone').toLowerCase().replace(/[^a-z0-9]/g, '');
   const cleanReceiver = (receiver || 'love').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const randomSuffix = Math.random().toString(36).substring(2, 7);
+  const randomSuffix = crypto.randomBytes(8).toString('base64url');
   return `love-${cleanSender}-${cleanReceiver}-${randomSuffix}`;
 }
 
@@ -289,7 +332,7 @@ apiRouter.post('/upload-voice', async (req, res) => {
 });
 
 // Create new experience
-apiRouter.post('/experiences', async (req, res) => {
+apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
   try {
     const payload: CreateExperiencePayload = req.body;
     if (!payload || !payload.sender_name || !payload.receiver_name || !payload.message) {
@@ -466,7 +509,7 @@ apiRouter.post('/experiences/:slug/react', async (req, res) => {
 });
 
 // Initialize Paystack Payment
-apiRouter.post('/paystack/initialize', async (req, res) => {
+apiRouter.post('/paystack/initialize', paystackInitializeLimiter, async (req, res) => {
   try {
     const secretKey = process.env.PAYSTACK_SECRET_KEY;
     if (!secretKey) {
@@ -726,7 +769,7 @@ async function requireAdmin(req: express.Request, res: express.Response, next: e
 }
 
 // POST /api/admin/login
-apiRouter.post('/admin/login', async (req, res) => {
+apiRouter.post('/admin/login', adminLoginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
