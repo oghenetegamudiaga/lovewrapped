@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type, Download, Image, FileText } from 'lucide-react';
+import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type, Download, Image, FileText, Music, Volume2, VolumeX } from 'lucide-react';
 import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
 import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount } from '../types';
 import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi } from '../lib/api';
 import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants';
 import { StaticInviteCard } from '../components/StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
+import { CURATED_MUSIC_TRACKS } from '../components/MusicPlayerToggle';
 
 interface WeddingsCreateViewProps {
   onNavigate: (path: string) => void;
@@ -30,6 +31,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [loveStory, setLoveStory] = useState<string>('');
   const [musicTrack, setMusicTrack] = useState<string>('romantic-strings');
   const [registryInfo, setRegistryInfo] = useState<string>('');
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
 
   // Multi-event schedule state for Premium
   const [events, setEvents] = useState<WeddingEventPayload[]>([
@@ -87,6 +89,44 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
       img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
+  };
+
+  // Gallery Multi-Photo Upload Handler (up to 10 photos)
+  const handleGalleryPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 10 - galleryPhotos.length;
+    if (remainingSlots <= 0) {
+      alert('Maximum of 10 gallery photos reached.');
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
+    filesToUpload.forEach((file: File) => {
+      if (file.size > 10 * 1024 * 1024) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const scale = Math.min(1, MAX_WIDTH / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setGalleryPhotos((prev) => [...prev, compressedUrl].slice(0, 10));
+          }
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleAddEvent = (presetTitle?: string) => {
@@ -184,6 +224,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
       cover_photo_url: coverPhotoUrl,
       love_story: loveStory,
       music_track: musicTrack,
+      gallery_photos: galleryPhotos,
       registry_info: registryInfo,
       events: validEvents,
       event_title: validEvents[0].title,
@@ -848,6 +889,79 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       onChange={(e) => setLoveStory(e.target.value)}
                       className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                     />
+                  </div>
+
+                  {/* Pre-Wedding Photo Gallery Upload (Up to 10 photos) */}
+                  <div className="space-y-3 pt-3 border-t border-cream-border">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-maroon uppercase tracking-wider flex items-center gap-1.5">
+                        <Image className="w-3.5 h-3.5 text-coral" /> Pre-Wedding Photo Gallery ({galleryPhotos.length} / 10)
+                      </label>
+                      <span className="text-[11px] text-mauve">PNG, JPG up to 10MB each</span>
+                    </div>
+
+                    {galleryPhotos.length < 10 && (
+                      <label className="w-full p-4 border-2 border-dashed border-cream-border hover:border-coral rounded-2xl flex flex-col items-center justify-center cursor-pointer bg-cream/30 hover:bg-cream/70 transition-all">
+                        <Upload className="w-5 h-5 text-mauve mb-1" />
+                        <span className="text-xs font-semibold text-maroon">Add Pre-Wedding Photos</span>
+                        <span className="text-[10px] text-mauve mt-0.5">Select up to 10 photos for your gallery grid</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleGalleryPhotoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+
+                    {galleryPhotos.length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
+                        {galleryPhotos.map((photoUrl, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-cream-border group">
+                            <img src={photoUrl} alt={`Gallery photo ${idx + 1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setGalleryPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                              className="absolute top-1 right-1 bg-maroon/80 text-cream text-[10px] p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Curated Background Music Track Selection */}
+                  <div className="space-y-3 pt-3 border-t border-cream-border">
+                    <label className="block text-xs font-bold text-maroon uppercase tracking-wider flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5 text-coral" /> Background Love Song (Curated Tracks)
+                    </label>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {Object.values(CURATED_MUSIC_TRACKS).map((track) => (
+                        <div
+                          key={track.id}
+                          onClick={() => setMusicTrack(track.id)}
+                          className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                            musicTrack === track.id
+                              ? 'border-maroon bg-cream/90 shadow-sm font-bold'
+                              : 'border-cream-border bg-cream/40 hover:bg-cream/70'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] uppercase font-semibold text-coral">{track.genre}</span>
+                              <div className="w-4 h-4 rounded-full border border-maroon flex items-center justify-center">
+                                {musicTrack === track.id && <div className="w-2 h-2 rounded-full bg-maroon" />}
+                              </div>
+                            </div>
+                            <p className="text-xs font-serif font-bold text-maroon leading-snug">{track.name}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="pt-4 border-t border-cream-border flex items-center justify-between">

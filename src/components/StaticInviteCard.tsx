@@ -79,7 +79,7 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
             className="text-[10px] tracking-[0.3em] font-semibold uppercase px-3 py-1 rounded-full border border-current opacity-90"
             style={{ color: accentColor, borderColor: `${accentColor}50` }}
           >
-            Save The Date
+            {customText ? 'Official Invitation' : 'Save The Date'}
           </span>
           <span className="h-[1px] w-8 bg-current opacity-40" style={{ backgroundColor: accentColor }} />
         </div>
@@ -91,16 +91,6 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
 
       {/* Main Content Area */}
       <div className="relative z-10 space-y-5 my-auto py-4 w-full">
-        {/* Custom Text / Guest Personalization Slot (Prompt B Prep) */}
-        {customText && (
-          <div
-            className="inline-block px-4 py-1.5 rounded-full text-xs font-medium tracking-wide bg-black/20 backdrop-blur border border-white/10"
-            style={{ color: secondaryColor }}
-          >
-            {customText}
-          </div>
-        )}
-
         {/* Couple Names */}
         <div className="space-y-1">
           <h1
@@ -121,6 +111,21 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
             {groomFirstName || 'Groom'}
           </h1>
         </div>
+
+        {/* Personalized Guest Invitation Slot */}
+        {customText && (
+          <div className="space-y-1 my-2">
+            <p className="text-[11px] uppercase tracking-[0.25em] opacity-75 font-light">
+              request the presence of
+            </p>
+            <div
+              className="inline-block px-5 py-2 rounded-2xl text-base sm:text-lg font-serif font-bold tracking-wide bg-black/25 backdrop-blur border shadow-md"
+              style={{ color: secondaryColor, borderColor: `${accentColor}40` }}
+            >
+              {customText}
+            </div>
+          </div>
+        )}
 
         {/* Monogram Seal */}
         <div className="my-3 flex justify-center">

@@ -177,6 +177,7 @@ CREATE TABLE IF NOT EXISTS public.weddings (
   cover_photo_url TEXT,
   theme_id TEXT NOT NULL DEFAULT 'classic-burgundy',
   tier TEXT NOT NULL DEFAULT 'premium' CHECK (tier IN ('free', 'premium')),
+  gallery_photos TEXT[] NOT NULL DEFAULT ARRAY[]::text[],
   love_story TEXT,
   music_track TEXT,
   registry_info TEXT,
@@ -323,6 +324,12 @@ WHERE bride_first_name IS NULL AND couple_names IS NOT NULL AND couple_names LIK
 -- Existing premium weddings created before this migration will default to tier = 'premium'.
 
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'premium' CHECK (tier IN ('free', 'premium'));
+
+-- ==================== Migration: Weddings Gallery Photos (Premium Tier) ====================
+-- Run this block manually in Supabase SQL Editor to add the gallery_photos column to existing weddings table.
+
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS gallery_photos TEXT[] NOT NULL DEFAULT ARRAY[]::text[];
+
 
 
 

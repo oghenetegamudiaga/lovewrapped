@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink } from 'lucide-react';
+import { Sparkles, RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest } from '../types';
 import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
 import { submitWeddingRsvpApi } from '../lib/api';
+import { StaticInviteCard } from './StaticInviteCard';
+import { downloadCard } from '../lib/downloadCard';
+import { MusicPlayerToggle } from './MusicPlayerToggle';
 
 interface WeddingInvitationViewerProps {
   wedding?: Wedding | null;
@@ -191,6 +194,25 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
   const [rsvpSuccess, setRsvpSuccess] = useState(false);
   const [rsvpError, setRsvpError] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const [isDownloadingCard, setIsDownloadingCard] = useState<boolean>(false);
+  const personalizedCardRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPersonalizedCard = async (format: 'jpeg' | 'png') => {
+    if (!personalizedCardRef.current) return;
+    setIsDownloadingCard(true);
+    try {
+      const gName = guestName.trim() || guest?.name || 'Honored Guest';
+      await downloadCard(personalizedCardRef.current, format, {
+        watermark: false, // Premium - no watermark
+        filename: `${gName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-wedding-card`,
+      });
+    } catch (err) {
+      console.error('Error downloading personalized card:', err);
+    } finally {
+      setIsDownloadingCard(false);
+    }
+  };
 
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
@@ -446,6 +468,47 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           </div>
         );
 
+      case 'gallery':
+        const galleryPhotos = wedding?.gallery_photos || [];
+        return (
+          <div key="gallery" id="gallery-section" className={`space-y-4 pt-4 border-t border-white/10 ${sansClass}`}>
+            <div className="text-center space-y-1">
+              <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                Pre-Wedding Gallery
+              </h3>
+              <p className="text-xs opacity-75">
+                Moments & memories from our journey together.
+              </p>
+            </div>
+
+            {galleryPhotos.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                {galleryPhotos.map((photoUrl, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setLightboxPhoto(photoUrl)}
+                    className="relative aspect-square rounded-2xl overflow-hidden border cursor-pointer group shadow-md"
+                    style={{ borderColor: `${accentColor}40` }}
+                  >
+                    <img
+                      src={photoUrl}
+                      alt={`Pre-wedding photo ${idx + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-6 rounded-2xl border text-center opacity-75" style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}30` }}>
+                <p className="text-xs italic">Pre-wedding photos coming soon!</p>
+              </div>
+            )}
+          </div>
+        );
+
       case 'rsvp':
         return (
           <div key="rsvp" id="rsvp-section" className={`space-y-4 pt-4 border-t border-white/10 ${sansClass}`}>
@@ -459,12 +522,54 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             </div>
 
             {rsvpSuccess ? (
-              <div className="p-6 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-center space-y-2">
-                <Check className="w-8 h-8 text-emerald-400 mx-auto" />
-                <p className="font-serif font-bold text-base text-emerald-200">Thank You for Your RSVP!</p>
-                <p className="text-xs text-emerald-300/80">
-                  Your responses have been recorded. We look forward to celebrating with you!
-                </p>
+              <div className="p-6 rounded-2xl bg-emerald-950/90 border border-emerald-500/40 text-center space-y-4 shadow-xl">
+                <div className="space-y-1">
+                  <Check className="w-8 h-8 text-emerald-400 mx-auto" />
+                  <p className="font-serif font-bold text-lg text-emerald-200">Thank You for Your RSVP!</p>
+                  <p className="text-xs text-emerald-300/80">
+                    Your responses have been recorded. Here is your official personalized invitation card:
+                  </p>
+                </div>
+
+                {/* Rendered Personalized Post-RSVP Guest Card (Full resolution, NO watermark) */}
+                <div className="py-2 overflow-hidden flex justify-center">
+                  <StaticInviteCard
+                    cardRef={personalizedCardRef}
+                    brideFirstName={wedding?.bride_first_name || nameParts[0] || 'Bride'}
+                    groomFirstName={wedding?.groom_first_name || nameParts[1] || 'Groom'}
+                    customText={guestName.trim() || guest?.name || 'Honored Guest'}
+                    weddingDate={activeEvents[0]?.date}
+                    venueName={activeEvents[0]?.venue_name}
+                    venueAddress={activeEvents[0]?.venue_address || undefined}
+                    themeId={wedding?.theme_id}
+                    colorVariant={wedding?.color_variant || undefined}
+                    fontVariant={wedding?.font_variant || undefined}
+                    watermark={false}
+                  />
+                </div>
+
+                {/* Download Actions */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    disabled={isDownloadingCard}
+                    onClick={() => handleDownloadPersonalizedCard('jpeg')}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isDownloadingCard ? 'Exporting JPEG...' : 'Download Card (JPEG)'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isDownloadingCard}
+                    onClick={() => handleDownloadPersonalizedCard('png')}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-black/40 text-emerald-200 border border-emerald-500/40 hover:bg-black/60 font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Image className="w-3.5 h-3.5" />
+                    <span>{isDownloadingCard ? 'Exporting PNG...' : 'Download Card (PNG)'}</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <form
@@ -874,6 +979,41 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           </motion.div>
         )}
       </div>
+
+      {/* Floating Background Music Player with Mute/Unmute toggle */}
+      <MusicPlayerToggle
+        musicTrackId={wedding?.music_track}
+        accentColor={accentColor}
+        bgColor={activeTheme.bgColor}
+      />
+
+      {/* Photo Gallery Lightbox Modal Overlay */}
+      <AnimatePresence>
+        {lightboxPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxPhoto(null)}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          >
+            <div className="relative max-w-3xl max-h-[90vh] w-full flex items-center justify-center">
+              <img
+                src={lightboxPhoto}
+                alt="Enlarged pre-wedding photo"
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/20"
+              />
+              <button
+                type="button"
+                onClick={() => setLightboxPhoto(null)}
+                className="absolute -top-4 -right-4 bg-white/20 hover:bg-white/40 text-white rounded-full p-2 backdrop-blur transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

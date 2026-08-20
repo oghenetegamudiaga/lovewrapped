@@ -118,6 +118,7 @@ const VALID_THEME_IDS = new Set(['classic-burgundy', 'modern-emerald', 'boho-cha
 const VALID_COLOR_VARIANTS = new Set(['royal-gold', 'rose-gold', 'champagne-pearl', 'bronze-copper']);
 const VALID_FONT_VARIANTS = new Set(['classic-serif', 'modern-sans', 'editorial-display']);
 const VALID_SECTIONS = new Set(['schedule', 'love_story', 'registry', 'gallery', 'rsvp']);
+const VALID_MUSIC_TRACKS = new Set(['romantic-strings', 'piano-acoustic', 'cinematic-love']);
 
 // Helper to generate wedding slug using crypto.randomBytes
 function generateWeddingSlug(brideFirstName: string, groomFirstName: string): string {
@@ -1697,11 +1698,25 @@ apiRouter.get('/weddings/slug/:slug', async (req, res) => {
       }
     }
 
+    let guestRsvps: WeddingRSVP[] = [];
+    if (activeGuest && isSupabaseConfigured && supabase) {
+      const { data: rData } = await supabase
+        .from('wedding_rsvps')
+        .select('*')
+        .eq('wedding_id', wedding.id)
+        .eq('guest_id', activeGuest.id);
+      if (rData) guestRsvps = rData;
+    } else if (activeGuest) {
+      const allRsvps = weddingRsvpsStore.get(wedding.id) || [];
+      guestRsvps = allRsvps.filter((r) => r.guest_id === activeGuest.id);
+    }
+
     return res.json({
       wedding,
       events,
       event: events.length > 0 ? events[0] : null,
       guest: activeGuest,
+      guestRsvps,
     });
   } catch (err: unknown) {
     console.error('Error fetching wedding by slug:', err);
@@ -1904,7 +1919,8 @@ apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitialize
       font_variant,
       section_order: section_order.length > 0 ? section_order : ['schedule', 'love_story', 'registry', 'rsvp'],
       love_story: payload.love_story || null,
-      music_track: payload.music_track || null,
+      gallery_photos: Array.isArray(payload.gallery_photos) ? payload.gallery_photos.filter(p => typeof p === 'string' && p.trim()).slice(0, 10) : [],
+      music_track: payload.music_track && VALID_MUSIC_TRACKS.has(payload.music_track) ? payload.music_track : 'romantic-strings',
       registry_info: payload.registry_info || null,
       is_paid: false,
       payment_reference: ref,
@@ -2640,7 +2656,10 @@ apiRouter.patch('/weddings/dashboard/:weddingId/info', requireCoupleAuth, async 
       updates.love_story = typeof love_story === 'string' ? love_story.trim().slice(0, 5000) : null;
     }
     if (music_track !== undefined) {
-      updates.music_track = typeof music_track === 'string' ? music_track.trim().slice(0, 200) : null;
+      updates.music_track = typeof music_track === 'string' && VALID_MUSIC_TRACKS.has(music_track) ? music_track : 'romantic-strings';
+    }
+    if (Array.isArray(req.body.gallery_photos)) {
+      updates.gallery_photos = req.body.gallery_photos.filter((p: any) => typeof p === 'string' && p.trim()).slice(0, 10);
     }
 
     let updatedWedding: Wedding | null = null;

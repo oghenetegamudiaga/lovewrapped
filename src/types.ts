@@ -165,6 +165,7 @@ export interface Wedding {
   font_variant?: string | null;
   section_order?: string[] | null;
   love_story?: string | null;
+  gallery_photos?: string[] | null;
   music_track?: string | null;
   registry_info?: string | null;
   is_paid: boolean;
@@ -243,6 +244,7 @@ export interface CreateWeddingPayload {
   couple_names?: string;
   cover_photo_url?: string;
   love_story?: string;
+  gallery_photos?: string[];
   music_track?: string;
   registry_info?: string;
   // Multi-event array (backward compatible with single event)
