@@ -73,7 +73,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
                 </div>
                 <span className="text-xs font-semibold text-coral uppercase tracking-wider">Product line</span>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold text-maroon mt-1 mb-3">
-                  Amorah Love Stories
+                  Amorah Moments
                 </h3>
                 <p className="text-mauve text-sm sm:text-base leading-relaxed mb-6">
                   Personalized interactive digital cards for anniversaries, birthdays, proposals, and romantic surprises. A few memories, a few honest words, one beautiful story they’ll want to replay.
@@ -101,7 +101,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
                   onClick={() => onNavigate('/love-stories')}
                   className="w-full py-3.5 px-6 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-sm shadow-md hover:scale-[1.01] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>Explore Love Stories</span>
+                  <span>Explore Moments</span>
                   <ArrowRight className="w-4 h-4 text-coral" />
                 </button>
               </div>

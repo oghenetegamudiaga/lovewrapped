@@ -42,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 : 'text-mauve hover:text-maroon hover:bg-cream-card'
             }`}
           >
-            Love Stories
+            Moments
           </button>
 
           <button
@@ -120,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 onClick={() => handleMobileNav('/love-stories')}
                 className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
               >
-                <span>Love Stories</span>
+                <span>Moments</span>
                 <Heart className="w-4 h-4 text-coral fill-coral" />
               </button>
 

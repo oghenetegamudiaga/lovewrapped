@@ -45,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             onClick={() => onNavigate('/love-stories')}
             className="hover:text-maroon transition-colors py-1 cursor-pointer"
           >
-            Love Stories
+            Moments
           </button>
           <button
             id="footer-weddings-link"
