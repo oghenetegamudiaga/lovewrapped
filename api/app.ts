@@ -2337,6 +2337,70 @@ apiRouter.patch('/weddings/dashboard/:weddingId', requireCoupleAuth, async (req,
   }
 });
 
+// PATCH /api/weddings/dashboard/:weddingId/info — Edit wedding-level registry_info, love_story, couple_names (ownership check & input caps enforced)
+apiRouter.patch('/weddings/dashboard/:weddingId/info', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId } = req.params;
+    const { registry_info, love_story, music_track, couple_names } = req.body;
+
+    let targetWedding: Wedding | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('weddings').select('*').eq('id', weddingId).single();
+      if (data) targetWedding = data;
+    }
+
+    if (!targetWedding) {
+      targetWedding = weddingsStore.get(weddingId);
+    }
+
+    if (!targetWedding) {
+      return res.status(404).json({ message: 'Wedding invitation not found.' });
+    }
+
+    // SERVER-SIDE OWNERSHIP ENFORCEMENT: logged-in couple MUST own this wedding
+    if (targetWedding.couple_account_id !== couple.id) {
+      return res.status(403).json({ message: 'Access denied: You do not have permission to edit this wedding.' });
+    }
+
+    const updates: Partial<Wedding> = { updated_at: new Date().toISOString() };
+    if (couple_names && typeof couple_names === 'string') {
+      updates.couple_names = couple_names.trim().slice(0, 200);
+    }
+    if (registry_info !== undefined) {
+      updates.registry_info = typeof registry_info === 'string' ? registry_info.trim().slice(0, 5000) : null;
+    }
+    if (love_story !== undefined) {
+      updates.love_story = typeof love_story === 'string' ? love_story.trim().slice(0, 5000) : null;
+    }
+    if (music_track !== undefined) {
+      updates.music_track = typeof music_track === 'string' ? music_track.trim().slice(0, 200) : null;
+    }
+
+    let updatedWedding: Wedding | null = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('weddings')
+        .update(updates)
+        .eq('id', weddingId)
+        .select()
+        .single();
+      if (data && !error) updatedWedding = data;
+    }
+
+    const w = weddingsStore.get(weddingId);
+    if (w) {
+      Object.assign(w, updates);
+      if (!updatedWedding) updatedWedding = w;
+    }
+
+    return res.json({ success: true, wedding: updatedWedding || { ...targetWedding, ...updates } });
+  } catch (err: unknown) {
+    console.error('Error updating wedding info:', err);
+    return res.status(500).json({ message: 'Failed to update wedding info.' });
+  }
+});
+
 /* ==================== Admin Weddings Management Routes ==================== */
 
 // GET /api/admin/weddings — List non-sensitive metadata only (Privacy compliant)

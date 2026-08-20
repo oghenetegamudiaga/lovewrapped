@@ -373,6 +373,16 @@ export async function updateCoupleWeddingDetailsApi(
   });
 }
 
+export async function updateCoupleWeddingInfoApi(
+  weddingId: string,
+  updates: Partial<Wedding>
+): Promise<{ success: boolean; wedding: Wedding }> {
+  return apiFetch<{ success: boolean; wedding: Wedding }>(`/weddings/dashboard/${weddingId}/info`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
 /* ==================== Phase 2 Guest Management API Helpers ==================== */
 
 export async function getCoupleWeddingGuestsApi(weddingId: string): Promise<WeddingGuestWithEvents[]> {

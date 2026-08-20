@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus } from 'lucide-react';
+import { Sparkles, RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest } from '../types';
 import { getWeddingTheme } from '../config/weddingThemes';
 import { submitWeddingRsvpApi } from '../lib/api';
@@ -14,6 +14,64 @@ interface WeddingInvitationViewerProps {
   slug?: string;
   onNavigate?: (path: string) => void;
   isSpike?: boolean;
+}
+
+// Helper to parse date strings into Date objects
+function parseEventDate(dateStr: string, timeStr?: string): Date {
+  try {
+    const combined = `${dateStr} ${timeStr || '10:00 AM'}`;
+    const d = new Date(combined);
+    if (!isNaN(d.getTime())) return d;
+
+    const pureD = new Date(dateStr);
+    if (!isNaN(pureD.getTime())) return pureD;
+  } catch (e) {
+    // fallback
+  }
+  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // fallback +30 days
+}
+
+// Helper to format ISO dates for Google Calendar URLs (YYYYMMDDTHHmmssZ)
+function formatGoogleCalendarDate(d: Date): string {
+  return d.toISOString().replace(/-|:|\.\d\d\d/g, '');
+}
+
+// Helper to generate iCalendar (.ics) download file Blob for Apple/Outlook
+function downloadIcsFile(ev: WeddingEvent, coupleNames: string) {
+  const startDate = parseEventDate(ev.date, ev.time);
+  const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000); // 4 hours duration
+
+  const startStr = formatGoogleCalendarDate(startDate);
+  const endStr = formatGoogleCalendarDate(endDate);
+
+  const location = `${ev.venue_name}${ev.venue_address ? `, ${ev.venue_address}` : ''}`;
+  const title = `${coupleNames} - ${ev.title}`;
+
+  const csContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Amorah Weddings//EN',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `SUMMARY:${title.replace(/,/g, '\\,')}`,
+    `DESCRIPTION:Wedding Celebration for ${coupleNames.replace(/,/g, '\\,')}`,
+    `LOCATION:${location.replace(/,/g, '\\,')}`,
+    `DTSTART:${startStr}`,
+    `DTEND:${endStr}`,
+    'STATUS:CONFIRMED',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  const blob = new Blob([csContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `${ev.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = ({
@@ -68,6 +126,11 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [rsvpSuccess, setRsvpSuccess] = useState(false);
   const [rsvpError, setRsvpError] = useState<string | null>(null);
 
+  // Countdown timer state
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const [isPastAllEvents, setIsPastAllEvents] = useState<boolean>(false);
+  const [targetEventTitle, setTargetEventTitle] = useState<string>('');
+
   // Resolve theme
   const activeTheme = customTheme || getWeddingTheme(wedding?.theme_id);
 
@@ -80,6 +143,46 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   // Initials for monogram seal
   const nameParts = coupleNames.split('&').map((n) => n.trim());
   const initials = nameParts.length >= 2 ? `${nameParts[0][0]} & ${nameParts[1][0]}` : 'B & M';
+
+  // Live Countdown Interval Effect
+  useEffect(() => {
+    // Find nearest upcoming event
+    const now = Date.now();
+    const sortedUpcoming = activeEvents
+      .map((ev) => ({ event: ev, targetDate: parseEventDate(ev.date, ev.time) }))
+      .filter((item) => item.targetDate.getTime() > now)
+      .sort((a, b) => a.targetDate.getTime() - b.targetDate.getTime());
+
+    if (sortedUpcoming.length === 0) {
+      setIsPastAllEvents(true);
+      setTimeLeft(null);
+      return;
+    }
+
+    const nextEv = sortedUpcoming[0];
+    setTargetEventTitle(nextEv.event.title);
+    setIsPastAllEvents(false);
+
+    const updateCountdown = () => {
+      const diff = nextEv.targetDate.getTime() - Date.now();
+      if (diff <= 0) {
+        setIsPastAllEvents(true);
+        setTimeLeft(null);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [activeEvents]);
 
   // Detect OS/Browser prefers-reduced-motion setting
   useEffect(() => {
@@ -341,22 +444,45 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 Are getting married!
               </p>
 
-              {/* Multi-Event Timeline Cards */}
-              <div className="space-y-3 pt-2">
-                {activeEvents.map((ev, idx) => (
-                  <div key={ev.id || idx} className="p-4 rounded-2xl bg-[#1F050C]/80 border border-[#D4AF37]/30 space-y-1.5 text-xs font-sans text-[#D4AF37]">
-                    <span className="text-[10px] font-bold text-coral uppercase tracking-wider block">Event #{idx + 1}</span>
-                    <p className="font-serif text-sm font-bold text-[#F4E3B2]">{ev.title}</p>
-                    <div className="flex items-center justify-center gap-2 text-[#FDFBF7]/90 font-medium">
-                      <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>{ev.date} at {ev.time}</span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2 text-[#FDFBF7]/70 text-[11px]">
-                      <MapPin className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>{ev.venue_name} {ev.venue_address ? `• ${ev.venue_address}` : ''}</span>
+              {/* LIVE COUNTDOWN TIMER BANNER */}
+              <div className="p-4 rounded-2xl bg-[#1F050C]/90 border border-[#D4AF37]/40 space-y-2 text-center shadow-lg">
+                {isPastAllEvents ? (
+                  <div className="space-y-1 py-1">
+                    <Heart className="w-5 h-5 text-[#D4AF37] mx-auto fill-[#D4AF37]" />
+                    <p className="font-serif font-bold text-sm text-[#F4E3B2]">
+                      Thank you for celebrating with us!
+                    </p>
+                    <p className="text-[10px] font-sans text-[#FDFBF7]/60">
+                      Our wedding events have concluded. We are forever grateful for your love and support.
+                    </p>
+                  </div>
+                ) : timeLeft ? (
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-sans uppercase tracking-widest text-[#D4AF37] font-semibold flex items-center justify-center gap-1">
+                      <Clock className="w-3 h-3" /> Countdown To {targetEventTitle || 'Special Day'}
+                    </p>
+                    <div className="grid grid-cols-4 gap-2 font-mono text-center">
+                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
+                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.days}</span>
+                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Days</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
+                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.hours}</span>
+                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Hours</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
+                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.minutes}</span>
+                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Mins</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
+                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.seconds}</span>
+                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Secs</span>
+                      </div>
                     </div>
                   </div>
-                ))}
+                ) : (
+                  <p className="text-xs font-sans text-[#D4AF37]">Calculating event countdown...</p>
+                )}
               </div>
 
               {/* Quick Action Icon Shortcuts */}
@@ -385,8 +511,84 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               </div>
             </div>
 
-            {/* Scene 4: Love Story & Schedule Details */}
+            {/* Scene 4: Multi-Event Schedule, Add to Calendar & Google Maps Embed */}
             <div id="details-section" className="space-y-6 font-sans">
+              <div className="space-y-4">
+                <h3 className="font-serif text-lg font-bold text-[#F4E3B2] flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#D4AF37]" /> Event Schedule & Locations
+                </h3>
+
+                {activeEvents.map((ev, idx) => {
+                  const startDate = parseEventDate(ev.date, ev.time);
+                  const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
+                  const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                    `${coupleNames} - ${ev.title}`
+                  )}&dates=${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(endDate)}&location=${encodeURIComponent(
+                    `${ev.venue_name}, ${ev.venue_address || ''}`
+                  )}&details=${encodeURIComponent(`Wedding Celebration for ${coupleNames}`)}`;
+
+                  const mapQuery = `${ev.venue_name}${ev.venue_address ? `, ${ev.venue_address}` : ''}`;
+
+                  return (
+                    <div key={ev.id || idx} className="p-4 sm:p-5 rounded-2xl bg-[#1F050C]/90 border border-[#D4AF37]/30 space-y-4 text-xs">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider block">Event #{idx + 1}</span>
+                          <h4 className="font-serif text-base font-bold text-[#F4E3B2] mt-0.5">{ev.title}</h4>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-[#FDFBF7]/90">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                          <span>{ev.date} at {ev.time}</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-semibold text-[#F4E3B2]">{ev.venue_name}</p>
+                            {ev.venue_address && <p className="text-[11px] text-[#FDFBF7]/70">{ev.venue_address}</p>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* GOOGLE MAPS EMBED IFRAME */}
+                      <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/20 bg-[#2A0812]">
+                        <iframe
+                          title={`Map location for ${ev.venue_name}`}
+                          width="100%"
+                          height="160"
+                          frameBorder="0"
+                          style={{ border: 0, borderRadius: '1rem' }}
+                          src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                          allowFullScreen
+                        />
+                      </div>
+
+                      {/* ADD TO CALENDAR BUTTONS */}
+                      <div className="pt-2 border-t border-[#D4AF37]/15 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span className="text-[#D4AF37] font-semibold">Add to Calendar:</span>
+                        <a
+                          href={googleCalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 hover:border-[#D4AF37] text-[#D4AF37] flex items-center gap-1 transition-all"
+                        >
+                          <ExternalLink className="w-3 h-3 text-[#D4AF37]" /> Google Calendar
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => downloadIcsFile(ev, coupleNames)}
+                          className="px-3 py-1.5 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 hover:border-[#D4AF37] text-[#D4AF37] flex items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <Download className="w-3 h-3 text-[#D4AF37]" /> Apple / Outlook (.ics)
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
               {loveStory && (
                 <div className="space-y-2">
                   <h3 className="font-serif text-lg font-bold text-[#F4E3B2] flex items-center gap-2">
@@ -403,7 +605,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   <h3 className="font-serif text-lg font-bold text-[#F4E3B2] flex items-center gap-2">
                     <Gift className="w-4 h-4 text-[#D4AF37]" /> Gift Registry & Wishlist
                   </h3>
-                  <div className="p-4 rounded-2xl bg-[#1F050C]/60 border border-[#D4AF37]/20 text-xs text-[#FDFBF7]/80 leading-relaxed">
+                  <div className="p-4 rounded-2xl bg-[#1F050C]/60 border border-[#D4AF37]/20 text-xs text-[#FDFBF7]/80 leading-relaxed whitespace-pre-line">
                     {registryInfo}
                   </div>
                 </div>

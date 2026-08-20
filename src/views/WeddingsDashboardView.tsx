@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, MapPin, Edit3, UserCheck, X, Check, AlertCircle, Copy, Share2, Shield, Heart, Users, Plus, Upload, Download, Search, Filter, Trash2, Link as LinkIcon, Eye, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Calendar, MapPin, Edit3, UserCheck, X, Check, AlertCircle, Copy, Share2, Shield, Heart, Users, Plus, Upload, Download, Search, Filter, Trash2, Link as LinkIcon, Eye, CheckCircle2, Gift, BookOpen, Save } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingRSVP, WeddingGuestWithEvents, CoupleAccount } from '../types';
 import {
   getCoupleWeddingDashboardApi,
   updateCoupleWeddingDetailsApi,
+  updateCoupleWeddingInfoApi,
   getCoupleWeddingGuestsApi,
   addCoupleWeddingGuestApi,
   updateCoupleWeddingGuestApi,
@@ -36,6 +37,13 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [rsvpFilter, setRsvpFilter] = useState<'all' | 'attending' | 'declined' | 'pending'>('all');
 
+  // Registry & Wedding Details Edit State
+  const [editRegistryInfo, setEditRegistryInfo] = useState('');
+  const [editLoveStory, setEditLoveStory] = useState('');
+  const [editCoupleNames, setEditCoupleNames] = useState('');
+  const [isSavingInfo, setIsSavingInfo] = useState(false);
+  const [infoSaveSuccess, setInfoSaveSuccess] = useState(false);
+
   // Add / Edit Guest Modal State
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const [editingGuest, setEditingGuest] = useState<WeddingGuestWithEvents | null>(null);
@@ -50,14 +58,6 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [csvRawText, setCsvRawText] = useState('');
   const [isImporting, setIsImporting] = useState(false);
-
-  // Edit Event Details Modal State
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editDate, setEditDate] = useState('');
-  const [editTime, setEditTime] = useState('');
-  const [editVenueName, setEditVenueName] = useState('');
-  const [editVenueAddress, setEditVenueAddress] = useState('');
-  const [isSavingEvent, setIsSavingEvent] = useState(false);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
@@ -74,7 +74,12 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
       setRsvps(dashRes.rsvps || []);
       setGuests(guestsRes);
 
-      // Pre-select all events for new guests by default
+      if (dashRes.wedding) {
+        setEditRegistryInfo(dashRes.wedding.registry_info || '');
+        setEditLoveStory(dashRes.wedding.love_story || '');
+        setEditCoupleNames(dashRes.wedding.couple_names || '');
+      }
+
       if (evList.length > 0) {
         setSelectedEventIds(evList.map((e) => e.id));
       }
@@ -137,6 +142,28 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
 
     return matchesFilter && matchesSearch;
   });
+
+  const handleSaveWeddingInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingInfo(true);
+    setInfoSaveSuccess(false);
+
+    try {
+      const res = await updateCoupleWeddingInfoApi(weddingId, {
+        couple_names: editCoupleNames,
+        registry_info: editRegistryInfo,
+        love_story: editLoveStory,
+      });
+
+      setWedding(res.wedding);
+      setInfoSaveSuccess(true);
+      setTimeout(() => setInfoSaveSuccess(false), 3000);
+    } catch (err: unknown) {
+      alert('Failed to update registry and wedding details.');
+    } finally {
+      setIsSavingInfo(false);
+    }
+  };
 
   const handleOpenAddGuestModal = () => {
     setEditingGuest(null);
@@ -213,11 +240,10 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
         return;
       }
 
-      // Simple CSV Line Parser
       const parsedGuests = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map((c) => c.trim().replace(/^"(.*)"$/, '$1'));
-        if (!cols[0]) continue; // skip if name is blank
+        if (!cols[0]) continue;
 
         const name = cols[0];
         const email = cols[1] || undefined;
@@ -259,7 +285,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
               {wedding.couple_names}
             </h1>
             <p className="text-xs text-mauve mt-1">
-              Manage multi-event schedules, guest RSVPs, and personalized invitation links.
+              Manage multi-event schedules, guest RSVPs, registry info, and invitation settings.
             </p>
           </div>
 
@@ -299,7 +325,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
           </button>
         </div>
 
-        {/* TAB 1: Overview & Multi-Event Schedule */}
+        {/* TAB 1: Overview, Schedule, & Registry Settings */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Share General Link Banner */}
@@ -384,6 +410,71 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                   );
                 })}
               </div>
+            </div>
+
+            {/* GIFT REGISTRY & WEDDING DETAILS EDITING PANEL */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-cream-card border border-cream-border space-y-6">
+              <div className="flex items-center justify-between border-b border-cream-border pb-4">
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-maroon flex items-center gap-2">
+                    <Gift className="w-5 h-5 text-coral" /> Gift Registry & Wedding Details
+                  </h2>
+                  <p className="text-xs text-mauve">Update bank account info, cash registry notes, and love story post-creation.</p>
+                </div>
+              </div>
+
+              {infoSaveSuccess && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Registry and wedding details updated successfully!</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveWeddingInfo} className="space-y-4 text-xs">
+                <div>
+                  <label className="block font-semibold text-maroon mb-1">Couple Names</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCoupleNames}
+                    onChange={(e) => setEditCoupleNames(e.target.value)}
+                    className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-maroon mb-1">Gift Registry Notes & Account Details</label>
+                  <textarea
+                    rows={4}
+                    placeholder="e.g. Account Name: Becky & Martins / Bank: GTBank / Account No: 0123456789"
+                    value={editRegistryInfo}
+                    onChange={(e) => setEditRegistryInfo(e.target.value)}
+                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-maroon mb-1">Our Love Story Text</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Share a short note about your love story..."
+                    value={editLoveStory}
+                    onChange={(e) => setEditLoveStory(e.target.value)}
+                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
+                  />
+                </div>
+
+                <div className="pt-2 border-t border-cream-border flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSavingInfo}
+                    className="px-6 py-2.5 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5 text-coral" />
+                    <span>{isSavingInfo ? 'Saving Details...' : 'Save Registry & Wedding Info'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
