@@ -967,7 +967,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0"
+            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full"
             style={{ backgroundColor: activeTheme.bgColor }}
           >
             {/* Full-Bleed Edge-to-Edge Reveal Background Image (Vivid Clarity) */}
