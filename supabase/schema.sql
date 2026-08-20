@@ -291,5 +291,14 @@ CREATE INDEX IF NOT EXISTS idx_wedding_rsvps_guest_id ON public.wedding_rsvps(gu
 CREATE INDEX IF NOT EXISTS idx_wedding_rsvps_event_id ON public.wedding_rsvps(event_id);
 
 
+-- ==================== Migration: Weddings Phase 4 (Visual Themes & Section Order) ====================
+-- Run this block in Supabase SQL Editor to support Phase 4 visual customization & reordering.
+
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS color_variant TEXT NOT NULL DEFAULT 'royal-gold';
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS font_variant TEXT NOT NULL DEFAULT 'classic-serif';
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS section_order TEXT[] NOT NULL DEFAULT ARRAY['schedule', 'love_story', 'registry', 'rsvp'];
+
+
+
 
 

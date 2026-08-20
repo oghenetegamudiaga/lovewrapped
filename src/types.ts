@@ -156,6 +156,9 @@ export interface Wedding {
   couple_names: string;
   cover_photo_url?: string | null;
   theme_id: string;
+  color_variant?: string | null;
+  font_variant?: string | null;
+  section_order?: string[] | null;
   love_story?: string | null;
   music_track?: string | null;
   registry_info?: string | null;
@@ -224,6 +227,9 @@ export interface WeddingEventPayload {
 
 export interface CreateWeddingPayload {
   theme_id: string;
+  color_variant?: string;
+  font_variant?: string;
+  section_order?: string[];
   couple_names: string;
   cover_photo_url?: string;
   love_story?: string;
@@ -238,5 +244,6 @@ export interface CreateWeddingPayload {
   event_venue_name?: string;
   event_venue_address?: string;
 }
+
 
 

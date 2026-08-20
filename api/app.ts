@@ -113,6 +113,12 @@ const weddingRsvpsStore: Map<string, WeddingRSVP[]> = new Map();
 const weddingGuestsStore: Map<string, WeddingGuest> = new Map();
 const weddingGuestEventsStore: Map<string, string[]> = new Map(); // guestId -> event_id[]
 
+// Phase 4 Allowlists for Server-Side Input Validation
+const VALID_THEME_IDS = new Set(['classic-burgundy', 'modern-emerald', 'boho-champagne']);
+const VALID_COLOR_VARIANTS = new Set(['royal-gold', 'rose-gold', 'champagne-pearl', 'bronze-copper']);
+const VALID_FONT_VARIANTS = new Set(['classic-serif', 'modern-sans', 'editorial-display']);
+const VALID_SECTIONS = new Set(['schedule', 'love_story', 'registry', 'gallery', 'rsvp']);
+
 // Helper to generate wedding slug using crypto.randomBytes
 function generateWeddingSlug(coupleNames: string): string {
   const cleanNames = (coupleNames || 'wedding').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/(^-|-$)/g, '');
@@ -1784,13 +1790,23 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
     const slug = generateWeddingSlug(payload.couple_names);
     const now = new Date().toISOString();
 
+    const theme_id = payload.theme_id && VALID_THEME_IDS.has(payload.theme_id) ? payload.theme_id : 'classic-burgundy';
+    const color_variant = payload.color_variant && VALID_COLOR_VARIANTS.has(payload.color_variant) ? payload.color_variant : 'royal-gold';
+    const font_variant = payload.font_variant && VALID_FONT_VARIANTS.has(payload.font_variant) ? payload.font_variant : 'classic-serif';
+    const section_order = Array.isArray(payload.section_order)
+      ? payload.section_order.filter((s) => typeof s === 'string' && VALID_SECTIONS.has(s))
+      : ['schedule', 'love_story', 'registry', 'rsvp'];
+
     const weddingRecord: Wedding = {
       id: weddingId,
       couple_account_id: couple.id,
       slug,
       couple_names: payload.couple_names.trim(),
       cover_photo_url: payload.cover_photo_url || null,
-      theme_id: payload.theme_id || 'classic-burgundy',
+      theme_id,
+      color_variant,
+      font_variant,
+      section_order: section_order.length > 0 ? section_order : ['schedule', 'love_story', 'registry', 'rsvp'],
       love_story: payload.love_story || null,
       music_track: payload.music_track || null,
       registry_info: payload.registry_info || null,
@@ -2366,6 +2382,21 @@ apiRouter.patch('/weddings/dashboard/:weddingId/info', requireCoupleAuth, async 
     const updates: Partial<Wedding> = { updated_at: new Date().toISOString() };
     if (couple_names && typeof couple_names === 'string') {
       updates.couple_names = couple_names.trim().slice(0, 200);
+    }
+    if (req.body.theme_id && VALID_THEME_IDS.has(req.body.theme_id)) {
+      updates.theme_id = req.body.theme_id;
+    }
+    if (req.body.color_variant && VALID_COLOR_VARIANTS.has(req.body.color_variant)) {
+      updates.color_variant = req.body.color_variant;
+    }
+    if (req.body.font_variant && VALID_FONT_VARIANTS.has(req.body.font_variant)) {
+      updates.font_variant = req.body.font_variant;
+    }
+    if (Array.isArray(req.body.section_order)) {
+      const validSecs = req.body.section_order.filter((s: any) => typeof s === 'string' && VALID_SECTIONS.has(s));
+      if (validSecs.length > 0) {
+        updates.section_order = validSecs;
+      }
     }
     if (registry_info !== undefined) {
       updates.registry_info = typeof registry_info === 'string' ? registry_info.trim().slice(0, 5000) : null;

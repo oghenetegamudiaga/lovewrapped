@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest } from '../types';
-import { getWeddingTheme } from '../config/weddingThemes';
+import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
 import { submitWeddingRsvpApi } from '../lib/api';
 
 interface WeddingInvitationViewerProps {
@@ -31,15 +31,15 @@ function parseEventDate(dateStr: string, timeStr?: string): Date {
   return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // fallback +30 days
 }
 
-// Helper to format ISO dates for Google Calendar URLs (YYYYMMDDTHHmmssZ)
+// Helper to format ISO dates for Google Calendar URLs
 function formatGoogleCalendarDate(d: Date): string {
   return d.toISOString().replace(/-|:|\.\d\d\d/g, '');
 }
 
-// Helper to generate iCalendar (.ics) download file Blob for Apple/Outlook
+// Helper to generate iCalendar (.ics) download file Blob
 function downloadIcsFile(ev: WeddingEvent, coupleNames: string) {
   const startDate = parseEventDate(ev.date, ev.time);
-  const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000); // 4 hours duration
+  const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
 
   const startStr = formatGoogleCalendarDate(startDate);
   const endStr = formatGoogleCalendarDate(endDate);
@@ -88,6 +88,24 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
   const [manualReducedMotion, setManualReducedMotion] = useState<boolean>(false);
 
+  // Dynamic Theme & Variant Styles Computation
+  const themeStyles = resolveThemeStyles(
+    wedding?.theme_id,
+    wedding?.color_variant,
+    wedding?.font_variant
+  );
+
+  const activeTheme = customTheme || themeStyles.baseTheme;
+  const accentColor = themeStyles.accentColor;
+  const secondaryColor = themeStyles.secondaryColor;
+  const serifClass = themeStyles.serifClass;
+  const sansClass = themeStyles.sansClass;
+
+  // Section Order Resolution (Default fallback if missing)
+  const sectionOrder = (wedding?.section_order && wedding.section_order.length > 0)
+    ? wedding.section_order
+    : ['schedule', 'love_story', 'registry', 'rsvp'];
+
   // Normalize multi-event array
   const activeEvents: WeddingEvent[] = propEvents && propEvents.length > 0
     ? propEvents
@@ -106,14 +124,13 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         },
       ];
 
-  // RSVP Form state (pre-filled if personalized guest context exists)
+  // RSVP Form state
   const [guestName, setGuestName] = useState(guest?.name || '');
   const [hasPlusOne, setHasPlusOne] = useState(!!guest?.plus_one_name);
   const [plusOneName, setPlusOneName] = useState(guest?.plus_one_name || '');
   const [dietaryNotes, setDietaryNotes] = useState(guest?.dietary_notes || '');
   const [message, setMessage] = useState('');
 
-  // Per-event attendance tracking map: eventId -> boolean (attending)
   const [eventAttendance, setEventAttendance] = useState<{ [eventId: string]: boolean }>(() => {
     const initial: { [eventId: string]: boolean } = {};
     activeEvents.forEach((ev) => {
@@ -131,22 +148,17 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [isPastAllEvents, setIsPastAllEvents] = useState<boolean>(false);
   const [targetEventTitle, setTargetEventTitle] = useState<string>('');
 
-  // Resolve theme
-  const activeTheme = customTheme || getWeddingTheme(wedding?.theme_id);
-
-  // Resolve fallback data for spike testing
+  // Fallback data
   const coupleNames = wedding?.couple_names || 'Becky & Martins';
   const coverPhoto = wedding?.cover_photo_url || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80';
   const loveStory = wedding?.love_story || 'From quiet morning walks to a lifetime of laughter, we are overjoyed to celebrate our special day with the people who mean the world to us.';
   const registryInfo = wedding?.registry_info || 'Your presence at our wedding is the greatest gift of all. If you wish to honor us with a gift, a monetary contribution towards our new home would be warmly appreciated.';
 
-  // Initials for monogram seal
   const nameParts = coupleNames.split('&').map((n) => n.trim());
   const initials = nameParts.length >= 2 ? `${nameParts[0][0]} & ${nameParts[1][0]}` : 'B & M';
 
   // Live Countdown Interval Effect
   useEffect(() => {
-    // Find nearest upcoming event
     const now = Date.now();
     const sortedUpcoming = activeEvents
       .map((ev) => ({ event: ev, targetDate: parseEventDate(ev.date, ev.time) }))
@@ -198,7 +210,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
       return () => mediaQuery.removeEventListener('change', handleChange);
     } else {
       mediaQuery.addListener(handleChange);
-      return () => mediaQuery.removeListener(handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
     }
   }, []);
 
@@ -227,7 +239,6 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     try {
       const activeSlug = slug || wedding?.slug || 'demo';
 
-      // Submit per-event RSVPs for all active events
       for (const ev of activeEvents) {
         const isAttending = eventAttendance[ev.id] ?? true;
         const totalGuests = isAttending ? (hasPlusOne && plusOneName.trim() ? 2 : 1) : 0;
@@ -253,28 +264,321 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     }
   };
 
+  // Render individual Scene 4 sections dynamically based on sectionOrder
+  const renderSectionByKey = (sectionKey: string) => {
+    switch (sectionKey) {
+      case 'schedule':
+        return (
+          <div key="schedule" id="details-section" className={`space-y-4 ${sansClass}`}>
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass}`} style={{ color: secondaryColor }}>
+              <Calendar className="w-4 h-4" style={{ color: accentColor }} /> Event Schedule & Locations
+            </h3>
+
+            {activeEvents.map((ev, idx) => {
+              const startDate = parseEventDate(ev.date, ev.time);
+              const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
+              const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                `${coupleNames} - ${ev.title}`
+              )}&dates=${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(endDate)}&location=${encodeURIComponent(
+                `${ev.venue_name}, ${ev.venue_address || ''}`
+              )}&details=${encodeURIComponent(`Wedding Celebration for ${coupleNames}`)}`;
+
+              const mapQuery = `${ev.venue_name}${ev.venue_address ? `, ${ev.venue_address}` : ''}`;
+
+              return (
+                <div
+                  key={ev.id || idx}
+                  className="p-4 sm:p-5 rounded-2xl border space-y-4 text-xs shadow-md"
+                  style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}40` }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: accentColor }}>
+                        Event #{idx + 1}
+                      </span>
+                      <h4 className={`text-base font-bold mt-0.5 ${serifClass}`} style={{ color: secondaryColor }}>
+                        {ev.title}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 opacity-90">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
+                      <span>{ev.date} at {ev.time}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accentColor }} />
+                      <div>
+                        <p className="font-semibold" style={{ color: secondaryColor }}>{ev.venue_name}</p>
+                        {ev.venue_address && <p className="text-[11px] opacity-75">{ev.venue_address}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* GOOGLE MAPS EMBED IFRAME */}
+                  <div className="rounded-2xl overflow-hidden border border-white/10" style={{ backgroundColor: activeTheme.bgColor }}>
+                    <iframe
+                      title={`Map location for ${ev.venue_name}`}
+                      width="100%"
+                      height="160"
+                      frameBorder="0"
+                      style={{ border: 0, borderRadius: '1rem' }}
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      allowFullScreen
+                    />
+                  </div>
+
+                  {/* ADD TO CALENDAR BUTTONS */}
+                  <div className="pt-2 border-t border-white/10 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="font-semibold" style={{ color: accentColor }}>Add to Calendar:</span>
+                    <a
+                      href={googleCalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-xl border hover:opacity-90 flex items-center gap-1 transition-all"
+                      style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40`, color: accentColor }}
+                    >
+                      <ExternalLink className="w-3 h-3" /> Google Calendar
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => downloadIcsFile(ev, coupleNames)}
+                      className="px-3 py-1.5 rounded-xl border hover:opacity-90 flex items-center gap-1 transition-all cursor-pointer"
+                      style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40`, color: accentColor }}
+                    >
+                      <Download className="w-3 h-3" /> Apple / Outlook (.ics)
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+
+      case 'love_story':
+        if (!loveStory) return null;
+        return (
+          <div key="love_story" className={`space-y-2 ${sansClass}`}>
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass}`} style={{ color: secondaryColor }}>
+              <Heart className="w-4 h-4 fill-current" style={{ color: accentColor }} /> Our Story
+            </h3>
+            <p
+              className="text-xs opacity-90 leading-relaxed italic p-4 rounded-2xl border"
+              style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}30` }}
+            >
+              "{loveStory}"
+            </p>
+          </div>
+        );
+
+      case 'registry':
+        if (!registryInfo) return null;
+        return (
+          <div key="registry" id="registry-section" className={`space-y-2 ${sansClass}`}>
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass}`} style={{ color: secondaryColor }}>
+              <Gift className="w-4 h-4" style={{ color: accentColor }} /> Gift Registry & Wishlist
+            </h3>
+            <div
+              className="p-4 rounded-2xl border text-xs opacity-90 leading-relaxed whitespace-pre-line"
+              style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}30` }}
+            >
+              {registryInfo}
+            </div>
+          </div>
+        );
+
+      case 'rsvp':
+        return (
+          <div key="rsvp" id="rsvp-section" className={`space-y-4 pt-4 border-t border-white/10 ${sansClass}`}>
+            <div className="text-center space-y-1">
+              <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                RSVP to Our Events
+              </h3>
+              <p className="text-xs opacity-75">
+                Kindly select your attendance for each event in our celebration schedule.
+              </p>
+            </div>
+
+            {rsvpSuccess ? (
+              <div className="p-6 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-center space-y-2">
+                <Check className="w-8 h-8 text-emerald-400 mx-auto" />
+                <p className="font-serif font-bold text-base text-emerald-200">Thank You for Your RSVP!</p>
+                <p className="text-xs text-emerald-300/80">
+                  Your responses have been recorded. We look forward to celebrating with you!
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleRsvpSubmit}
+                className="p-5 rounded-2xl border space-y-4 text-xs shadow-lg"
+                style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}40` }}
+              >
+                {rsvpError && (
+                  <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-300 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    <span>{rsvpError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1" style={{ color: accentColor }}>Your Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Chief & Mrs. Adebayo"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="w-full p-3 rounded-xl border text-white focus:outline-none"
+                    style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40` }}
+                  />
+                </div>
+
+                {/* Per-Event Attendance Selectors */}
+                <div className="space-y-3 pt-1 border-t border-white/10">
+                  <p className="text-[11px] font-semibold" style={{ color: accentColor }}>Select Attendance Per Event:</p>
+                  {activeEvents.map((ev) => {
+                    const isAttending = eventAttendance[ev.id] ?? true;
+                    return (
+                      <div
+                        key={ev.id}
+                        className="p-3.5 rounded-xl border space-y-2"
+                        style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold" style={{ color: secondaryColor }}>{ev.title}</p>
+                            <p className="text-[10px] opacity-60">{ev.date} • {ev.venue_name}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: true }))}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                isAttending ? 'opacity-100 shadow-sm' : 'opacity-40'
+                              }`}
+                              style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                            >
+                              Attending
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: false }))}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                !isAttending ? 'bg-amber-800 text-white' : 'opacity-40 border border-white/20'
+                              }`}
+                            >
+                              Declining
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Plus-One Handling */}
+                {(guest ? guest.plus_one_allowed : true) && (
+                  <div className="space-y-2 pt-2 border-t border-white/10">
+                    <label className="flex items-center gap-2 cursor-pointer text-[11px] font-semibold" style={{ color: accentColor }}>
+                      <input
+                        type="checkbox"
+                        checked={hasPlusOne}
+                        onChange={(e) => setHasPlusOne(e.target.checked)}
+                        className="w-4 h-4 rounded text-gold"
+                      />
+                      <span className="flex items-center gap-1">
+                        <UserPlus className="w-3.5 h-3.5" /> Bringing a Plus-One Guest?
+                      </span>
+                    </label>
+
+                    {hasPlusOne && (
+                      <input
+                        type="text"
+                        placeholder="Plus-One Full Name (e.g. Jane Doe)"
+                        value={plusOneName}
+                        onChange={(e) => setPlusOneName(e.target.value)}
+                        className="w-full p-3 rounded-xl border text-white focus:outline-none"
+                        style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40` }}
+                      />
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1" style={{ color: accentColor }}>Dietary Notes / Special Requirements</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Vegetarian, Peanut allergy..."
+                    value={dietaryNotes}
+                    onChange={(e) => setDietaryNotes(e.target.value)}
+                    className="w-full p-3 rounded-xl border text-white focus:outline-none"
+                    style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40` }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold mb-1" style={{ color: accentColor }}>Personal Message for the Couple</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Send warm wishes..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full p-3 rounded-xl border text-white focus:outline-none"
+                    style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40` }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={rsvpSubmitting}
+                  className="w-full py-3.5 px-4 rounded-xl font-semibold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                  style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{rsvpSubmitting ? 'Submitting RSVPs...' : 'Confirm All RSVPs'}</span>
+                </button>
+              </form>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="relative min-h-screen bg-[#2A0812] text-[#FDFBF7] font-serif overflow-y-auto flex flex-col items-center justify-center p-4 sm:p-6 select-none">
-      {/* Dev Mode Banner (Dev-only route test controls) */}
+    <div
+      className={`relative min-h-screen text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center p-4 sm:p-6 select-none`}
+      style={{ backgroundColor: activeTheme.bgColor }}
+    >
+      {/* Dev Mode Controls */}
       {(isSpike || !wedding) && (
-        <div className="fixed top-4 right-4 z-50 bg-[#1F050C]/90 backdrop-blur-md border border-[#D4AF37]/30 px-3.5 py-2 rounded-2xl text-[11px] font-sans text-[#FDFBF7] flex items-center gap-3 shadow-xl">
-          <span className="text-[#D4AF37] font-semibold flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5" /> Dev Mode (Scenes 1–4)
+        <div
+          className="fixed top-4 right-4 z-50 backdrop-blur-md border px-3.5 py-2 rounded-2xl text-[11px] font-sans flex items-center gap-3 shadow-xl"
+          style={{ backgroundColor: `${activeTheme.bgColor}E6`, borderColor: `${accentColor}40` }}
+        >
+          <span className="font-semibold flex items-center gap-1" style={{ color: accentColor }}>
+            <Sparkles className="w-3.5 h-3.5" /> Dev Mode (Phase 4)
           </span>
           <label className="flex items-center gap-1.5 cursor-pointer text-xs">
             <input
               type="checkbox"
               checked={manualReducedMotion}
               onChange={(e) => setManualReducedMotion(e.target.checked)}
-              className="w-3.5 h-3.5 rounded text-[#D4AF37] focus:ring-[#D4AF37]"
+              className="w-3.5 h-3.5 rounded"
             />
             <span>Force Reduced Motion</span>
           </label>
         </div>
       )}
 
-      <div className="relative max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl overflow-hidden shadow-2xl border border-[#D4AF37]/40 bg-[#3B0E1B] flex flex-col">
-        {/* Animated Container for Cover & Opening Doors (Scenes 1 & 2) */}
+      <div
+        className="relative max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl overflow-hidden shadow-2xl border flex flex-col"
+        style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}50` }}
+      >
+        {/* Animated Cover & Opening Doors (Scenes 1 & 2) */}
         <AnimatePresence mode="wait">
           {stage !== 'unveiled' && (
             <motion.div
@@ -284,31 +588,38 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               transition={{ duration: isReducedMotion ? 0.4 : 0.8 }}
               className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 text-center"
             >
-              {/* Background Photo with Vignette */}
               <div className="absolute inset-0 z-0">
                 <img
                   src={coverPhoto}
                   alt={coupleNames}
                   className="w-full h-full object-cover opacity-35 scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#2A0812] via-[#3B0E1B]/70 to-[#2A0812]/90" />
+                <div
+                  className="absolute inset-0 bg-gradient-to-t"
+                  style={{
+                    backgroundImage: `linear-gradient(to top, ${activeTheme.bgColor}, ${activeTheme.cardBgColor}B3, ${activeTheme.bgColor}E6)`,
+                  }}
+                />
               </div>
 
-              {/* Decorative Frame Overlay */}
-              <div className="absolute inset-4 z-10 border border-[#D4AF37]/40 rounded-2xl pointer-events-none flex flex-col justify-between p-3">
+              {/* Decorative Corner Filigree Frame */}
+              <div
+                className="absolute inset-4 z-10 border rounded-2xl pointer-events-none flex flex-col justify-between p-3"
+                style={{ borderColor: `${accentColor}40` }}
+              >
                 <div className="flex justify-between">
-                  <svg className="w-8 h-8 text-[#D4AF37]/70" viewBox="0 0 40 40">
+                  <svg className="w-8 h-8 opacity-80" style={{ color: accentColor }} viewBox="0 0 40 40">
                     <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
                   </svg>
-                  <svg className="w-8 h-8 text-[#D4AF37]/70 rotate-90" viewBox="0 0 40 40">
+                  <svg className="w-8 h-8 opacity-80 rotate-90" style={{ color: accentColor }} viewBox="0 0 40 40">
                     <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
                   </svg>
                 </div>
                 <div className="flex justify-between">
-                  <svg className="w-8 h-8 text-[#D4AF37]/70 -rotate-90" viewBox="0 0 40 40">
+                  <svg className="w-8 h-8 opacity-80 -rotate-90" style={{ color: accentColor }} viewBox="0 0 40 40">
                     <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
                   </svg>
-                  <svg className="w-8 h-8 text-[#D4AF37]/70 rotate-180" viewBox="0 0 40 40">
+                  <svg className="w-8 h-8 opacity-80 rotate-180" style={{ color: accentColor }} viewBox="0 0 40 40">
                     <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
                   </svg>
                 </div>
@@ -320,23 +631,26 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   <motion.div
                     animate={stage === 'opening' ? { x: '-100%' } : { x: 0 }}
                     transition={{ duration: 1.1, ease: [0.77, 0, 0.175, 1] }}
-                    className="absolute inset-y-0 left-0 w-1/2 bg-[#3B0E1B] border-r border-[#D4AF37]/30 z-15 pointer-events-none"
+                    className="absolute inset-y-0 left-0 w-1/2 border-r z-15 pointer-events-none"
+                    style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}
                   />
                   <motion.div
                     animate={stage === 'opening' ? { x: '100%' } : { x: 0 }}
                     transition={{ duration: 1.1, ease: [0.77, 0, 0.175, 1] }}
-                    className="absolute inset-y-0 right-0 w-1/2 bg-[#3B0E1B] border-l border-[#D4AF37]/30 z-15 pointer-events-none"
+                    className="absolute inset-y-0 right-0 w-1/2 border-l z-15 pointer-events-none"
+                    style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}
                   />
                 </>
               )}
 
-              {/* Cover Typography & Content */}
+              {/* Cover Typography */}
               <div className="relative z-20 pt-8 space-y-4 max-w-xs mx-auto">
                 <motion.p
                   initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
-                  className="font-sans text-[11px] tracking-[0.3em] uppercase text-[#D4AF37] font-semibold"
+                  className="text-[11px] tracking-[0.3em] uppercase font-semibold"
+                  style={{ color: accentColor }}
                 >
                   {guest ? `Special Invitation For ${guest.name}` : 'Together With Their Families'}
                 </motion.p>
@@ -347,7 +661,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   transition={{ duration: 1, delay: 0.4 }}
                   className="py-2"
                 >
-                  <h1 className="text-4xl sm:text-5xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FDFBF7] via-[#F4E3B2] to-[#D4AF37] leading-tight">
+                  <h1 className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass}`} style={{ color: secondaryColor }}>
                     {coupleNames}
                   </h1>
                 </motion.div>
@@ -356,7 +670,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   initial={isReducedMotion ? { opacity: 1 } : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.8, delay: 0.7 }}
-                  className="text-xs text-[#FDFBF7]/80 font-sans italic font-light"
+                  className="text-xs opacity-80 italic font-light"
                 >
                   request the honor of your presence at their wedding celebration
                 </motion.p>
@@ -367,20 +681,22 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.9 }}
-                className="relative z-20 py-2 px-4 rounded-full bg-[#1F050C]/80 border border-[#D4AF37]/40 text-[11px] font-sans text-[#D4AF37] flex items-center gap-2"
+                className="relative z-20 py-2 px-4 rounded-full border text-[11px] flex items-center gap-2"
+                style={{ backgroundColor: `${activeTheme.bgColor}CC`, borderColor: `${accentColor}40`, color: accentColor }}
               >
-                <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <Calendar className="w-3.5 h-3.5" />
                 <span>{activeEvents[0]?.date.toUpperCase()} • {activeEvents[0]?.venue_name.toUpperCase()}</span>
               </motion.div>
 
-              {/* Interactive Monogram Wax Seal */}
+              {/* Interactive Wax Seal */}
               <div className="relative z-20 pb-6 flex flex-col items-center gap-3">
                 <div className="relative flex items-center justify-center">
                   {!isReducedMotion && (
                     <motion.div
                       animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.8, 0.4] }}
                       transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                      className="absolute inset-0 -m-3 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/50"
+                      className="absolute inset-0 -m-3 rounded-full border"
+                      style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}50` }}
                     />
                   )}
 
@@ -394,11 +710,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                           : { x: 0, rotate: 0, opacity: 1, scale: 1 }
                       }
                       transition={{ duration: 0.7, ease: 'easeOut' }}
-                      className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#80182C] via-[#5C101E] to-[#3B0E1B] border-2 border-[#D4AF37] shadow-xl flex items-center justify-center cursor-pointer group active:scale-95"
+                      className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${activeTheme.sealColor} border-2 shadow-xl flex items-center justify-center cursor-pointer active:scale-95`}
+                      style={{ borderColor: accentColor }}
                     >
-                      <div className="w-16 h-16 rounded-full border border-[#D4AF37]/40 flex flex-col items-center justify-center bg-[#4A1525]/60 text-[#D4AF37] shadow-inner">
-                        <span className="font-serif font-bold text-lg tracking-widest text-shadow">{initials}</span>
-                        <span className="text-[8px] font-sans uppercase tracking-widest text-[#D4AF37]/80 mt-0.5">Unseal</span>
+                      <div className="w-16 h-16 rounded-full border flex flex-col items-center justify-center shadow-inner" style={{ borderColor: `${accentColor}40`, backgroundColor: `${activeTheme.bgColor}99` }}>
+                        <span className={`font-bold text-lg tracking-widest ${serifClass}`} style={{ color: accentColor }}>{initials}</span>
+                        <span className="text-[8px] uppercase tracking-widest opacity-80 mt-0.5" style={{ color: accentColor }}>Unseal</span>
                       </div>
                     </motion.button>
                   </div>
@@ -407,7 +724,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 <motion.p
                   animate={{ opacity: [0.6, 1, 0.6] }}
                   transition={{ duration: 1.8, repeat: Infinity }}
-                  className="text-[10px] font-sans tracking-[0.25em] text-[#D4AF37] uppercase font-semibold"
+                  className="text-[10px] tracking-[0.25em] uppercase font-semibold"
+                  style={{ color: accentColor }}
                 >
                   Tap Wax Seal to Open
                 </motion.p>
@@ -423,349 +741,93 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="flex-1 overflow-y-auto p-6 space-y-8 bg-gradient-to-b from-[#2A0812] via-[#3B0E1B] to-[#1F050C] text-[#FDFBF7]"
+            className="flex-1 overflow-y-auto p-6 space-y-8 text-white"
+            style={{ backgroundColor: activeTheme.bgColor }}
           >
-            {/* Scene 3: Save-the-Date Reveal Graphic & Quick Shortcuts */}
-            <div className="text-center space-y-4 pt-4 border-b border-[#D4AF37]/20 pb-8">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[#D4AF37] text-[10px] font-sans font-semibold uppercase tracking-wider">
-                <Sparkles className="w-3 h-3 text-[#D4AF37]" /> Official Invitation
+            {/* Scene 3: Save-the-Date Graphic & Countdown */}
+            <div className="text-center space-y-4 pt-4 border-b border-white/10 pb-8">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider"
+                style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+              >
+                <Sparkles className="w-3 h-3" /> Official Invitation
               </span>
 
               {guest && (
-                <p className="text-xs font-sans text-[#D4AF37] uppercase tracking-widest font-semibold">
+                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
                   Warm Welcome, {guest.name}
                 </p>
               )}
 
-              <h2 className="text-3xl font-serif font-bold text-[#F4E3B2]">
+              <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
                 {coupleNames}
               </h2>
-              <p className="text-xs font-sans text-[#FDFBF7]/80 italic">
+              <p className="text-xs italic opacity-80">
                 Are getting married!
               </p>
 
               {/* LIVE COUNTDOWN TIMER BANNER */}
-              <div className="p-4 rounded-2xl bg-[#1F050C]/90 border border-[#D4AF37]/40 space-y-2 text-center shadow-lg">
+              <div
+                className="p-4 rounded-2xl border space-y-2 text-center shadow-lg"
+                style={{ backgroundColor: `${activeTheme.bgColor}F2`, borderColor: `${accentColor}40` }}
+              >
                 {isPastAllEvents ? (
                   <div className="space-y-1 py-1">
-                    <Heart className="w-5 h-5 text-[#D4AF37] mx-auto fill-[#D4AF37]" />
-                    <p className="font-serif font-bold text-sm text-[#F4E3B2]">
+                    <Heart className="w-5 h-5 mx-auto fill-current" style={{ color: accentColor }} />
+                    <p className={`font-bold text-sm ${serifClass}`} style={{ color: secondaryColor }}>
                       Thank you for celebrating with us!
                     </p>
-                    <p className="text-[10px] font-sans text-[#FDFBF7]/60">
+                    <p className="text-[10px] opacity-60">
                       Our wedding events have concluded. We are forever grateful for your love and support.
                     </p>
                   </div>
                 ) : timeLeft ? (
                   <div className="space-y-2">
-                    <p className="text-[10px] font-sans uppercase tracking-widest text-[#D4AF37] font-semibold flex items-center justify-center gap-1">
+                    <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-1" style={{ color: accentColor }}>
                       <Clock className="w-3 h-3" /> Countdown To {targetEventTitle || 'Special Day'}
                     </p>
                     <div className="grid grid-cols-4 gap-2 font-mono text-center">
-                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
-                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.days}</span>
-                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Days</span>
+                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.days}</span>
+                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Days</span>
                       </div>
-                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
-                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.hours}</span>
-                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Hours</span>
+                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.hours}</span>
+                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Hours</span>
                       </div>
-                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
-                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.minutes}</span>
-                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Mins</span>
+                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.minutes}</span>
+                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Mins</span>
                       </div>
-                      <div className="p-2 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30">
-                        <span className="block text-xl font-bold text-[#F4E3B2]">{timeLeft.seconds}</span>
-                        <span className="text-[9px] font-sans uppercase text-[#D4AF37]">Secs</span>
+                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.seconds}</span>
+                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Secs</span>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs font-sans text-[#D4AF37]">Calculating event countdown...</p>
-                )}
-              </div>
-
-              {/* Quick Action Icon Shortcuts */}
-              <div className="grid grid-cols-3 gap-3 pt-2 font-sans text-[11px]">
-                <a
-                  href="#rsvp-section"
-                  className="p-3 rounded-2xl bg-[#3B0E1B] border border-[#D4AF37]/30 hover:border-[#D4AF37] text-[#D4AF37] flex flex-col items-center gap-1.5 transition-all"
-                >
-                  <UserCheck className="w-4 h-4" />
-                  <span>RSVP Now</span>
-                </a>
-                <a
-                  href="#details-section"
-                  className="p-3 rounded-2xl bg-[#3B0E1B] border border-[#D4AF37]/30 hover:border-[#D4AF37] text-[#D4AF37] flex flex-col items-center gap-1.5 transition-all"
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Schedule</span>
-                </a>
-                <a
-                  href="#registry-section"
-                  className="p-3 rounded-2xl bg-[#3B0E1B] border border-[#D4AF37]/30 hover:border-[#D4AF37] text-[#D4AF37] flex flex-col items-center gap-1.5 transition-all"
-                >
-                  <Gift className="w-4 h-4" />
-                  <span>Registry</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Scene 4: Multi-Event Schedule, Add to Calendar & Google Maps Embed */}
-            <div id="details-section" className="space-y-6 font-sans">
-              <div className="space-y-4">
-                <h3 className="font-serif text-lg font-bold text-[#F4E3B2] flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#D4AF37]" /> Event Schedule & Locations
-                </h3>
-
-                {activeEvents.map((ev, idx) => {
-                  const startDate = parseEventDate(ev.date, ev.time);
-                  const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
-                  const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-                    `${coupleNames} - ${ev.title}`
-                  )}&dates=${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(endDate)}&location=${encodeURIComponent(
-                    `${ev.venue_name}, ${ev.venue_address || ''}`
-                  )}&details=${encodeURIComponent(`Wedding Celebration for ${coupleNames}`)}`;
-
-                  const mapQuery = `${ev.venue_name}${ev.venue_address ? `, ${ev.venue_address}` : ''}`;
-
-                  return (
-                    <div key={ev.id || idx} className="p-4 sm:p-5 rounded-2xl bg-[#1F050C]/90 border border-[#D4AF37]/30 space-y-4 text-xs">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider block">Event #{idx + 1}</span>
-                          <h4 className="font-serif text-base font-bold text-[#F4E3B2] mt-0.5">{ev.title}</h4>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-[#FDFBF7]/90">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                          <span>{ev.date} at {ev.time}</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 text-[#D4AF37] shrink-0 mt-0.5" />
-                          <div>
-                            <p className="font-semibold text-[#F4E3B2]">{ev.venue_name}</p>
-                            {ev.venue_address && <p className="text-[11px] text-[#FDFBF7]/70">{ev.venue_address}</p>}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* GOOGLE MAPS EMBED IFRAME */}
-                      <div className="rounded-2xl overflow-hidden border border-[#D4AF37]/20 bg-[#2A0812]">
-                        <iframe
-                          title={`Map location for ${ev.venue_name}`}
-                          width="100%"
-                          height="160"
-                          frameBorder="0"
-                          style={{ border: 0, borderRadius: '1rem' }}
-                          src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                          allowFullScreen
-                        />
-                      </div>
-
-                      {/* ADD TO CALENDAR BUTTONS */}
-                      <div className="pt-2 border-t border-[#D4AF37]/15 flex flex-wrap items-center gap-2 text-[11px]">
-                        <span className="text-[#D4AF37] font-semibold">Add to Calendar:</span>
-                        <a
-                          href={googleCalUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 hover:border-[#D4AF37] text-[#D4AF37] flex items-center gap-1 transition-all"
-                        >
-                          <ExternalLink className="w-3 h-3 text-[#D4AF37]" /> Google Calendar
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => downloadIcsFile(ev, coupleNames)}
-                          className="px-3 py-1.5 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 hover:border-[#D4AF37] text-[#D4AF37] flex items-center gap-1 transition-all cursor-pointer"
-                        >
-                          <Download className="w-3 h-3 text-[#D4AF37]" /> Apple / Outlook (.ics)
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {loveStory && (
-                <div className="space-y-2">
-                  <h3 className="font-serif text-lg font-bold text-[#F4E3B2] flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-[#D4AF37] fill-[#D4AF37]" /> Our Story
-                  </h3>
-                  <p className="text-xs text-[#FDFBF7]/80 leading-relaxed italic p-4 rounded-2xl bg-[#1F050C]/60 border border-[#D4AF37]/20">
-                    "{loveStory}"
-                  </p>
-                </div>
-              )}
-
-              {registryInfo && (
-                <div id="registry-section" className="space-y-2">
-                  <h3 className="font-serif text-lg font-bold text-[#F4E3B2] flex items-center gap-2">
-                    <Gift className="w-4 h-4 text-[#D4AF37]" /> Gift Registry & Wishlist
-                  </h3>
-                  <div className="p-4 rounded-2xl bg-[#1F050C]/60 border border-[#D4AF37]/20 text-xs text-[#FDFBF7]/80 leading-relaxed whitespace-pre-line">
-                    {registryInfo}
-                  </div>
-                </div>
-              )}
-
-              {/* Scene 4: Interactive Per-Event Guest RSVP Form */}
-              <div id="rsvp-section" className="space-y-4 pt-4 border-t border-[#D4AF37]/20">
-                <div className="text-center space-y-1">
-                  <h3 className="font-serif text-xl font-bold text-[#F4E3B2]">
-                    RSVP to Our Events
-                  </h3>
-                  <p className="text-xs text-[#FDFBF7]/70">
-                    Kindly select your attendance for each event in our celebration schedule.
-                  </p>
-                </div>
-
-                {rsvpSuccess ? (
-                  <div className="p-6 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-center space-y-2">
-                    <Check className="w-8 h-8 text-emerald-400 mx-auto" />
-                    <p className="font-serif font-bold text-base text-emerald-200">Thank You for Your RSVP!</p>
-                    <p className="text-xs text-emerald-300/80">
-                      Your responses have been recorded. We look forward to celebrating with you!
-                    </p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleRsvpSubmit} className="p-5 rounded-2xl bg-[#1F050C]/90 border border-[#D4AF37]/30 space-y-4 text-xs">
-                    {rsvpError && (
-                      <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-300 text-xs flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                        <span>{rsvpError}</span>
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#D4AF37] mb-1">Your Full Name *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Chief & Mrs. Adebayo"
-                        value={guestName}
-                        onChange={(e) => setGuestName(e.target.value)}
-                        className="w-full p-3 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 text-[#FDFBF7] focus:outline-none focus:border-[#D4AF37]"
-                      />
-                    </div>
-
-                    {/* Per-Event Attendance Selectors */}
-                    <div className="space-y-3 pt-1 border-t border-[#D4AF37]/15">
-                      <p className="text-[11px] font-semibold text-[#D4AF37]">Select Attendance Per Event:</p>
-                      {activeEvents.map((ev) => {
-                        const isAttending = eventAttendance[ev.id] ?? true;
-                        return (
-                          <div key={ev.id} className="p-3.5 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/20 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-semibold text-[#F4E3B2]">{ev.title}</p>
-                                <p className="text-[10px] text-[#FDFBF7]/60">{ev.date} • {ev.venue_name}</p>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: true }))}
-                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                                    isAttending
-                                      ? 'bg-[#D4AF37] text-[#2A0812]'
-                                      : 'bg-[#2A0812] text-[#FDFBF7]/60 border border-[#D4AF37]/20'
-                                  }`}
-                                >
-                                  Attending
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: false }))}
-                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                                    !isAttending
-                                      ? 'bg-amber-800 text-[#FDFBF7]'
-                                      : 'bg-[#2A0812] text-[#FDFBF7]/60 border border-[#D4AF37]/20'
-                                  }`}
-                                >
-                                  Declining
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Plus-One Handling if Allowed */}
-                    {(guest ? guest.plus_one_allowed : true) && (
-                      <div className="space-y-2 pt-2 border-t border-[#D4AF37]/15">
-                        <label className="flex items-center gap-2 cursor-pointer text-[11px] font-semibold text-[#D4AF37]">
-                          <input
-                            type="checkbox"
-                            checked={hasPlusOne}
-                            onChange={(e) => setHasPlusOne(e.target.checked)}
-                            className="w-4 h-4 rounded text-[#D4AF37] focus:ring-[#D4AF37]"
-                          />
-                          <span className="flex items-center gap-1">
-                            <UserPlus className="w-3.5 h-3.5" /> Bringing a Plus-One Guest?
-                          </span>
-                        </label>
-
-                        {hasPlusOne && (
-                          <input
-                            type="text"
-                            placeholder="Plus-One Full Name (e.g. Jane Doe)"
-                            value={plusOneName}
-                            onChange={(e) => setPlusOneName(e.target.value)}
-                            className="w-full p-3 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 text-[#FDFBF7] focus:outline-none focus:border-[#D4AF37]"
-                          />
-                        )}
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#D4AF37] mb-1">Dietary Requirements / Special Notes (Optional)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Vegetarian, Peanut allergy..."
-                        value={dietaryNotes}
-                        onChange={(e) => setDietaryNotes(e.target.value)}
-                        className="w-full p-3 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 text-[#FDFBF7] focus:outline-none focus:border-[#D4AF37]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#D4AF37] mb-1">Personal Message for the Couple (Optional)</label>
-                      <textarea
-                        rows={2}
-                        placeholder="Send warm wishes to the couple..."
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        className="w-full p-3 rounded-xl bg-[#3B0E1B] border border-[#D4AF37]/30 text-[#FDFBF7] focus:outline-none focus:border-[#D4AF37]"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={rsvpSubmitting}
-                      className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F4E3B2] text-[#2A0812] font-semibold text-xs transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <Send className="w-4 h-4" />
-                      <span>{rsvpSubmitting ? 'Submitting RSVPs...' : 'Confirm All RSVPs'}</span>
-                    </button>
-                  </form>
+                  <p className="text-xs" style={{ color: accentColor }}>Calculating event countdown...</p>
                 )}
               </div>
             </div>
 
-            {/* Replay Controls Footer */}
-            <div className="pt-6 border-t border-[#D4AF37]/20 flex items-center justify-between font-sans text-xs">
+            {/* Scene 4: Dynamically Ordered Sections */}
+            <div className="space-y-6">
+              {sectionOrder.map((key) => renderSectionByKey(key))}
+            </div>
+
+            {/* Footer Replay */}
+            <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs">
               <button
                 onClick={handleReplay}
-                className="px-4 py-2 rounded-full bg-[#D4AF37] hover:bg-[#c29f2f] text-[#2A0812] font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 rounded-full font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Replay Invitation</span>
               </button>
 
-              <span className="text-[10px] text-[#FDFBF7]/50">
+              <span className="text-[10px] opacity-50">
                 Weddings by Amorah
               </span>
             </div>

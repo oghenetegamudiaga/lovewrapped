@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2 } from 'lucide-react';
-import { WEDDING_THEMES } from '../config/weddingThemes';
+import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type } from 'lucide-react';
+import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
 import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount } from '../types';
 import { createWeddingPaymentApi, verifyWeddingPaymentApi } from '../lib/api';
 import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants';
@@ -13,6 +13,9 @@ interface WeddingsCreateViewProps {
 export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNavigate, currentCouple }) => {
   const [step, setStep] = useState<number>(1);
   const [themeId, setThemeId] = useState<string>('classic-burgundy');
+  const [colorVariant, setColorVariant] = useState<string>('royal-gold');
+  const [fontVariant, setFontVariant] = useState<string>('classic-serif');
+
   const [coupleNames, setCoupleNames] = useState<string>('');
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string>('');
   const [loveStory, setLoveStory] = useState<string>('');
@@ -109,13 +112,15 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
 
     const payload: CreateWeddingPayload = {
       theme_id: themeId,
+      color_variant: colorVariant,
+      font_variant: fontVariant,
+      section_order: ['schedule', 'love_story', 'registry', 'rsvp'],
       couple_names: coupleNames,
       cover_photo_url: coverPhotoUrl,
       love_story: loveStory,
       music_track: musicTrack,
       registry_info: registryInfo,
       events: validEvents,
-      // Backward compatibility fields for legacy receivers
       event_title: validEvents[0].title,
       event_date: validEvents[0].date,
       event_time: validEvents[0].time,
@@ -180,37 +185,94 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
 
         {/* Builder Form Card */}
         <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-xl bg-cream-card">
-          {/* STEP 1: Theme Selection */}
+          {/* STEP 1: Theme & Visual Variant Selection */}
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="font-serif text-xl font-bold text-maroon mb-1">Select Theme</h2>
-                <p className="text-xs text-mauve">Choose the aesthetic framework for your digital invitation.</p>
+                <h2 className="font-serif text-xl font-bold text-maroon mb-1">Select Theme & Styling</h2>
+                <p className="text-xs text-mauve">Pick a base theme, then choose a curated accent color & font pairing.</p>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {Object.values(WEDDING_THEMES).map((t) => (
-                  <div
-                    key={t.id}
-                    onClick={() => setThemeId(t.id)}
-                    className={`p-6 rounded-3xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                      themeId === t.id
-                        ? 'border-maroon bg-cream/90 shadow-md scale-[1.01]'
-                        : 'border-cream-border bg-cream/40 hover:bg-cream/70'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-[10px] font-semibold text-coral uppercase tracking-wider">Royal Luxury Theme</span>
-                        <h3 className="font-serif text-lg font-bold text-maroon mt-0.5">{t.name}</h3>
-                        <p className="text-xs text-mauve mt-1">{t.description}</p>
-                      </div>
-                      <div className="w-6 h-6 rounded-full border-2 border-maroon flex items-center justify-center">
-                        {themeId === t.id && <div className="w-3 h-3 rounded-full bg-maroon" />}
+              {/* 3 Distinct Base Themes */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-maroon uppercase tracking-wider">1. Base Visual Theme</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {Object.values(WEDDING_THEMES).map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => setThemeId(t.id)}
+                      className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                        themeId === t.id
+                          ? 'border-maroon bg-cream/90 shadow-md scale-[1.01]'
+                          : 'border-cream-border bg-cream/40 hover:bg-cream/70'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-3.5 h-3.5 rounded-full border border-black/20"
+                              style={{ backgroundColor: t.accentColor }}
+                            />
+                            <h3 className="font-serif text-base font-bold text-maroon">{t.name}</h3>
+                          </div>
+                          <p className="text-xs text-mauve mt-1 leading-relaxed">{t.description}</p>
+                        </div>
+                        <div className="w-5 h-5 rounded-full border-2 border-maroon flex items-center justify-center shrink-0">
+                          {themeId === t.id && <div className="w-2.5 h-2.5 rounded-full bg-maroon" />}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Curated Accent Color Options */}
+              <div className="space-y-3 pt-3 border-t border-cream-border">
+                <label className="block text-xs font-bold text-maroon uppercase tracking-wider flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-coral" /> 2. Accent Color Variant
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {Object.values(ACCENT_COLOR_VARIANTS).map((c) => (
+                    <button
+                      type="button"
+                      key={c.id}
+                      onClick={() => setColorVariant(c.id)}
+                      className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
+                        colorVariant === c.id
+                          ? 'border-maroon bg-cream/90 shadow-sm font-bold'
+                          : 'border-cream-border bg-cream/40 hover:bg-cream/70'
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full border border-black/20" style={{ backgroundColor: c.accentColor }} />
+                      <span className="text-[11px] text-maroon">{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Curated Font Pairing Options */}
+              <div className="space-y-3 pt-3 border-t border-cream-border">
+                <label className="block text-xs font-bold text-maroon uppercase tracking-wider flex items-center gap-1.5">
+                  <Type className="w-3.5 h-3.5 text-coral" /> 3. Font Pairing Variant
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {Object.values(FONT_PAIRING_VARIANTS).map((f) => (
+                    <button
+                      type="button"
+                      key={f.id}
+                      onClick={() => setFontVariant(f.id)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        fontVariant === f.id
+                          ? 'border-maroon bg-cream/90 shadow-sm'
+                          : 'border-cream-border bg-cream/40 hover:bg-cream/70'
+                      }`}
+                    >
+                      <p className={`text-xs font-bold text-maroon ${f.serifClass}`}>{f.name}</p>
+                      <p className="text-[10px] text-mauve mt-1 leading-tight">{f.description}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="pt-4 border-t border-cream-border flex justify-end">
@@ -499,6 +561,14 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                 <div className="flex justify-between">
                   <span className="font-semibold text-mauve">Couple:</span>
                   <span className="font-bold">{coupleNames}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-mauve">Base Theme:</span>
+                  <span className="font-bold capitalize">{themeId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-mauve">Accent / Font:</span>
+                  <span className="font-bold capitalize">{colorVariant} • {fontVariant}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold text-mauve">Events Count:</span>

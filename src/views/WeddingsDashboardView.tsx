@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, MapPin, Edit3, UserCheck, X, Check, AlertCircle, Copy, Share2, Shield, Heart, Users, Plus, Upload, Download, Search, Filter, Trash2, Link as LinkIcon, Eye, CheckCircle2, Gift, BookOpen, Save } from 'lucide-react';
+import { Sparkles, Calendar, MapPin, Edit3, UserCheck, X, Check, AlertCircle, Copy, Share2, Shield, Heart, Users, Plus, Upload, Download, Search, Filter, Trash2, Link as LinkIcon, Eye, CheckCircle2, Gift, BookOpen, Save, ArrowUp, ArrowDown, Palette, Type, Layers } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingRSVP, WeddingGuestWithEvents, CoupleAccount } from '../types';
+import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
 import {
   getCoupleWeddingDashboardApi,
-  updateCoupleWeddingDetailsApi,
   updateCoupleWeddingInfoApi,
   getCoupleWeddingGuestsApi,
   addCoupleWeddingGuestApi,
@@ -18,6 +18,13 @@ interface WeddingsDashboardViewProps {
   onNavigate: (path: string) => void;
   currentCouple?: CoupleAccount | null;
 }
+
+const SECTION_LABELS: Record<string, string> = {
+  schedule: 'Event Schedule & Locations',
+  love_story: 'Our Love Story',
+  registry: 'Gift Registry & Account Notes',
+  rsvp: 'RSVP Form',
+};
 
 export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   weddingId,
@@ -37,7 +44,11 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [rsvpFilter, setRsvpFilter] = useState<'all' | 'attending' | 'declined' | 'pending'>('all');
 
-  // Registry & Wedding Details Edit State
+  // Phase 4 Settings & Variant State
+  const [editThemeId, setEditThemeId] = useState('classic-burgundy');
+  const [editColorVariant, setEditColorVariant] = useState('royal-gold');
+  const [editFontVariant, setEditFontVariant] = useState('classic-serif');
+  const [editSectionOrder, setEditSectionOrder] = useState<string[]>(['schedule', 'love_story', 'registry', 'rsvp']);
   const [editRegistryInfo, setEditRegistryInfo] = useState('');
   const [editLoveStory, setEditLoveStory] = useState('');
   const [editCoupleNames, setEditCoupleNames] = useState('');
@@ -75,6 +86,14 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
       setGuests(guestsRes);
 
       if (dashRes.wedding) {
+        setEditThemeId(dashRes.wedding.theme_id || 'classic-burgundy');
+        setEditColorVariant(dashRes.wedding.color_variant || 'royal-gold');
+        setEditFontVariant(dashRes.wedding.font_variant || 'classic-serif');
+        setEditSectionOrder(
+          dashRes.wedding.section_order && dashRes.wedding.section_order.length > 0
+            ? dashRes.wedding.section_order
+            : ['schedule', 'love_story', 'registry', 'rsvp']
+        );
         setEditRegistryInfo(dashRes.wedding.registry_info || '');
         setEditLoveStory(dashRes.wedding.love_story || '');
         setEditCoupleNames(dashRes.wedding.couple_names || '');
@@ -124,14 +143,12 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
 
   const generalShareUrl = `${window.location.origin}/w/wedding/${wedding.slug}`;
 
-  // Guest Helper Calculations
   const getGuestRsvpStatus = (guestId: string) => {
     const gRsvps = rsvps.filter((r) => r.guest_id === guestId);
     if (gRsvps.length === 0) return 'pending';
     return gRsvps.some((r) => r.attending) ? 'attending' : 'declined';
   };
 
-  // Filtered Guests List
   const filteredGuests = guests.filter((g) => {
     const status = getGuestRsvpStatus(g.id);
     const matchesFilter = rsvpFilter === 'all' || status === rsvpFilter;
@@ -143,6 +160,29 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
     return matchesFilter && matchesSearch;
   });
 
+  const moveSection = (index: number, direction: 'up' | 'down') => {
+    const newOrder = [...editSectionOrder];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+
+    const temp = newOrder[index];
+    newOrder[index] = newOrder[targetIndex];
+    newOrder[targetIndex] = temp;
+    setEditSectionOrder(newOrder);
+  };
+
+  const toggleSectionVisibility = (key: string) => {
+    if (editSectionOrder.includes(key)) {
+      if (editSectionOrder.length <= 1) {
+        alert('You must keep at least one active section.');
+        return;
+      }
+      setEditSectionOrder(editSectionOrder.filter((k) => k !== key));
+    } else {
+      setEditSectionOrder([...editSectionOrder, key]);
+    }
+  };
+
   const handleSaveWeddingInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingInfo(true);
@@ -151,6 +191,10 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
     try {
       const res = await updateCoupleWeddingInfoApi(weddingId, {
         couple_names: editCoupleNames,
+        theme_id: editThemeId,
+        color_variant: editColorVariant,
+        font_variant: editFontVariant,
+        section_order: editSectionOrder,
         registry_info: editRegistryInfo,
         love_story: editLoveStory,
       });
@@ -159,7 +203,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
       setInfoSaveSuccess(true);
       setTimeout(() => setInfoSaveSuccess(false), 3000);
     } catch (err: unknown) {
-      alert('Failed to update registry and wedding details.');
+      alert('Failed to update wedding details & customization settings.');
     } finally {
       setIsSavingInfo(false);
     }
@@ -285,7 +329,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
               {wedding.couple_names}
             </h1>
             <p className="text-xs text-mauve mt-1">
-              Manage multi-event schedules, guest RSVPs, registry info, and invitation settings.
+              Manage multi-event schedules, guest RSVPs, visual customization, and section order.
             </p>
           </div>
 
@@ -310,7 +354,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                 : 'bg-cream text-mauve hover:text-maroon'
             }`}
           >
-            Overview & Schedule ({events.length} Events)
+            Overview & Settings ({events.length} Events)
           </button>
           <button
             onClick={() => setActiveTab('guests')}
@@ -325,7 +369,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
           </button>
         </div>
 
-        {/* TAB 1: Overview, Schedule, & Registry Settings */}
+        {/* TAB 1: Overview, Schedule & Phase 4 Settings */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Share General Link Banner */}
@@ -370,6 +414,214 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
               </div>
             </div>
 
+            {/* PHASE 4: VISUAL THEMES, VARIANTS & SECTION REORDERING SETTINGS */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-cream-card border border-cream-border space-y-6">
+              <div className="flex items-center justify-between border-b border-cream-border pb-4">
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-maroon flex items-center gap-2">
+                    <Palette className="w-5 h-5 text-coral" /> Visual Customization & Section Order
+                  </h2>
+                  <p className="text-xs text-mauve">Customize base themes, curated color/font variants, and reorder Scene 4 info sections.</p>
+                </div>
+              </div>
+
+              {infoSaveSuccess && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Customization settings and registry details updated successfully!</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveWeddingInfo} className="space-y-6 text-xs">
+                {/* 1. Base Theme Selection */}
+                <div className="space-y-3">
+                  <label className="block font-bold text-maroon uppercase tracking-wider text-[11px]">1. Base Visual Theme</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {Object.values(WEDDING_THEMES).map((t) => (
+                      <button
+                        type="button"
+                        key={t.id}
+                        onClick={() => setEditThemeId(t.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                          editThemeId === t.id
+                            ? 'border-maroon bg-cream/90 font-bold shadow-xs'
+                            : 'border-cream-border bg-cream/40 hover:bg-cream/70'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-3 h-3 rounded-full border border-black/20" style={{ backgroundColor: t.accentColor }} />
+                          <span className="text-xs text-maroon">{t.name}</span>
+                        </div>
+                        <p className="text-[10px] text-mauve leading-tight">{t.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Curated Accent Color Selection */}
+                <div className="space-y-3 pt-3 border-t border-cream-border">
+                  <label className="block font-bold text-maroon uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-coral" /> 2. Accent Color Variant
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {Object.values(ACCENT_COLOR_VARIANTS).map((c) => (
+                      <button
+                        type="button"
+                        key={c.id}
+                        onClick={() => setEditColorVariant(c.id)}
+                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
+                          editColorVariant === c.id
+                            ? 'border-maroon bg-cream/90 shadow-xs font-bold'
+                            : 'border-cream-border bg-cream/40 hover:bg-cream/70'
+                        }`}
+                      >
+                        <span className="w-4 h-4 rounded-full border border-black/20" style={{ backgroundColor: c.accentColor }} />
+                        <span className="text-[11px] text-maroon">{c.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Curated Font Pairing Selection */}
+                <div className="space-y-3 pt-3 border-t border-cream-border">
+                  <label className="block font-bold text-maroon uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Type className="w-3.5 h-3.5 text-coral" /> 3. Font Pairing Variant
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {Object.values(FONT_PAIRING_VARIANTS).map((f) => (
+                      <button
+                        type="button"
+                        key={f.id}
+                        onClick={() => setEditFontVariant(f.id)}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          editFontVariant === f.id
+                            ? 'border-maroon bg-cream/90 shadow-xs'
+                            : 'border-cream-border bg-cream/40 hover:bg-cream/70'
+                        }`}
+                      >
+                        <p className={`text-xs font-bold text-maroon ${f.serifClass}`}>{f.name}</p>
+                        <p className="text-[10px] text-mauve mt-1 leading-tight">{f.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Section Order & Visibility Toggles */}
+                <div className="space-y-3 pt-3 border-t border-cream-border">
+                  <label className="block font-bold text-maroon uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-coral" /> 4. Scene 4 Info Section Display Order & Visibility
+                  </label>
+
+                  <div className="space-y-2 max-w-lg">
+                    {editSectionOrder.map((secKey, idx) => (
+                      <div
+                        key={secKey}
+                        className="p-3 rounded-2xl bg-cream border border-cream-border flex items-center justify-between gap-3 text-xs"
+                      >
+                        <span className="font-semibold text-maroon">
+                          {idx + 1}. {SECTION_LABELS[secKey] || secKey}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => moveSection(idx, 'up')}
+                            className="p-1.5 rounded-lg bg-cream-card border border-cream-border text-maroon hover:border-coral disabled:opacity-30 cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === editSectionOrder.length - 1}
+                            onClick={() => moveSection(idx, 'down')}
+                            className="p-1.5 rounded-lg bg-cream-card border border-cream-border text-maroon hover:border-coral disabled:opacity-30 cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleSectionVisibility(secKey)}
+                            className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 text-[10px] font-semibold hover:bg-red-100 cursor-pointer"
+                          >
+                            Hide
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Toggle Disabled Sections Quick Add */}
+                  {Object.keys(SECTION_LABELS).some((k) => !editSectionOrder.includes(k)) && (
+                    <div className="flex items-center gap-2 pt-2">
+                      <span className="text-[11px] text-mauve">Disabled Sections:</span>
+                      {Object.keys(SECTION_LABELS)
+                        .filter((k) => !editSectionOrder.includes(k))
+                        .map((k) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => toggleSectionVisibility(k)}
+                            className="px-2.5 py-1 rounded-full bg-cream border border-cream-border text-maroon text-[11px] font-semibold hover:border-coral cursor-pointer flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3 text-coral" /> {SECTION_LABELS[k]}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Text Information Inputs */}
+                <div className="space-y-4 pt-3 border-t border-cream-border">
+                  <div>
+                    <label className="block font-semibold text-maroon mb-1">Couple Names</label>
+                    <input
+                      type="text"
+                      required
+                      value={editCoupleNames}
+                      onChange={(e) => setEditCoupleNames(e.target.value)}
+                      className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-maroon mb-1">Gift Registry Notes & Account Details</label>
+                    <textarea
+                      rows={3}
+                      placeholder="e.g. Account Name: Becky & Martins / Bank: GTBank / Account No: 0123456789"
+                      value={editRegistryInfo}
+                      onChange={(e) => setEditRegistryInfo(e.target.value)}
+                      className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-maroon mb-1">Our Love Story Text</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Share a short note about your love story..."
+                      value={editLoveStory}
+                      onChange={(e) => setEditLoveStory(e.target.value)}
+                      className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-cream-border flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSavingInfo}
+                    className="px-6 py-2.5 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-3.5 h-3.5 text-coral" />
+                    <span>{isSavingInfo ? 'Saving Settings...' : 'Save All Settings'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
             {/* Multi-Event Schedule Cards */}
             <div className="p-6 sm:p-8 rounded-3xl bg-cream-card border border-cream-border space-y-6">
               <div className="flex items-center justify-between border-b border-cream-border pb-4">
@@ -411,78 +663,12 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                 })}
               </div>
             </div>
-
-            {/* GIFT REGISTRY & WEDDING DETAILS EDITING PANEL */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-cream-card border border-cream-border space-y-6">
-              <div className="flex items-center justify-between border-b border-cream-border pb-4">
-                <div>
-                  <h2 className="font-serif text-lg font-bold text-maroon flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-coral" /> Gift Registry & Wedding Details
-                  </h2>
-                  <p className="text-xs text-mauve">Update bank account info, cash registry notes, and love story post-creation.</p>
-                </div>
-              </div>
-
-              {infoSaveSuccess && (
-                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2 font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Registry and wedding details updated successfully!</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSaveWeddingInfo} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-semibold text-maroon mb-1">Couple Names</label>
-                  <input
-                    type="text"
-                    required
-                    value={editCoupleNames}
-                    onChange={(e) => setEditCoupleNames(e.target.value)}
-                    className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-maroon mb-1">Gift Registry Notes & Account Details</label>
-                  <textarea
-                    rows={4}
-                    placeholder="e.g. Account Name: Becky & Martins / Bank: GTBank / Account No: 0123456789"
-                    value={editRegistryInfo}
-                    onChange={(e) => setEditRegistryInfo(e.target.value)}
-                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-maroon mb-1">Our Love Story Text</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Share a short note about your love story..."
-                    value={editLoveStory}
-                    onChange={(e) => setEditLoveStory(e.target.value)}
-                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
-                  />
-                </div>
-
-                <div className="pt-2 border-t border-cream-border flex justify-end">
-                  <button
-                    type="submit"
-                    disabled={isSavingInfo}
-                    className="px-6 py-2.5 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                  >
-                    <Save className="w-3.5 h-3.5 text-coral" />
-                    <span>{isSavingInfo ? 'Saving Details...' : 'Save Registry & Wedding Info'}</span>
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
 
         {/* TAB 2: Guest List & Proactive Management */}
         {activeTab === 'guests' && (
           <div className="space-y-6">
-            {/* Top Toolbar */}
             <div className="p-6 rounded-3xl bg-cream-card border border-cream-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="font-serif text-xl font-bold text-maroon">Proactive Guest List</h2>
@@ -516,7 +702,6 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Filter & Search Bar */}
             <div className="p-4 rounded-3xl bg-cream-card border border-cream-border flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 text-mauve absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -549,7 +734,6 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Guests Table */}
             <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
