@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Heart, Lock, Mail, User, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import { Heart, Lock, Mail, User, ArrowRight, AlertCircle } from 'lucide-react';
 import { CoupleAccount } from '../types.js';
+import { getCoupleMyWeddingsApi } from '../lib/api.js';
 
 interface WeddingsSignupViewProps {
   onNavigate: (path: string) => void;
@@ -52,7 +53,21 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
       if (data.couple) {
         onSignupSuccess(data.couple);
       }
-      onNavigate('/weddings');
+
+      // Smart post-signup redirection logic based on user's weddings portfolio count
+      try {
+        const mineRes = await getCoupleMyWeddingsApi();
+        const list = mineRes.weddings || [];
+        if (list.length === 0) {
+          onNavigate('/weddings/create');
+        } else if (list.length === 1) {
+          onNavigate(`/weddings/dashboard/${list[0].id}`);
+        } else {
+          onNavigate('/weddings/mine');
+        }
+      } catch (err) {
+        onNavigate('/weddings/create');
+      }
     } catch (err) {
       console.error('Signup request error:', err);
       setErrorMsg('An unexpected network error occurred. Please try again.');

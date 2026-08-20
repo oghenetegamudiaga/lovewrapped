@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents } from '../types.js';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents, CoupleAccount } from '../types.js';
 
 const API_BASE = '/api';
 
@@ -380,6 +380,29 @@ export async function updateCoupleWeddingInfoApi(
   return apiFetch<{ success: boolean; wedding: Wedding }>(`/weddings/dashboard/${weddingId}/info`, {
     method: 'PATCH',
     body: JSON.stringify(updates),
+  });
+}
+
+export async function getCoupleMyWeddingsApi(): Promise<{
+  success: boolean;
+  weddings: Array<{ id: string; slug: string; couple_names: string; is_paid: boolean; created_at: string }>;
+}> {
+  return apiFetch<{
+    success: boolean;
+    weddings: Array<{ id: string; slug: string; couple_names: string; is_paid: boolean; created_at: string }>;
+  }>('/weddings/mine');
+}
+
+export async function getCoupleMeApi(): Promise<{
+  authenticated: boolean;
+  couple: CoupleAccount | null;
+}> {
+  return apiFetch<{ authenticated: boolean; couple: CoupleAccount | null }>('/weddings/me');
+}
+
+export async function logoutCoupleApi(): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/weddings/logout', {
+    method: 'POST',
   });
 }
 

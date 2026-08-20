@@ -10,10 +10,11 @@ import { PayView } from './views/PayView';
 import { WatchView } from './views/WatchView';
 import { AdminView } from './views/AdminView';
 import { WeddingsLandingView } from './views/WeddingsLandingView';
+import { WeddingsCreateView } from './views/WeddingsCreateView';
 import { WeddingsSignupView } from './views/WeddingsSignupView';
 import { WeddingsLoginView } from './views/WeddingsLoginView';
-import { WeddingsCreateView } from './views/WeddingsCreateView';
 import { WeddingsDashboardView } from './views/WeddingsDashboardView';
+import { WeddingsMineView } from './views/WeddingsMineView';
 import { WeddingGuestView } from './views/WeddingGuestView';
 import { BlogIndexView } from './views/BlogIndexView';
 import { BlogPostView } from './views/BlogPostView';
@@ -96,6 +97,8 @@ export default function App() {
         setCurrentPath('/weddings/signup');
       } else if (path === '/weddings/login') {
         setCurrentPath('/weddings/login');
+      } else if (path === '/weddings/mine') {
+        setCurrentPath('/weddings/mine');
       } else {
         setCurrentPath('/');
       }
@@ -226,7 +229,15 @@ export default function App() {
         )}
 
         {currentPath === '/weddings' && (
-          <WeddingsLandingView onNavigate={navigate} />
+          <WeddingsLandingView onNavigate={navigate} currentCouple={currentCouple} onLogout={handleCoupleLogout} />
+        )}
+
+        {currentPath === '/weddings/mine' && (
+          currentCouple ? (
+            <WeddingsMineView onNavigate={navigate} currentCouple={currentCouple} onLogout={handleCoupleLogout} />
+          ) : (
+            <WeddingsLoginView onNavigate={navigate} onLoginSuccess={(c) => { setCurrentCouple(c); navigate('/weddings/mine'); }} />
+          )
         )}
 
         {currentPath === '/weddings/create' && (

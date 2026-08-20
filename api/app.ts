@@ -1082,6 +1082,43 @@ apiRouter.get('/weddings/me', requireCoupleAuth, (req, res) => {
   });
 });
 
+// GET /api/weddings/mine — List non-sensitive metadata for weddings owned by logged-in couple (requireCoupleAuth)
+apiRouter.get('/weddings/mine', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    let list: Array<{ id: string; slug: string; couple_names: string; is_paid: boolean; created_at: string }> = [];
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('weddings')
+        .select('id, slug, couple_names, is_paid, created_at')
+        .eq('couple_account_id', couple.id)
+        .order('created_at', { ascending: false });
+      if (data && !error) {
+        list = data;
+      }
+    } else {
+      for (const w of weddingsStore.values()) {
+        if (w.couple_account_id === couple.id) {
+          list.push({
+            id: w.id,
+            slug: w.slug,
+            couple_names: w.couple_names,
+            is_paid: w.is_paid,
+            created_at: w.created_at,
+          });
+        }
+      }
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    return res.json({ success: true, weddings: list });
+  } catch (err: unknown) {
+    console.error('Error fetching couple weddings:', err);
+    return res.status(500).json({ message: 'Failed to fetch couple weddings.' });
+  }
+});
+
 // POST /api/admin/login
 apiRouter.post('/admin/login', adminLoginLimiter, async (req, res) => {
   try {
