@@ -86,7 +86,6 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 }) => {
   const [stage, setStage] = useState<'cover' | 'opening' | 'unveiled'>('cover');
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
-  const [manualReducedMotion, setManualReducedMotion] = useState<boolean>(false);
 
   // Dynamic Theme & Variant Styles Computation
   const themeStyles = resolveThemeStyles(
@@ -214,7 +213,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     }
   }, []);
 
-  const isReducedMotion = prefersReducedMotion || manualReducedMotion;
+  const isReducedMotion = prefersReducedMotion;
 
   const handleUnseal = () => {
     if (isReducedMotion) {
@@ -553,26 +552,6 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
       className={`relative min-h-screen text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center p-4 sm:p-6 select-none`}
       style={{ backgroundColor: activeTheme.bgColor }}
     >
-      {/* Dev Mode Controls */}
-      {(isSpike || !wedding) && (
-        <div
-          className="fixed top-4 right-4 z-50 backdrop-blur-md border px-3.5 py-2 rounded-2xl text-[11px] font-sans flex items-center gap-3 shadow-xl"
-          style={{ backgroundColor: `${activeTheme.bgColor}E6`, borderColor: `${accentColor}40` }}
-        >
-          <span className="font-semibold flex items-center gap-1" style={{ color: accentColor }}>
-            <Sparkles className="w-3.5 h-3.5" /> Dev Mode (Phase 4)
-          </span>
-          <label className="flex items-center gap-1.5 cursor-pointer text-xs">
-            <input
-              type="checkbox"
-              checked={manualReducedMotion}
-              onChange={(e) => setManualReducedMotion(e.target.checked)}
-              className="w-3.5 h-3.5 rounded"
-            />
-            <span>Force Reduced Motion</span>
-          </label>
-        </div>
-      )}
 
       <div
         className="relative max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl overflow-hidden shadow-2xl border flex flex-col"

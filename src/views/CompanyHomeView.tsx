@@ -52,10 +52,6 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
       <section id="products" className="py-16 sm:py-20 px-4 sm:px-6 bg-cream-card/60 border-y border-cream-border/60">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <div className="eyebrow-pill mb-3 mx-auto">
-              <span />
-              Our Product Suite
-            </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-maroon mb-3">
               Crafted for Your Moments
             </h2>

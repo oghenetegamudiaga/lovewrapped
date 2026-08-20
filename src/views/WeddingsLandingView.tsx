@@ -111,11 +111,6 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
 
       {/* Hero Section */}
       <section className="relative pt-12 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-coral/10 border border-coral/20 text-coral text-xs font-semibold tracking-wide uppercase mb-6 shadow-xs">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Introducing Weddings by Amorah</span>
-        </div>
-
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6 max-w-4xl">
           Digital Wedding Invitations<br />
           <em className="italic font-normal text-coral">as unforgettable as your love story.</em>

@@ -530,10 +530,6 @@ export const CreateView: React.FC<CreateViewProps> = ({
         {/* Step Header */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-10 pb-6 border-b border-cream-border text-center">
           <div className="flex flex-col items-center">
-            <div className="eyebrow-pill mb-2">
-              <span />
-              Your Amorah
-            </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-maroon tracking-tight">
               Let’s make it <em className="italic font-normal text-coral">personal.</em>
             </h1>

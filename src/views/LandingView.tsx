@@ -16,11 +16,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 px-4 sm:px-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         {/* Left Copy Column */}
         <div className="lg:col-span-7 flex flex-col items-center text-center z-10">
-          <div className="eyebrow-pill mb-6">
-            <span />
-            {getContent('hero_eyebrow', 'Made for your favourite person')}
-          </div>
-
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6">
             {getContent('hero_title_prefix', 'Turn your love into')}<br />
             <em className="italic font-normal text-coral">
@@ -118,10 +113,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       <section className="py-20 md:py-28 px-4 sm:px-6 bg-cream-card border-y border-cream-border" id="how-it-works">
         <div className="max-w-5xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="eyebrow-pill mb-3 justify-center">
-              <span />
-              Simple, really
-            </div>
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
               Something meaningful,<br />
               <em className="italic font-normal text-coral">in three little steps.</em>
@@ -168,10 +159,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       {/* Available Plans Section */}
       <section className="py-20 md:py-28 px-4 sm:px-6 max-w-6xl mx-auto w-full">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="eyebrow-pill mb-3 justify-center">
-            <span />
-            Available Plans
-          </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
             Pick the right tier<br />
             <em className="italic font-normal text-coral">for your moment.</em>

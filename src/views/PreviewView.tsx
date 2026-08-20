@@ -66,10 +66,6 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
       <div className="max-w-4xl mx-auto">
         {/* Step Indicator Header */}
         <div className="text-center max-w-lg mx-auto mb-8">
-          <div className="eyebrow-pill mb-2 justify-center">
-            <span />
-            Preview Your Story
-          </div>
           <h1 className="font-serif font-bold text-3xl sm:text-4xl text-maroon">
             Story Preview for {experience.receiver_name}
           </h1>

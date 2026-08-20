@@ -16,10 +16,6 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
       <div className="max-w-5xl mx-auto w-full">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="eyebrow-pill mb-3 justify-center">
-            <span />
-            {getContent('pricing_badge', 'Simple, Transparent Pricing')}
-          </div>
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
             {getContent('pricing_title', 'Choose how you want to share your story')}
           </h1>
