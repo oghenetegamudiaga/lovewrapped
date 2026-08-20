@@ -337,9 +337,15 @@ CREATE TABLE IF NOT EXISTS public.theme_assets (
   theme_id TEXT PRIMARY KEY,
   cover_background_url TEXT,
   reveal_background_url TEXT,
+  card_template_url TEXT,
+  text_zone JSONB DEFAULT '{"top": 50, "left": 10, "width": 80, "height": 40}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Explicit Migration Block for Custom Card Templates & Text Zone
+ALTER TABLE public.theme_assets ADD COLUMN IF NOT EXISTS card_template_url TEXT;
+ALTER TABLE public.theme_assets ADD COLUMN IF NOT EXISTS text_zone JSONB DEFAULT '{"top": 50, "left": 10, "width": 80, "height": 40}'::jsonb;
 
 -- Enable RLS (Public read, Server/Service Role write)
 ALTER TABLE public.theme_assets ENABLE ROW LEVEL SECURITY;

@@ -2774,22 +2774,39 @@ apiRouter.get('/theme-assets', async (req, res) => {
   }
 });
 
-// POST /api/admin/theme-assets/:themeId — Admin endpoint to upload/replace theme background scene images
+// POST /api/admin/theme-assets/:themeId — Admin endpoint to upload/replace theme background scene images & static card templates
 apiRouter.post('/admin/theme-assets/:themeId', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
     const { themeId } = req.params;
-    const { cover_background_url, reveal_background_url } = req.body;
+    const { cover_background_url, reveal_background_url, card_template_url, text_zone } = req.body;
 
     if (!VALID_THEME_IDS.has(themeId)) {
       return res.status(400).json({ message: `Invalid theme_id. Must be one of: ${Array.from(VALID_THEME_IDS).join(', ')}` });
     }
 
-    // Size & format validation on image URL payloads (cap base64 data URLs at 10MB)
+    // Size & format validation on image URL payloads (cap base64 data URLs at 15MB payload)
     if (cover_background_url && typeof cover_background_url === 'string' && cover_background_url.length > 15 * 1024 * 1024) {
       return res.status(400).json({ message: 'Cover background image payload exceeds size limit.' });
     }
     if (reveal_background_url && typeof reveal_background_url === 'string' && reveal_background_url.length > 15 * 1024 * 1024) {
       return res.status(400).json({ message: 'Reveal background image payload exceeds size limit.' });
+    }
+    if (card_template_url && typeof card_template_url === 'string' && card_template_url.length > 15 * 1024 * 1024) {
+      return res.status(400).json({ message: 'Card template image payload exceeds size limit.' });
+    }
+
+    // Server-side clamping and validation for text_zone (0% to 100%)
+    let validatedTextZone: { top: number; left: number; width: number; height: number } | null | undefined = undefined;
+    if (text_zone !== undefined) {
+      if (text_zone === null) {
+        validatedTextZone = null;
+      } else if (typeof text_zone === 'object') {
+        const top = Math.min(100, Math.max(0, Number(text_zone.top) ?? 50));
+        const left = Math.min(100, Math.max(0, Number(text_zone.left) ?? 10));
+        const width = Math.min(100, Math.max(5, Number(text_zone.width) ?? 80));
+        const height = Math.min(100, Math.max(5, Number(text_zone.height) ?? 40));
+        validatedTextZone = { top, left, width, height };
+      }
     }
 
     const now = new Date().toISOString();
@@ -2798,6 +2815,8 @@ apiRouter.post('/admin/theme-assets/:themeId', requireRole(['super_admin', 'admi
       theme_id: themeId,
       cover_background_url: cover_background_url !== undefined ? (typeof cover_background_url === 'string' && cover_background_url.trim() ? cover_background_url.trim() : null) : (existing.cover_background_url || null),
       reveal_background_url: reveal_background_url !== undefined ? (typeof reveal_background_url === 'string' && reveal_background_url.trim() ? reveal_background_url.trim() : null) : (existing.reveal_background_url || null),
+      card_template_url: card_template_url !== undefined ? (typeof card_template_url === 'string' && card_template_url.trim() ? card_template_url.trim() : null) : (existing.card_template_url || null),
+      text_zone: validatedTextZone !== undefined ? validatedTextZone : (existing.text_zone || { top: 50, left: 10, width: 80, height: 40 }),
       updated_at: now,
     };
 

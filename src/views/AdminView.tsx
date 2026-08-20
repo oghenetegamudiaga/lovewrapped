@@ -123,6 +123,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
     { id: string; couple_names: string; slug: string; theme_id: string; is_paid: boolean; payment_reference?: string; created_at: string }[]
   >([]);
   const [themeAssetsMap, setThemeAssetsMap] = useState<ThemeAssetsMap>({});
+  const [uploadingThemeSlot, setUploadingThemeSlot] = useState<{ themeId: string; field: 'cover' | 'reveal' | 'template' } | null>(null);
   const [themeAssetSaving, setThemeAssetSaving] = useState<string | null>(null);
 
   // Blog Management State
@@ -139,7 +140,6 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [blogError, setBlogError] = useState<string | null>(null);
   const [blogSuccess, setBlogSuccess] = useState<string | null>(null);
   const [blogIsSaving, setBlogIsSaving] = useState(false);
-  const [uploadingThemeSlot, setUploadingThemeSlot] = useState<{ themeId: string; field: 'cover' | 'reveal' } | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -293,13 +293,15 @@ export const AdminView: React.FC<AdminViewProps> = () => {
     });
   };
 
-  const handleThemeAssetUpload = async (themeId: string, field: 'cover' | 'reveal', file: File) => {
+  const handleThemeAssetUpload = async (themeId: string, field: 'cover' | 'reveal' | 'template', file: File) => {
     try {
       setUploadingThemeSlot({ themeId, field });
       const compressedDataUrl = await compressThemeImageFile(file);
       const payload = field === 'cover'
         ? { cover_background_url: compressedDataUrl }
-        : { reveal_background_url: compressedDataUrl };
+        : field === 'reveal'
+        ? { reveal_background_url: compressedDataUrl }
+        : { card_template_url: compressedDataUrl };
 
       const res = await updateAdminThemeAssetsApi(themeId, payload);
       if (res.success && res.asset) {
@@ -309,19 +311,21 @@ export const AdminView: React.FC<AdminViewProps> = () => {
         }));
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to upload theme backdrop image.');
+      alert(err.message || 'Failed to upload theme asset image.');
     } finally {
       setUploadingThemeSlot(null);
     }
   };
 
-  const handleThemeAssetRemove = async (themeId: string, field: 'cover' | 'reveal') => {
-    if (!confirm(`Are you sure you want to remove the ${field} backdrop image for this theme?`)) return;
+  const handleThemeAssetRemove = async (themeId: string, field: 'cover' | 'reveal' | 'template') => {
+    if (!confirm(`Are you sure you want to remove the ${field} image for this theme?`)) return;
     try {
       setUploadingThemeSlot({ themeId, field });
       const payload = field === 'cover'
         ? { cover_background_url: null }
-        : { reveal_background_url: null };
+        : field === 'reveal'
+        ? { reveal_background_url: null }
+        : { card_template_url: null };
 
       const res = await updateAdminThemeAssetsApi(themeId, payload);
       if (res.success && res.asset) {
@@ -331,9 +335,23 @@ export const AdminView: React.FC<AdminViewProps> = () => {
         }));
       }
     } catch (err: any) {
-      alert('Failed to remove theme backdrop image.');
+      alert('Failed to remove theme asset image.');
     } finally {
       setUploadingThemeSlot(null);
+    }
+  };
+
+  const handleSaveTextZone = async (themeId: string, textZone: { top: number; left: number; width: number; height: number }) => {
+    try {
+      const res = await updateAdminThemeAssetsApi(themeId, { text_zone: textZone });
+      if (res.success && res.asset) {
+        setThemeAssetsMap((prev) => ({
+          ...prev,
+          [themeId]: res.asset,
+        }));
+      }
+    } catch (err: any) {
+      alert('Failed to save text zone configuration.');
     }
   };
 
@@ -2335,6 +2353,9 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                     const currentAsset = themeAssetsMap[theme.id];
                     const isUploadingCover = uploadingThemeSlot?.themeId === theme.id && uploadingThemeSlot?.field === 'cover';
                     const isUploadingReveal = uploadingThemeSlot?.themeId === theme.id && uploadingThemeSlot?.field === 'reveal';
+                    const isUploadingTemplate = uploadingThemeSlot?.themeId === theme.id && uploadingThemeSlot?.field === 'template';
+
+                    const currentTextZone = currentAsset?.text_zone || { top: 50, left: 10, width: 80, height: 40 };
 
                     return (
                       <div key={theme.id} className="p-5 rounded-2xl bg-cream border border-cream-border flex flex-col justify-between space-y-4">
@@ -2356,7 +2377,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                             <label className="text-[11px] font-semibold text-maroon uppercase tracking-wider block">
                               Cover Background (Scene 1)
                             </label>
-                            <div className="relative h-32 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
+                            <div className="relative h-28 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
                               {currentAsset?.cover_background_url ? (
                                 <>
                                   <img
@@ -2409,7 +2430,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                               />
                               <label
                                 htmlFor={`upload-cover-${theme.id}`}
-                                className="w-full py-2 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                                className="w-full py-1.5 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
                               >
                                 <Upload className="w-3.5 h-3.5 text-coral" />
                                 <span>{currentAsset?.cover_background_url ? 'Replace Cover Image' : 'Upload Cover Image'}</span>
@@ -2422,7 +2443,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                             <label className="text-[11px] font-semibold text-maroon uppercase tracking-wider block">
                               Reveal Background (Scene 3)
                             </label>
-                            <div className="relative h-32 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
+                            <div className="relative h-28 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
                               {currentAsset?.reveal_background_url ? (
                                 <>
                                   <img
@@ -2475,12 +2496,181 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                               />
                               <label
                                 htmlFor={`upload-reveal-${theme.id}`}
-                                className="w-full py-2 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                                className="w-full py-1.5 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
                               >
                                 <Upload className="w-3.5 h-3.5 text-coral" />
                                 <span>{currentAsset?.reveal_background_url ? 'Replace Reveal Image' : 'Upload Reveal Image'}</span>
                               </label>
                             </label>
+                          </div>
+
+                          {/* Slot 3: Card Template (Static Invitation Card) */}
+                          <div className="space-y-2 pt-2 border-t border-cream-border">
+                            <label className="text-[11px] font-semibold text-maroon uppercase tracking-wider block">
+                              Card Template (Static Card)
+                            </label>
+                            <div className="relative h-36 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
+                              {currentAsset?.card_template_url ? (
+                                <>
+                                  <img
+                                    src={currentAsset.card_template_url}
+                                    alt={`${theme.name} Card Template`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/20" />
+
+                                  {/* Interactive Visual Overlay Box representing Text Zone */}
+                                  <div
+                                    className="absolute border-2 border-amber-400 bg-amber-400/25 rounded-md pointer-events-none transition-all flex items-center justify-center text-[9px] font-bold text-amber-200 shadow-md backdrop-blur-xs"
+                                    style={{
+                                      top: `${currentTextZone.top}%`,
+                                      left: `${currentTextZone.left}%`,
+                                      width: `${currentTextZone.width}%`,
+                                      height: `${currentTextZone.height}%`,
+                                    }}
+                                  >
+                                    Text Zone
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleThemeAssetRemove(theme.id, 'template')}
+                                    disabled={isUploadingTemplate}
+                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-red-600 text-white transition-colors cursor-pointer z-10"
+                                    title="Remove Card Template"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <div
+                                  className="w-full h-full flex flex-col items-center justify-center p-3 text-center"
+                                  style={{ backgroundColor: theme.cardBgColor, color: theme.textColor }}
+                                >
+                                  <p className="text-[10px] font-semibold opacity-75">Default Color Card</p>
+                                  <p className="text-[9px] opacity-50 mt-0.5">No template uploaded</p>
+                                </div>
+                              )}
+
+                              {isUploadingTemplate && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-semibold gap-2 z-20">
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  <span>Uploading...</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <label className="block w-full">
+                              <span className="sr-only">Choose Card Template File</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                disabled={isUploadingTemplate}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleThemeAssetUpload(theme.id, 'template', file);
+                                  e.target.value = '';
+                                }}
+                                className="hidden"
+                                id={`upload-template-${theme.id}`}
+                              />
+                              <label
+                                htmlFor={`upload-template-${theme.id}`}
+                                className="w-full py-1.5 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                              >
+                                <Upload className="w-3.5 h-3.5 text-coral" />
+                                <span>{currentAsset?.card_template_url ? 'Replace Card Template' : 'Upload Card Template'}</span>
+                              </label>
+                            </label>
+
+                            {/* Text Zone Percentage Inputs */}
+                            <div className="p-3 rounded-xl bg-cream-card border border-cream-border space-y-2 text-[10px]">
+                              <p className="font-semibold text-maroon uppercase tracking-wider">
+                                Text Zone Position (%)
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-mauve block mb-0.5">Top %</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={currentTextZone.top}
+                                    onChange={(e) => {
+                                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                                      const updated = { ...currentTextZone, top: val };
+                                      setThemeAssetsMap((prev) => ({
+                                        ...prev,
+                                        [theme.id]: { ...(prev[theme.id] || { theme_id: theme.id }), text_zone: updated },
+                                      }));
+                                    }}
+                                    className="w-full px-2 py-1 rounded-lg border border-cream-border bg-cream text-maroon font-mono"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-mauve block mb-0.5">Left %</label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={currentTextZone.left}
+                                    onChange={(e) => {
+                                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                                      const updated = { ...currentTextZone, left: val };
+                                      setThemeAssetsMap((prev) => ({
+                                        ...prev,
+                                        [theme.id]: { ...(prev[theme.id] || { theme_id: theme.id }), text_zone: updated },
+                                      }));
+                                    }}
+                                    className="w-full px-2 py-1 rounded-lg border border-cream-border bg-cream text-maroon font-mono"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-mauve block mb-0.5">Width %</label>
+                                  <input
+                                    type="number"
+                                    min={5}
+                                    max={100}
+                                    value={currentTextZone.width}
+                                    onChange={(e) => {
+                                      const val = Math.min(100, Math.max(5, Number(e.target.value) || 5));
+                                      const updated = { ...currentTextZone, width: val };
+                                      setThemeAssetsMap((prev) => ({
+                                        ...prev,
+                                        [theme.id]: { ...(prev[theme.id] || { theme_id: theme.id }), text_zone: updated },
+                                      }));
+                                    }}
+                                    className="w-full px-2 py-1 rounded-lg border border-cream-border bg-cream text-maroon font-mono"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-mauve block mb-0.5">Height %</label>
+                                  <input
+                                    type="number"
+                                    min={5}
+                                    max={100}
+                                    value={currentTextZone.height}
+                                    onChange={(e) => {
+                                      const val = Math.min(100, Math.max(5, Number(e.target.value) || 5));
+                                      const updated = { ...currentTextZone, height: val };
+                                      setThemeAssetsMap((prev) => ({
+                                        ...prev,
+                                        [theme.id]: { ...(prev[theme.id] || { theme_id: theme.id }), text_zone: updated },
+                                      }));
+                                    }}
+                                    className="w-full px-2 py-1 rounded-lg border border-cream-border bg-cream text-maroon font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleSaveTextZone(theme.id, currentTextZone)}
+                                className="w-full py-1.5 px-3 rounded-lg bg-maroon hover:bg-maroon-light text-cream font-semibold text-[10px] uppercase tracking-wider transition-all shadow-xs cursor-pointer"
+                              >
+                                Save Text Zone Position
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -265,10 +265,19 @@ export interface CreateWeddingPayload {
   event_venue_address?: string;
 }
 
+export interface TextZone {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 export interface ThemeAssetRecord {
   theme_id: string;
   cover_background_url?: string | null;
   reveal_background_url?: string | null;
+  card_template_url?: string | null;
+  text_zone?: TextZone | null;
   created_at?: string;
   updated_at?: string;
 }

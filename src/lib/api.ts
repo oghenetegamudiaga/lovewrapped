@@ -559,7 +559,12 @@ export async function getPublicThemeAssetsApi(): Promise<ThemeAssetsMap> {
  */
 export async function updateAdminThemeAssetsApi(
   themeId: string,
-  payload: { cover_background_url?: string | null; reveal_background_url?: string | null }
+  payload: {
+    cover_background_url?: string | null;
+    reveal_background_url?: string | null;
+    card_template_url?: string | null;
+    text_zone?: { top: number; left: number; width: number; height: number } | null;
+  }
 ): Promise<{ success: boolean; asset: ThemeAssetRecord }> {
   return apiFetch<{ success: boolean; asset: ThemeAssetRecord }>(`/admin/theme-assets/${themeId}`, {
     method: 'POST',
