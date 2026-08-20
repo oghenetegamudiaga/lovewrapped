@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, ArrowRight, Menu, X, PlayCircle, Layers, Sparkles } from 'lucide-react';
+import { Heart, ArrowRight, Menu, X, PlayCircle, Layers, Sparkles, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -43,6 +43,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             }`}
           >
             Weddings
+          </button>
+
+          <button
+            id="nav-blog-button"
+            onClick={() => onNavigate('/blog')}
+            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
+              currentPath.startsWith('/blog')
+                ? 'bg-cream-card text-maroon border border-cream-border font-semibold'
+                : 'text-mauve hover:text-maroon hover:bg-cream-card'
+            }`}
+          >
+            Blog
           </button>
 
           <button
@@ -110,6 +122,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               >
                 <span>Weddings by Amorah</span>
                 <Sparkles className="w-4 h-4 text-coral" />
+              </button>
+
+              <button
+                type="button"
+                id="mobile-nav-blog"
+                onClick={() => handleMobileNav('/blog')}
+                className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
+              >
+                <span>The Amorah Journal (Blog)</span>
+                <BookOpen className="w-4 h-4 text-coral" />
               </button>
 
               <button

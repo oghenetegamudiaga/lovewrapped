@@ -11,6 +11,8 @@ import { AdminView } from './views/AdminView';
 import { WeddingsLandingView } from './views/WeddingsLandingView';
 import { WeddingsSignupView } from './views/WeddingsSignupView';
 import { WeddingsLoginView } from './views/WeddingsLoginView';
+import { BlogIndexView } from './views/BlogIndexView';
+import { BlogPostView } from './views/BlogPostView';
 import { Experience, PlanTier, CoupleAccount } from './types';
 import { DEFAULT_PAYMENT_REF } from './constants.js';
 
@@ -20,6 +22,7 @@ export default function App() {
   const [currentExperience, setCurrentExperience] = useState<Experience | null>(null);
   const [paymentState, setPaymentState] = useState<{ reference: string; expId: string } | null>(null);
   const [watchSlug, setWatchSlug] = useState<string>('demo');
+  const [blogSlug, setBlogSlug] = useState<string>('');
   const [currentCouple, setCurrentCouple] = useState<CoupleAccount | null>(null);
 
   // Check couple session on initial mount
@@ -50,6 +53,12 @@ export default function App() {
         const slug = path.replace('/w/', '') || 'demo';
         setWatchSlug(slug);
         setCurrentPath('/w/' + slug);
+      } else if (path.startsWith('/blog/')) {
+        const bSlug = path.replace('/blog/', '');
+        setBlogSlug(bSlug);
+        setCurrentPath('/blog/' + bSlug);
+      } else if (path === '/blog') {
+        setCurrentPath('/blog');
       } else if (path === '/pricing') {
         setCurrentPath('/pricing');
       } else if (path === '/create') {
@@ -91,6 +100,9 @@ export default function App() {
     if (urlObj.pathname.startsWith('/w/')) {
       const slug = urlObj.pathname.replace('/w/', '') || 'demo';
       setWatchSlug(slug);
+    } else if (urlObj.pathname.startsWith('/blog/')) {
+      const bSlug = urlObj.pathname.replace('/blog/', '');
+      setBlogSlug(bSlug);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -193,10 +205,19 @@ export default function App() {
             onLoginSuccess={(couple) => setCurrentCouple(couple)}
           />
         )}
+
+        {currentPath === '/blog' && (
+          <BlogIndexView onNavigate={navigate} />
+        )}
+
+        {currentPath.startsWith('/blog/') && (
+          <BlogPostView slug={blogSlug} onNavigate={navigate} />
+        )}
       </main>
 
       {!currentPath.startsWith('/w/') && <Footer onNavigate={navigate} />}
     </div>
   );
 }
+
 

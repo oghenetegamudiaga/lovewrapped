@@ -131,3 +131,33 @@ ALTER TABLE public.couple_accounts ENABLE ROW LEVEL SECURITY;
 -- Note: No public RLS policies are created for public.couple_accounts.
 -- All couple account operations are performed server-side via Supabase Service Role key or API endpoints.
 
+-- ==================== Migration: Blog Posts Table ====================
+-- Run this block in Supabase SQL Editor to support the Blog feature.
+
+CREATE TABLE IF NOT EXISTS public.blog_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  excerpt TEXT NOT NULL,
+  content TEXT NOT NULL,
+  cover_image_url TEXT,
+  published BOOLEAN NOT NULL DEFAULT false,
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_blog_posts_slug ON public.blog_posts(slug);
+CREATE INDEX IF NOT EXISTS idx_blog_posts_published_published_at ON public.blog_posts(published, published_at DESC);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.blog_posts ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policy: Public can only SELECT published posts
+CREATE POLICY "Public read access for published blog posts"
+  ON public.blog_posts FOR SELECT
+  USING (published = true);
+
+-- Note: Admin write/update/delete operations are handled server-side via Supabase Service Role key.
+
+

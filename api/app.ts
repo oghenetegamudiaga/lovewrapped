@@ -6,7 +6,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import { sealData, unsealData } from 'iron-session';
-import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, CoupleAccount } from '../src/types.js';
+import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, CoupleAccount, BlogPost } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } from '../src/constants.js';
@@ -98,6 +98,23 @@ const usersStore: Map<string, UserRecord> = new Map();
 const crmContactsStore: Map<string, CRMContact> = new Map();
 const adminsStore: Map<string, AdminRecordInternal> = new Map();
 const coupleAccountsStore: Map<string, CoupleAccountInternal> = new Map();
+const blogPostsStore: Map<string, BlogPost> = new Map();
+
+// Seed Demo Blog Post
+const seedBlogPost: BlogPost = {
+  id: 'blog-seed-001',
+  slug: 'crafting-the-perfect-digital-wedding-invitation',
+  title: 'Crafting the Perfect Digital Wedding Invitation: A Modern Couple’s Guide',
+  excerpt: 'Discover how to turn your wedding invitation into an immersive digital story that captivates your guests and streamlines your RSVPs.',
+  content: `## Why Digital Wedding Invitations Matter\n\nYour wedding day is one of the most significant chapters of your shared journey. Traditional paper cards often get misplaced or overlooked, but a **digital invitation experience** stays accessible, interactive, and memorable.\n\n### 3 Key Benefits of Digital Invitations\n\n1. **Immersive Storytelling**: Share your favorite memories, video highlights, and custom music tracks.\n2. **Instant RSVP Management**: Collect responses, dietary notes, and guest counts in real time.\n3. **Multi-Event Organization**: Easily guide guests through traditional ceremonies, white weddings, and receptions in one unified experience.\n\n> *"Turn your feelings into a story they’ll want to replay."*\n\n### Getting Started\n\nCreating your invitation with **Weddings by Amorah** takes just a few minutes. Choose your theme, upload your memories, and share your personalized link with loved ones worldwide.`,
+  cover_image_url: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
+  published: true,
+  published_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  updated_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+};
+
+blogPostsStore.set(seedBlogPost.id, seedBlogPost);
 const siteContentStore: Map<string, string> = new Map([
   ['hero_eyebrow', 'Made for your favourite person'],
   ['hero_title_prefix', 'Turn your love into'],
@@ -1387,6 +1404,261 @@ apiRouter.delete('/admin/experiences/:id', requireRole(['super_admin', 'admin'])
   }
 
   res.status(404).json({ message: 'Experience not found.' });
+});
+
+/* ==================== Public Blog Endpoints ==================== */
+
+// GET /api/blog — List published blog posts
+apiRouter.get('/blog', async (req, res) => {
+  try {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('published', true)
+        .order('published_at', { ascending: false });
+
+      if (data && !error) {
+        return res.json(data);
+      }
+    }
+
+    const posts = Array.from(blogPostsStore.values())
+      .filter((p) => p.published)
+      .sort((a, b) => new Date(b.published_at || b.created_at).getTime() - new Date(a.published_at || a.created_at).getTime());
+
+    return res.json(posts);
+  } catch (err: unknown) {
+    console.error('Error fetching blog posts:', err);
+    return res.status(500).json({ message: 'Failed to fetch blog posts.' });
+  }
+});
+
+// GET /api/blog/:slug — Single published blog post
+apiRouter.get('/blog/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('slug', slug)
+        .eq('published', true)
+        .single();
+
+      if (data && !error) {
+        return res.json(data);
+      }
+    }
+
+    let foundPost: BlogPost | undefined;
+    for (const post of blogPostsStore.values()) {
+      if (post.slug === slug && post.published) {
+        foundPost = post;
+        break;
+      }
+    }
+
+    if (!foundPost) {
+      return res.status(404).json({ message: 'Blog post not found.' });
+    }
+
+    return res.json(foundPost);
+  } catch (err: unknown) {
+    console.error('Error fetching blog post:', err);
+    return res.status(500).json({ message: 'Failed to fetch blog post.' });
+  }
+});
+
+/* ==================== Admin Blog Management Routes ==================== */
+
+// GET /api/admin/blog — List all blog posts (published + drafts)
+apiRouter.get('/admin/blog', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data && !error) {
+        return res.json(data);
+      }
+    }
+
+    const posts = Array.from(blogPostsStore.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    return res.json(posts);
+  } catch (err: unknown) {
+    console.error('Error fetching admin blog posts:', err);
+    return res.status(500).json({ message: 'Failed to fetch blog posts.' });
+  }
+});
+
+// POST /api/admin/blog — Create new blog post
+apiRouter.post('/admin/blog', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const { title, slug, excerpt, content, cover_image_url, published } = req.body;
+
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ message: 'Blog post title is required.' });
+    }
+    if (!excerpt || typeof excerpt !== 'string' || !excerpt.trim()) {
+      return res.status(400).json({ message: 'Blog post excerpt is required.' });
+    }
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ message: 'Blog post content is required.' });
+    }
+
+    const cleanTitle = title.trim();
+    const cleanExcerpt = excerpt.trim();
+    const cleanContent = content.trim();
+    const cleanCoverUrl = cover_image_url && typeof cover_image_url === 'string' ? cover_image_url.trim() : null;
+
+    const generatedSlug = (slug && typeof slug === 'string' && slug.trim())
+      ? slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      : cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    // Check slug uniqueness
+    if (isSupabaseConfigured && supabase) {
+      const { data: existing } = await supabase.from('blog_posts').select('id').eq('slug', generatedSlug).single();
+      if (existing) {
+        return res.status(400).json({ message: 'A blog post with this slug already exists.' });
+      }
+    }
+
+    for (const p of blogPostsStore.values()) {
+      if (p.slug === generatedSlug) {
+        return res.status(400).json({ message: 'A blog post with this slug already exists.' });
+      }
+    }
+
+    const isPublished = Boolean(published);
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    const newPost: BlogPost = {
+      id,
+      slug: generatedSlug,
+      title: cleanTitle,
+      excerpt: cleanExcerpt,
+      content: cleanContent,
+      cover_image_url: cleanCoverUrl,
+      published: isPublished,
+      published_at: isPublished ? now : null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('blog_posts').insert(newPost);
+      if (error) {
+        console.error('Supabase blog_posts insert error:', error);
+        return res.status(500).json({ message: 'Failed to save blog post to database.' });
+      }
+    }
+
+    blogPostsStore.set(id, newPost);
+
+    return res.status(201).json(newPost);
+  } catch (err: unknown) {
+    console.error('Error creating blog post:', err);
+    return res.status(500).json({ message: 'Failed to create blog post.' });
+  }
+});
+
+// PATCH /api/admin/blog/:id — Update existing blog post
+apiRouter.patch('/admin/blog/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { title, slug, excerpt, content, cover_image_url, published } = req.body;
+
+    let existingPost: BlogPost | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('blog_posts').select('*').eq('id', id).single();
+      if (data) existingPost = data;
+    }
+
+    if (!existingPost) {
+      existingPost = blogPostsStore.get(id);
+    }
+
+    if (!existingPost) {
+      return res.status(404).json({ message: 'Blog post not found.' });
+    }
+
+    const now = new Date().toISOString();
+    const updates: Partial<BlogPost> = { updated_at: now };
+
+    if (title && typeof title === 'string') updates.title = title.trim();
+    if (excerpt && typeof excerpt === 'string') updates.excerpt = excerpt.trim();
+    if (content && typeof content === 'string') updates.content = content.trim();
+    if (cover_image_url !== undefined) updates.cover_image_url = cover_image_url ? cover_image_url.trim() : null;
+
+    if (slug && typeof slug === 'string' && slug.trim()) {
+      const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      if (cleanSlug !== existingPost.slug) {
+        if (isSupabaseConfigured && supabase) {
+          const { data: existing } = await supabase.from('blog_posts').select('id').eq('slug', cleanSlug).neq('id', id).single();
+          if (existing) {
+            return res.status(400).json({ message: 'A blog post with this slug already exists.' });
+          }
+        }
+        updates.slug = cleanSlug;
+      }
+    }
+
+    if (typeof published === 'boolean') {
+      updates.published = published;
+      if (published && !existingPost.published_at) {
+        updates.published_at = now;
+      }
+    }
+
+    let updatedPost: BlogPost = { ...existingPost, ...updates };
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase blog_posts update error:', error);
+        return res.status(500).json({ message: 'Failed to update blog post.' });
+      }
+      if (data) updatedPost = data;
+    }
+
+    blogPostsStore.set(id, updatedPost);
+
+    return res.json(updatedPost);
+  } catch (err: unknown) {
+    console.error('Error updating blog post:', err);
+    return res.status(500).json({ message: 'Failed to update blog post.' });
+  }
+});
+
+// DELETE /api/admin/blog/:id — Delete blog post
+apiRouter.delete('/admin/blog/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('blog_posts').delete().eq('id', id);
+    }
+
+    blogPostsStore.delete(id);
+
+    return res.json({ success: true, message: 'Blog post deleted.' });
+  } catch (err: unknown) {
+    console.error('Error deleting blog post:', err);
+    return res.status(500).json({ message: 'Failed to delete blog post.' });
+  }
 });
 
 /* ==================== Public Site Content (CMS) Endpoint ==================== */

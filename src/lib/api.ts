@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord } from '../types.js';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost } from '../types.js';
 
 const API_BASE = '/api';
 
@@ -109,12 +109,22 @@ export async function verifyPaymentApi(
   });
 }
 
+/* ==================== Public Blog Endpoints ==================== */
+
+export async function getPublicBlogPostsApi(): Promise<BlogPost[]> {
+  return apiFetch<BlogPost[]>('/blog');
+}
+
+export async function getPublicBlogPostBySlugApi(slug: string): Promise<BlogPost> {
+  return apiFetch<BlogPost>(`/blog/${encodeURIComponent(slug)}`);
+}
+
 /* ==================== Admin API Calls (Cookie Auth) ==================== */
 
-export async function adminLoginApi(credentials: { email: string; password: string }): Promise<{ success: boolean; email: string }> {
-  return apiFetch<{ success: boolean; email: string }>('/admin/login', {
+export async function adminLoginApi(email: string, password: string): Promise<{ success: boolean; email: string; role: AdminRole; isRootAdmin?: boolean }> {
+  return apiFetch<{ success: boolean; email: string; role: AdminRole; isRootAdmin?: boolean }>('/admin/login', {
     method: 'POST',
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({ email, password }),
   });
 }
 
@@ -124,8 +134,8 @@ export async function adminLogoutApi(): Promise<{ success: boolean }> {
   });
 }
 
-export async function getAdminMeApi(): Promise<{ authenticated: boolean; email: string; role: AdminRole; isRootAdmin: boolean }> {
-  return apiFetch<{ authenticated: boolean; email: string; role: AdminRole; isRootAdmin: boolean }>('/admin/me');
+export async function getAdminMeApi(): Promise<{ authenticated: boolean; email: string; role: AdminRole; isRootAdmin?: boolean }> {
+  return apiFetch<{ authenticated: boolean; email: string; role: AdminRole; isRootAdmin?: boolean }>('/admin/me');
 }
 
 export async function getAdminMetricsApi(): Promise<AdminMetrics> {
@@ -144,10 +154,10 @@ export async function getAdminExperiencesApi(): Promise<Experience[]> {
   return apiFetch<Experience[]>('/admin/experiences');
 }
 
-export async function updateAdminExperiencePaymentStatusApi(id: string, isPaid: boolean): Promise<{ success: boolean; experience: Experience }> {
+export async function updateAdminExperiencePaymentStatusApi(id: string, is_paid: boolean): Promise<{ success: boolean; experience: Experience }> {
   return apiFetch<{ success: boolean; experience: Experience }>(`/admin/experiences/${id}/payment-status`, {
     method: 'PATCH',
-    body: JSON.stringify({ is_paid: isPaid }),
+    body: JSON.stringify({ is_paid }),
   });
 }
 
@@ -163,10 +173,10 @@ export async function getAdminCrmContactsApi(): Promise<CRMContact[]> {
   return apiFetch<CRMContact[]>('/admin/crm');
 }
 
-export async function createAdminCrmContactApi(contact: Partial<CRMContact>): Promise<CRMContact> {
+export async function createAdminCrmContactApi(payload: Partial<CRMContact>): Promise<CRMContact> {
   return apiFetch<CRMContact>('/admin/crm', {
     method: 'POST',
-    body: JSON.stringify(contact),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -189,6 +199,42 @@ export async function updateSiteContentApi(key: string, value: string): Promise<
   return apiFetch<{ success: boolean; key: string; value: string }>('/admin/content', {
     method: 'PATCH',
     body: JSON.stringify({ key, value }),
+  });
+}
+
+/* ==================== Admin Blog Management API ==================== */
+
+export async function getAdminBlogPostsApi(): Promise<BlogPost[]> {
+  return apiFetch<BlogPost[]>('/admin/blog');
+}
+
+export async function createAdminBlogPostApi(payload: {
+  title: string;
+  slug?: string;
+  excerpt: string;
+  content: string;
+  cover_image_url?: string | null;
+  published: boolean;
+}): Promise<BlogPost> {
+  return apiFetch<BlogPost>('/admin/blog', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAdminBlogPostApi(
+  id: string,
+  updates: Partial<BlogPost>
+): Promise<BlogPost> {
+  return apiFetch<BlogPost>(`/admin/blog/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteAdminBlogPostApi(id: string): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(`/admin/blog/${id}`, {
+    method: 'DELETE',
   });
 }
 
