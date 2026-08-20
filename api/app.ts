@@ -6,10 +6,10 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import { sealData, unsealData } from 'iron-session';
-import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, CoupleAccount, BlogPost } from '../src/types.js';
+import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, CoupleAccount, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
-import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } from '../src/constants.js';
+import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED, WEDDING_PLAN_PRICE_KOBO, WEDDING_PLAN_PRICE_NGN, WEDDING_PLAN_PRICE_FORMATTED } from '../src/constants.js';
 
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -67,6 +67,14 @@ const createExperienceLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const weddingRsvpLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 30,
+  message: { message: 'Too many RSVP submissions from this IP. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const paystackInitializeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
@@ -99,6 +107,16 @@ const crmContactsStore: Map<string, CRMContact> = new Map();
 const adminsStore: Map<string, AdminRecordInternal> = new Map();
 const coupleAccountsStore: Map<string, CoupleAccountInternal> = new Map();
 const blogPostsStore: Map<string, BlogPost> = new Map();
+const weddingsStore: Map<string, Wedding> = new Map();
+const weddingEventsStore: Map<string, WeddingEvent[]> = new Map();
+const weddingRsvpsStore: Map<string, WeddingRSVP[]> = new Map();
+
+// Helper to generate wedding slug using crypto.randomBytes
+function generateWeddingSlug(coupleNames: string): string {
+  const cleanNames = (coupleNames || 'wedding').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/(^-|-$)/g, '');
+  const randomSuffix = crypto.randomBytes(6).toString('hex');
+  return `${cleanNames}-${randomSuffix}`;
+}
 
 // Seed Demo Blog Post
 const seedBlogPost: BlogPost = {
@@ -1468,6 +1486,437 @@ apiRouter.get('/blog/:slug', async (req, res) => {
   } catch (err: unknown) {
     console.error('Error fetching blog post:', err);
     return res.status(500).json({ message: 'Failed to fetch blog post.' });
+  }
+});
+
+/* ==================== Weddings API Endpoints (Phase 1) ==================== */
+
+// GET /api/weddings/slug/:slug — Public fetch of paid wedding + event
+apiRouter.get('/weddings/slug/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: wedding, error: wErr } = await supabase
+        .from('weddings')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_paid', true)
+        .single();
+
+      if (wedding && !wErr) {
+        const { data: events } = await supabase
+          .from('wedding_events')
+          .select('*')
+          .eq('wedding_id', wedding.id);
+
+        return res.json({
+          wedding,
+          event: events && events.length > 0 ? events[0] : null,
+        });
+      }
+    }
+
+    let foundWedding: Wedding | undefined;
+    for (const w of weddingsStore.values()) {
+      if (w.slug === slug && w.is_paid) {
+        foundWedding = w;
+        break;
+      }
+    }
+
+    if (!foundWedding) {
+      return res.status(404).json({ message: 'Wedding invitation not found or payment pending.' });
+    }
+
+    const events = weddingEventsStore.get(foundWedding.id) || [];
+    return res.json({
+      wedding: foundWedding,
+      event: events.length > 0 ? events[0] : null,
+    });
+  } catch (err: unknown) {
+    console.error('Error fetching wedding by slug:', err);
+    return res.status(500).json({ message: 'Failed to fetch wedding invitation.' });
+  }
+});
+
+// POST /api/weddings/:slug/rsvp — Public guest RSVP submission with rate limiting
+apiRouter.post('/weddings/:slug/rsvp', weddingRsvpLimiter, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { guest_name, attending, guest_count, dietary_notes, message } = req.body;
+
+    if (!guest_name || typeof guest_name !== 'string' || !guest_name.trim()) {
+      return res.status(400).json({ message: 'Guest name is required.' });
+    }
+    if (typeof attending !== 'boolean') {
+      return res.status(400).json({ message: 'Attending status is required.' });
+    }
+
+    let weddingId: string | null = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data: wedding } = await supabase
+        .from('weddings')
+        .select('id')
+        .eq('slug', slug)
+        .eq('is_paid', true)
+        .single();
+
+      if (wedding) weddingId = wedding.id;
+    }
+
+    if (!weddingId) {
+      for (const w of weddingsStore.values()) {
+        if (w.slug === slug && w.is_paid) {
+          weddingId = w.id;
+          break;
+        }
+      }
+    }
+
+    if (!weddingId) {
+      return res.status(404).json({ message: 'Wedding invitation not found.' });
+    }
+
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+    const rsvp: WeddingRSVP = {
+      id,
+      wedding_id: weddingId,
+      guest_name: guest_name.trim(),
+      attending,
+      guest_count: typeof guest_count === 'number' && guest_count > 0 ? guest_count : 1,
+      dietary_notes: dietary_notes && typeof dietary_notes === 'string' ? dietary_notes.trim() : null,
+      message: message && typeof message === 'string' ? message.trim() : null,
+      created_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('wedding_rsvps').insert(rsvp);
+      if (error) {
+        console.error('Supabase wedding_rsvps insert error:', error);
+        return res.status(500).json({ message: 'Failed to record RSVP submission.' });
+      }
+    }
+
+    const list = weddingRsvpsStore.get(weddingId) || [];
+    list.push(rsvp);
+    weddingRsvpsStore.set(weddingId, list);
+
+    return res.status(201).json({ success: true, rsvp });
+  } catch (err: unknown) {
+    console.error('Error submitting RSVP:', err);
+    return res.status(500).json({ message: 'Failed to submit RSVP.' });
+  }
+});
+
+// POST /api/weddings/create-payment — Initialize Paystack payment for Wedding package
+apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitializeLimiter, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const payload: CreateWeddingPayload = req.body;
+
+    if (!payload.couple_names || !payload.couple_names.trim()) {
+      return res.status(400).json({ message: 'Couple names are required.' });
+    }
+    if (!payload.event_date || !payload.event_venue_name) {
+      return res.status(400).json({ message: 'Event date and venue name are required.' });
+    }
+
+    const ref = `AMORAH_WEDDING_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+
+    if (!PAYSTACK_SECRET_KEY) {
+      // Mock Paystack checkout URL if Paystack key is missing in dev mode
+      const mockCheckoutUrl = `${req.protocol}://${req.get('host')}/pay?ref=${ref}&type=wedding`;
+      return res.json({
+        authorization_url: mockCheckoutUrl,
+        reference: ref,
+        amount: WEDDING_PLAN_PRICE_KOBO,
+      });
+    }
+
+    const response = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: couple.email,
+        amount: WEDDING_PLAN_PRICE_KOBO,
+        reference: ref,
+        metadata: {
+          couple_id: couple.id,
+          type: 'wedding',
+          payload,
+        },
+      }),
+    });
+
+    const data = await response.json();
+    if (!data.status) {
+      return res.status(400).json({ message: data.message || 'Failed to initialize Paystack checkout.' });
+    }
+
+    return res.json({
+      authorization_url: data.data.authorization_url,
+      reference: ref,
+      amount: WEDDING_PLAN_PRICE_KOBO,
+    });
+  } catch (err: unknown) {
+    console.error('Error initializing wedding payment:', err);
+    return res.status(500).json({ message: 'Payment initialization failed.' });
+  }
+});
+
+// POST /api/weddings/verify-payment — Verify Paystack reference and persist wedding
+apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { reference, payload } = req.body;
+
+    if (!reference || typeof reference !== 'string') {
+      return res.status(400).json({ message: 'Payment reference is required.' });
+    }
+
+    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+    if (PAYSTACK_SECRET_KEY && !reference.startsWith('LW_REF_') && !reference.startsWith('AMORAH_WEDDING_MOCK')) {
+      const resp = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+        headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
+      });
+      const verData = await resp.json();
+      if (!verData.status || verData.data.status !== 'success') {
+        return res.status(400).json({ message: 'Payment verification failed or transaction not completed.' });
+      }
+      if (verData.data.amount < WEDDING_PLAN_PRICE_KOBO) {
+        return res.status(400).json({ message: 'Payment amount mismatch.' });
+      }
+    }
+
+    const weddingId = crypto.randomUUID();
+    const slug = generateWeddingSlug(payload.couple_names);
+    const now = new Date().toISOString();
+
+    const weddingRecord: Wedding = {
+      id: weddingId,
+      couple_account_id: couple.id,
+      slug,
+      couple_names: payload.couple_names.trim(),
+      cover_photo_url: payload.cover_photo_url || null,
+      theme_id: payload.theme_id || 'classic-burgundy',
+      love_story: payload.love_story || null,
+      music_track: payload.music_track || null,
+      registry_info: payload.registry_info || null,
+      is_paid: true,
+      payment_reference: reference,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const eventRecord: WeddingEvent = {
+      id: crypto.randomUUID(),
+      wedding_id: weddingId,
+      title: payload.event_title || 'Wedding Celebration',
+      date: payload.event_date.trim(),
+      time: payload.event_time ? payload.event_time.trim() : '10:00 AM',
+      venue_name: payload.event_venue_name.trim(),
+      venue_address: payload.event_venue_address ? payload.event_venue_address.trim() : null,
+      created_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error: wErr } = await supabase.from('weddings').insert(weddingRecord);
+      if (wErr) {
+        console.error('Supabase weddings insert error:', wErr);
+        return res.status(500).json({ message: 'Failed to create wedding record.' });
+      }
+      const { error: eErr } = await supabase.from('wedding_events').insert(eventRecord);
+      if (eErr) {
+        console.error('Supabase wedding_events insert error:', eErr);
+      }
+    }
+
+    weddingsStore.set(weddingId, weddingRecord);
+    weddingEventsStore.set(weddingId, [eventRecord]);
+
+    return res.status(201).json({
+      success: true,
+      wedding: weddingRecord,
+      event: eventRecord,
+      shareUrl: `/w/wedding/${slug}`,
+    });
+  } catch (err: unknown) {
+    console.error('Error verifying wedding payment:', err);
+    return res.status(500).json({ message: 'Payment verification failed.' });
+  }
+});
+
+// GET /api/weddings/dashboard/:weddingId — Couple Dashboard fetch (ownership check enforced)
+apiRouter.get('/weddings/dashboard/:weddingId', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId } = req.params;
+
+    let targetWedding: Wedding | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('weddings').select('*').eq('id', weddingId).single();
+      if (data) targetWedding = data;
+    }
+
+    if (!targetWedding) {
+      targetWedding = weddingsStore.get(weddingId);
+    }
+
+    if (!targetWedding) {
+      return res.status(404).json({ message: 'Wedding invitation not found.' });
+    }
+
+    // SERVER-SIDE OWNERSHIP ENFORCEMENT: logged-in couple MUST own this wedding
+    if (targetWedding.couple_account_id !== couple.id) {
+      return res.status(403).json({ message: 'Access denied: You do not have permission to view this dashboard.' });
+    }
+
+    let events: WeddingEvent[] = [];
+    let rsvps: WeddingRSVP[] = [];
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: eData } = await supabase.from('wedding_events').select('*').eq('wedding_id', weddingId);
+      if (eData) events = eData;
+
+      const { data: rData } = await supabase
+        .from('wedding_rsvps')
+        .select('*')
+        .eq('wedding_id', weddingId)
+        .order('created_at', { ascending: false });
+      if (rData) rsvps = rData;
+    } else {
+      events = weddingEventsStore.get(weddingId) || [];
+      rsvps = (weddingRsvpsStore.get(weddingId) || []).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+
+    return res.json({
+      wedding: targetWedding,
+      event: events.length > 0 ? events[0] : null,
+      rsvps,
+    });
+  } catch (err: unknown) {
+    console.error('Error fetching wedding dashboard:', err);
+    return res.status(500).json({ message: 'Failed to fetch wedding dashboard.' });
+  }
+});
+
+// PATCH /api/weddings/dashboard/:weddingId — Couple Dashboard edit event typos (ownership check enforced)
+apiRouter.patch('/weddings/dashboard/:weddingId', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId } = req.params;
+    const { date, time, venue_name, venue_address } = req.body;
+
+    let targetWedding: Wedding | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('weddings').select('*').eq('id', weddingId).single();
+      if (data) targetWedding = data;
+    }
+
+    if (!targetWedding) {
+      targetWedding = weddingsStore.get(weddingId);
+    }
+
+    if (!targetWedding) {
+      return res.status(404).json({ message: 'Wedding invitation not found.' });
+    }
+
+    // SERVER-SIDE OWNERSHIP ENFORCEMENT: logged-in couple MUST own this wedding
+    if (targetWedding.couple_account_id !== couple.id) {
+      return res.status(403).json({ message: 'Access denied: You do not have permission to edit this wedding.' });
+    }
+
+    const updates: Partial<WeddingEvent> = {};
+    if (date && typeof date === 'string') updates.date = date.trim();
+    if (time && typeof time === 'string') updates.time = time.trim();
+    if (venue_name && typeof venue_name === 'string') updates.venue_name = venue_name.trim();
+    if (venue_address !== undefined) updates.venue_address = venue_address ? venue_address.trim() : null;
+
+    let updatedEvent: WeddingEvent | null = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('wedding_events')
+        .update(updates)
+        .eq('wedding_id', weddingId)
+        .select()
+        .single();
+      if (data && !error) updatedEvent = data;
+    }
+
+    const eventsList = weddingEventsStore.get(weddingId) || [];
+    if (eventsList.length > 0) {
+      eventsList[0] = { ...eventsList[0], ...updates };
+      weddingEventsStore.set(weddingId, eventsList);
+      if (!updatedEvent) updatedEvent = eventsList[0];
+    }
+
+    return res.json({ success: true, event: updatedEvent });
+  } catch (err: unknown) {
+    console.error('Error updating wedding details:', err);
+    return res.status(500).json({ message: 'Failed to update wedding details.' });
+  }
+});
+
+/* ==================== Admin Weddings Management Routes ==================== */
+
+// GET /api/admin/weddings — List non-sensitive metadata only (Privacy compliant)
+apiRouter.get('/admin/weddings', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('weddings')
+        .select('id, couple_names, slug, theme_id, is_paid, payment_reference, created_at')
+        .order('created_at', { ascending: false });
+
+      if (data && !error) {
+        return res.json(data);
+      }
+    }
+
+    const weddingsList = Array.from(weddingsStore.values())
+      .map((w) => ({
+        id: w.id,
+        couple_names: w.couple_names,
+        slug: w.slug,
+        theme_id: w.theme_id,
+        is_paid: w.is_paid,
+        payment_reference: w.payment_reference,
+        created_at: w.created_at,
+      }))
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return res.json(weddingsList);
+  } catch (err: unknown) {
+    console.error('Error fetching admin weddings list:', err);
+    return res.status(500).json({ message: 'Failed to fetch weddings list.' });
+  }
+});
+
+// DELETE /api/admin/weddings/:id — Delete wedding record
+apiRouter.delete('/admin/weddings/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('weddings').delete().eq('id', id);
+    }
+
+    weddingsStore.delete(id);
+    weddingEventsStore.delete(id);
+    weddingRsvpsStore.delete(id);
+
+    return res.json({ success: true, message: 'Wedding invitation deleted.' });
+  } catch (err: unknown) {
+    console.error('Error deleting wedding:', err);
+    return res.status(500).json({ message: 'Failed to delete wedding.' });
   }
 });
 

@@ -31,6 +31,7 @@ import {
   BookOpen,
   Plus,
   Eye,
+  Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -67,6 +68,8 @@ import {
   createAdminBlogPostApi,
   updateAdminBlogPostApi,
   deleteAdminBlogPostApi,
+  getAdminWeddingsApi,
+  deleteAdminWeddingApi,
   AdminTimeseriesPoint,
 } from '../lib/api';
 import { fetchSiteContentApi, invalidateSiteContentCache } from '../lib/useSiteContent';
@@ -108,8 +111,13 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [isRootAdmin, setIsRootAdmin] = useState(false);
   const [subAdmins, setSubAdmins] = useState<AdminRecord[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users' | 'crm' | 'settings' | 'blog'>('metrics');
+  const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users' | 'crm' | 'settings' | 'blog' | 'weddings'>('metrics');
   const [crmSubTab, setCrmSubTab] = useState<'contacts' | 'cms'>('contacts');
+
+  // Admin Weddings State
+  const [adminWeddings, setAdminWeddings] = useState<
+    { id: string; couple_names: string; slug: string; theme_id: string; is_paid: boolean; payment_reference?: string; created_at: string }[]
+  >([]);
 
   // Blog Management State
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -207,6 +215,9 @@ export const AdminView: React.FC<AdminViewProps> = () => {
 
         const posts = await getAdminBlogPostsApi().catch(() => []);
         setBlogPosts(posts);
+
+        const wList = await getAdminWeddingsApi().catch(() => []);
+        setAdminWeddings(wList);
       }
     } catch (err: unknown) {
       console.error('Failed to load admin data:', err);
@@ -727,15 +738,26 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                 <span>Settings</span>
               </button>
               {adminRole !== 'support' && (
-                <button
-                  onClick={() => setActiveTab('blog')}
-                  className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
-                    activeTab === 'blog' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Blog ({blogPosts.length})</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => setActiveTab('blog')}
+                    className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
+                      activeTab === 'blog' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Blog ({blogPosts.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('weddings')}
+                    className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
+                      activeTab === 'weddings' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-coral" />
+                    <span>Weddings ({adminWeddings.length})</span>
+                  </button>
+                </>
               )}
             </div>
 
@@ -2128,6 +2150,92 @@ export const AdminView: React.FC<AdminViewProps> = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {/* Weddings Management Tab View */}
+      {activeTab === 'weddings' && (
+        <div className="space-y-6">
+          {adminRole === 'support' ? (
+            <div className="p-8 text-center rounded-3xl bg-cream-card border border-cream-border">
+              <Shield className="w-10 h-10 text-coral mx-auto mb-3" />
+              <h3 className="font-serif text-xl font-bold text-maroon mb-2">Access Restricted</h3>
+              <p className="text-mauve text-sm">Weddings management requires Admin or Super Admin privileges.</p>
+            </div>
+          ) : (
+            <>
+              {/* Header Bar */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cream-card p-6 rounded-3xl border border-cream-border">
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-maroon">Weddings Management</h2>
+                  <p className="text-xs text-mauve">Overview of activated wedding invitations (Non-sensitive metadata only).</p>
+                </div>
+              </div>
+
+              {/* Weddings Table */}
+              <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-cream-border bg-cream/50 text-[11px] font-semibold text-mauve uppercase tracking-wider">
+                        <th className="py-4 px-6">Couple Names</th>
+                        <th className="py-4 px-6">Public URL</th>
+                        <th className="py-4 px-6">Theme</th>
+                        <th className="py-4 px-6">Payment Status</th>
+                        <th className="py-4 px-6">Created Date</th>
+                        <th className="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-cream-border text-xs text-maroon">
+                      {adminWeddings.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-mauve">
+                            No wedding invitations created yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        adminWeddings.map((w) => (
+                          <tr key={w.id} className="hover:bg-cream/40 transition-colors">
+                            <td className="py-4 px-6 font-semibold text-maroon">{w.couple_names}</td>
+                            <td className="py-4 px-6 font-mono text-[11px] text-mauve">/w/wedding/{w.slug}</td>
+                            <td className="py-4 px-6 text-mauve capitalize">{w.theme_id}</td>
+                            <td className="py-4 px-6">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Paid (₦10,000)
+                              </span>
+                            </td>
+                            <td className="py-4 px-6 text-mauve">
+                              {new Date(w.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Are you sure you want to delete wedding "${w.couple_names}"?`)) return;
+                                  try {
+                                    await deleteAdminWeddingApi(w.id);
+                                    setAdminWeddings((prev) => prev.filter((item) => item.id !== w.id));
+                                  } catch (err: unknown) {
+                                    alert('Failed to delete wedding record.');
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg bg-cream border border-cream-border text-red-600 hover:bg-red-50 transition-colors"
+                                title="Delete Wedding Record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -129,3 +129,75 @@ export interface SiteContentItem {
 }
 
 export type SiteContentMap = Record<string, string>;
+
+/* ==================== Weddings by Amorah Types ==================== */
+
+export interface WeddingTheme {
+  id: string;
+  name: string;
+  description: string;
+  bgColor: string;
+  cardBgColor: string;
+  textColor: string;
+  accentColor: string;
+  secondaryColor: string;
+  serifFont: string;
+  sansFont: string;
+  sealColor: string;
+  sealMonogramColor: string;
+  frameStyle: string;
+  ribbonColor: string;
+}
+
+export interface Wedding {
+  id: string;
+  couple_account_id: string;
+  slug: string;
+  couple_names: string;
+  cover_photo_url?: string | null;
+  theme_id: string;
+  love_story?: string | null;
+  music_track?: string | null;
+  registry_info?: string | null;
+  is_paid: boolean;
+  payment_reference?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WeddingEvent {
+  id: string;
+  wedding_id: string;
+  title: string;
+  date: string;
+  time: string;
+  venue_name: string;
+  venue_address?: string | null;
+  created_at: string;
+}
+
+export interface WeddingRSVP {
+  id: string;
+  wedding_id: string;
+  guest_name: string;
+  attending: boolean;
+  guest_count: number;
+  dietary_notes?: string | null;
+  message?: string | null;
+  created_at: string;
+}
+
+export interface CreateWeddingPayload {
+  theme_id: string;
+  couple_names: string;
+  cover_photo_url?: string;
+  love_story?: string;
+  music_track?: string;
+  registry_info?: string;
+  event_title: string;
+  event_date: string;
+  event_time: string;
+  event_venue_name: string;
+  event_venue_address?: string;
+}
+

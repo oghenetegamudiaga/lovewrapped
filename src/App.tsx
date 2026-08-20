@@ -12,6 +12,9 @@ import { AdminView } from './views/AdminView';
 import { WeddingsLandingView } from './views/WeddingsLandingView';
 import { WeddingsSignupView } from './views/WeddingsSignupView';
 import { WeddingsLoginView } from './views/WeddingsLoginView';
+import { WeddingsCreateView } from './views/WeddingsCreateView';
+import { WeddingsDashboardView } from './views/WeddingsDashboardView';
+import { WeddingGuestView } from './views/WeddingGuestView';
 import { BlogIndexView } from './views/BlogIndexView';
 import { BlogPostView } from './views/BlogPostView';
 import { WeddingInvitationViewer } from './components/WeddingInvitationViewer';
@@ -25,6 +28,8 @@ export default function App() {
   const [paymentState, setPaymentState] = useState<{ reference: string; expId: string } | null>(null);
   const [watchSlug, setWatchSlug] = useState<string>('demo');
   const [blogSlug, setBlogSlug] = useState<string>('');
+  const [weddingSlug, setWeddingSlug] = useState<string>('');
+  const [dashboardWeddingId, setDashboardWeddingId] = useState<string>('');
   const [currentCouple, setCurrentCouple] = useState<CoupleAccount | null>(null);
 
   // Check couple session on initial mount
@@ -51,7 +56,11 @@ export default function App() {
         setSelectedPlan(planParam);
       }
 
-      if (path.startsWith('/w/')) {
+      if (path.startsWith('/w/wedding/')) {
+        const wSlug = path.replace('/w/wedding/', '');
+        setWeddingSlug(wSlug);
+        setCurrentPath('/w/wedding/' + wSlug);
+      } else if (path.startsWith('/w/')) {
         const slug = path.replace('/w/', '') || 'demo';
         setWatchSlug(slug);
         setCurrentPath('/w/' + slug);
@@ -59,6 +68,10 @@ export default function App() {
         const bSlug = path.replace('/blog/', '');
         setBlogSlug(bSlug);
         setCurrentPath('/blog/' + bSlug);
+      } else if (path.startsWith('/weddings/dashboard/')) {
+        const wId = path.replace('/weddings/dashboard/', '');
+        setDashboardWeddingId(wId);
+        setCurrentPath('/weddings/dashboard/' + wId);
       } else if (path === '/blog') {
         setCurrentPath('/blog');
       } else if (path === '/love-stories') {
@@ -77,6 +90,8 @@ export default function App() {
         setCurrentPath('/admin');
       } else if (path === '/weddings') {
         setCurrentPath('/weddings');
+      } else if (path === '/weddings/create') {
+        setCurrentPath('/weddings/create');
       } else if (path === '/weddings/signup') {
         setCurrentPath('/weddings/signup');
       } else if (path === '/weddings/login') {
@@ -103,12 +118,18 @@ export default function App() {
     }
     setCurrentPath(urlObj.pathname);
 
-    if (urlObj.pathname.startsWith('/w/')) {
+    if (urlObj.pathname.startsWith('/w/wedding/')) {
+      const wSlug = urlObj.pathname.replace('/w/wedding/', '');
+      setWeddingSlug(wSlug);
+    } else if (urlObj.pathname.startsWith('/w/')) {
       const slug = urlObj.pathname.replace('/w/', '') || 'demo';
       setWatchSlug(slug);
     } else if (urlObj.pathname.startsWith('/blog/')) {
       const bSlug = urlObj.pathname.replace('/blog/', '');
       setBlogSlug(bSlug);
+    } else if (urlObj.pathname.startsWith('/weddings/dashboard/')) {
+      const wId = urlObj.pathname.replace('/weddings/dashboard/', '');
+      setDashboardWeddingId(wId);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -147,10 +168,12 @@ export default function App() {
     navigate(`/w/${exp.slug}?share=true`);
   };
 
+  const isFullscreenView = currentPath.startsWith('/w/') || currentPath === '/dev/wedding-spike';
+
   return (
     <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans antialiased">
-      {/* Hide standard navbar on fullscreen recipient viewer /w/[slug] and dev spike /dev/wedding-spike */}
-      {!currentPath.startsWith('/w/') && currentPath !== '/dev/wedding-spike' && (
+      {/* Hide standard navbar on fullscreen recipient viewers */}
+      {!isFullscreenView && (
         <Navbar currentPath={currentPath} onNavigate={navigate} />
       )}
 
@@ -159,7 +182,7 @@ export default function App() {
 
         {currentPath === '/love-stories' && <LandingView onNavigate={navigate} />}
 
-        {currentPath === '/dev/wedding-spike' && <WeddingInvitationViewer onNavigate={navigate} />}
+        {currentPath === '/dev/wedding-spike' && <WeddingInvitationViewer isSpike onNavigate={navigate} />}
 
         {currentPath === '/pricing' && (
           <PricingView onSelectPlan={handleSelectPlan} />
@@ -190,7 +213,11 @@ export default function App() {
           />
         )}
 
-        {currentPath.startsWith('/w/') && (
+        {currentPath.startsWith('/w/wedding/') && (
+          <WeddingGuestView slug={weddingSlug} onNavigate={navigate} />
+        )}
+
+        {currentPath.startsWith('/w/') && !currentPath.startsWith('/w/wedding/') && (
           <WatchView slug={watchSlug} onNavigateToCreate={() => navigate('/pricing')} />
         )}
 
@@ -200,6 +227,22 @@ export default function App() {
 
         {currentPath === '/weddings' && (
           <WeddingsLandingView onNavigate={navigate} />
+        )}
+
+        {currentPath === '/weddings/create' && (
+          currentCouple ? (
+            <WeddingsCreateView onNavigate={navigate} currentCouple={currentCouple} />
+          ) : (
+            <WeddingsLoginView onNavigate={navigate} onLoginSuccess={(c) => { setCurrentCouple(c); navigate('/weddings/create'); }} />
+          )
+        )}
+
+        {currentPath.startsWith('/weddings/dashboard/') && (
+          currentCouple ? (
+            <WeddingsDashboardView weddingId={dashboardWeddingId} onNavigate={navigate} currentCouple={currentCouple} />
+          ) : (
+            <WeddingsLoginView onNavigate={navigate} onLoginSuccess={(c) => { setCurrentCouple(c); navigate(`/weddings/dashboard/${dashboardWeddingId}`); }} />
+          )
         )}
 
         {currentPath === '/weddings/signup' && (
@@ -225,10 +268,11 @@ export default function App() {
         )}
       </main>
 
-      {!currentPath.startsWith('/w/') && currentPath !== '/dev/wedding-spike' && <Footer onNavigate={navigate} />}
+      {!isFullscreenView && <Footer onNavigate={navigate} />}
     </div>
   );
 }
+
 
 
 

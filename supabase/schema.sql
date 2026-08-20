@@ -161,3 +161,87 @@ CREATE POLICY "Public read access for published blog posts"
 -- Note: Admin write/update/delete operations are handled server-side via Supabase Service Role key.
 
 
+-- ==================== Migration: Weddings by Amorah Tables ====================
+-- Run this block in Supabase SQL Editor to support the Weddings product line (Phase 1).
+
+-- 1. Main Weddings Table
+CREATE TABLE IF NOT EXISTS public.weddings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  couple_account_id UUID NOT NULL REFERENCES public.couple_accounts(id) ON DELETE CASCADE,
+  slug TEXT UNIQUE NOT NULL,
+  couple_names TEXT NOT NULL,
+  cover_photo_url TEXT,
+  theme_id TEXT NOT NULL DEFAULT 'classic-burgundy',
+  love_story TEXT,
+  music_track TEXT,
+  registry_info TEXT,
+  is_paid BOOLEAN NOT NULL DEFAULT false,
+  payment_reference TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_weddings_slug ON public.weddings(slug);
+CREATE INDEX IF NOT EXISTS idx_weddings_couple_account_id ON public.weddings(couple_account_id);
+
+-- Enable RLS for public.weddings
+ALTER TABLE public.weddings ENABLE ROW LEVEL SECURITY;
+
+-- Public read access for paid weddings
+CREATE POLICY "Public read access for paid weddings"
+  ON public.weddings FOR SELECT
+  USING (is_paid = true);
+
+-- 2. Wedding Events Table (Supports single event in Phase 1, scalable to multi-event in Phase 2)
+CREATE TABLE IF NOT EXISTS public.wedding_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wedding_id UUID NOT NULL REFERENCES public.weddings(id) ON DELETE CASCADE,
+  title TEXT NOT NULL DEFAULT 'Wedding Celebration',
+  date TEXT NOT NULL,
+  time TEXT NOT NULL,
+  venue_name TEXT NOT NULL,
+  venue_address TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wedding_events_wedding_id ON public.wedding_events(wedding_id);
+
+-- Enable RLS for public.wedding_events
+ALTER TABLE public.wedding_events ENABLE ROW LEVEL SECURITY;
+
+-- Public read access for events of paid weddings
+CREATE POLICY "Public read access for wedding events"
+  ON public.wedding_events FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.weddings
+      WHERE public.weddings.id = public.wedding_events.wedding_id
+        AND public.weddings.is_paid = true
+    )
+  );
+
+-- 3. Wedding RSVPs Table
+CREATE TABLE IF NOT EXISTS public.wedding_rsvps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wedding_id UUID NOT NULL REFERENCES public.weddings(id) ON DELETE CASCADE,
+  guest_name TEXT NOT NULL,
+  attending BOOLEAN NOT NULL,
+  guest_count INTEGER NOT NULL DEFAULT 1,
+  dietary_notes TEXT,
+  message TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wedding_rsvps_wedding_id ON public.wedding_rsvps(wedding_id);
+
+-- Enable RLS for public.wedding_rsvps
+ALTER TABLE public.wedding_rsvps ENABLE ROW LEVEL SECURITY;
+
+-- Note: All RSVP writes (POST /api/weddings/:slug/rsvp) and Couple Dashboard reads/edits are performed server-side via Supabase Service Role Key to enforce security and ownership.
+
+-- 4. Supabase Storage Bucket Policy Note
+-- Create a public Storage bucket named 'wedding-images' in Supabase Dashboard.
+-- Enable Public Read access for displaying cover photos. Public Writes are disabled. All uploads take place server-side or via signed URLs.
+
+
+
