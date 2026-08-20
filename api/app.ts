@@ -808,21 +808,42 @@ apiRouter.post('/paystack/webhook', async (req, res) => {
 
   if (event && event.event === 'charge.success') {
     const txData = event.data;
-    if (txData && txData.status === 'success' && txData.amount === PAID_PLAN_PRICE_KOBO) {
+    if (txData && txData.status === 'success') {
       const reference = txData.reference;
-      if (reference) {
-        if (isSupabaseConfigured && supabase) {
-          await supabase
-            .from('experiences')
-            .update({ is_paid: true })
-            .eq('payment_reference', reference);
-        }
+      const metadata = txData.metadata || {};
+      const isWedding = metadata.type === 'wedding' || reference?.startsWith('AMORAH_WEDDING_');
 
-        for (const item of experiencesStore.values()) {
-          if (item.payment_reference === reference) {
-            item.is_paid = true;
-            experiencesStore.set(item.slug, item);
+      if (isWedding && txData.amount >= WEDDING_PLAN_PRICE_KOBO) {
+        const weddingId = metadata.wedding_id || metadata.weddingId;
+        if (isSupabaseConfigured && supabase) {
+          if (weddingId) {
+            await supabase.from('weddings').update({ is_paid: true }).eq('id', weddingId);
+          } else if (reference) {
+            await supabase.from('weddings').update({ is_paid: true }).eq('payment_reference', reference);
+          }
+        }
+        for (const w of weddingsStore.values()) {
+          if (w.id === weddingId || w.payment_reference === reference) {
+            w.is_paid = true;
+            weddingsStore.set(w.id, w);
             break;
+          }
+        }
+      } else if (txData.amount === PAID_PLAN_PRICE_KOBO) {
+        if (reference) {
+          if (isSupabaseConfigured && supabase) {
+            await supabase
+              .from('experiences')
+              .update({ is_paid: true })
+              .eq('payment_reference', reference);
+          }
+
+          for (const item of experiencesStore.values()) {
+            if (item.payment_reference === reference) {
+              item.is_paid = true;
+              experiencesStore.set(item.slug, item);
+              break;
+            }
           }
         }
       }
@@ -831,6 +852,29 @@ apiRouter.post('/paystack/webhook', async (req, res) => {
 
   return res.status(200).json({ status: 'success' });
 });
+
+// Periodic Cleanup Task for Abandoned Unpaid Wedding Records (> 24 hours old)
+async function cleanupUnpaidWeddings() {
+  try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    if (isSupabaseConfigured && supabase) {
+      await supabase
+        .from('weddings')
+        .delete()
+        .eq('is_paid', false)
+        .lt('created_at', cutoff);
+    }
+    for (const [id, w] of weddingsStore.entries()) {
+      if (!w.is_paid && w.created_at < cutoff) {
+        weddingsStore.delete(id);
+        weddingEventsStore.delete(id);
+      }
+    }
+  } catch (err) {
+    console.error('Error cleaning up unpaid weddings:', err);
+  }
+}
+setInterval(cleanupUnpaidWeddings, 60 * 60 * 1000);
 
 // Admin Authentication & Session Management using iron-session
 const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
@@ -1754,7 +1798,7 @@ apiRouter.post('/weddings/:slug/rsvp', weddingRsvpLimiter, async (req, res) => {
   }
 });
 
-// POST /api/weddings/create-payment — Initialize Paystack payment for Wedding package
+// POST /api/weddings/create-payment — Create wedding record (is_paid: false) & initialize Paystack transaction
 apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitializeLimiter, async (req, res) => {
   try {
     const couple = (req as any).coupleSession;
@@ -1768,91 +1812,21 @@ apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitialize
     if (!bride_first_name && !groom_first_name && (!payload.couple_names || !payload.couple_names.trim())) {
       return res.status(400).json({ message: "Bride's first name and Groom's first name are required." });
     }
-    if (!payload.event_date || !payload.event_venue_name) {
+
+    const hasEvents = payload.events && Array.isArray(payload.events) && payload.events.length > 0;
+    const firstEvent = hasEvents ? payload.events![0] : null;
+    const event_date = firstEvent?.date || payload.event_date;
+    const event_venue_name = firstEvent?.venue_name || payload.event_venue_name;
+
+    if (!event_date || !event_venue_name) {
       return res.status(400).json({ message: 'Event date and venue name are required.' });
     }
 
-    const ref = `AMORAH_WEDDING_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
-    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-
-    if (!PAYSTACK_SECRET_KEY) {
-      // Mock Paystack checkout URL if Paystack key is missing in dev mode
-      const mockCheckoutUrl = `${req.protocol}://${req.get('host')}/pay?ref=${ref}&type=wedding`;
-      return res.json({
-        authorization_url: mockCheckoutUrl,
-        reference: ref,
-        amount: WEDDING_PLAN_PRICE_KOBO,
-      });
-    }
-
-    const response = await fetch('https://api.paystack.co/transaction/initialize', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: couple.email,
-        amount: WEDDING_PLAN_PRICE_KOBO,
-        reference: ref,
-        metadata: {
-          couple_id: couple.id,
-          type: 'wedding',
-          payload,
-        },
-      }),
-    });
-
-    const data = await response.json();
-    if (!data.status) {
-      return res.status(400).json({ message: data.message || 'Failed to initialize Paystack checkout.' });
-    }
-
-    return res.json({
-      authorization_url: data.data.authorization_url,
-      reference: ref,
-      amount: WEDDING_PLAN_PRICE_KOBO,
-    });
-  } catch (err: unknown) {
-    console.error('Error initializing wedding payment:', err);
-    return res.status(500).json({ message: 'Payment initialization failed.' });
-  }
-});
-
-// POST /api/weddings/verify-payment — Verify Paystack reference and persist wedding
-apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) => {
-  try {
-    const couple = (req as any).coupleSession;
-    const { reference, payload } = req.body;
-
-    if (!reference || typeof reference !== 'string') {
-      return res.status(400).json({ message: 'Payment reference is required.' });
-    }
-
-    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-    if (PAYSTACK_SECRET_KEY && !reference.startsWith('LW_REF_') && !reference.startsWith('AMORAH_WEDDING_MOCK')) {
-      const resp = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-        headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
-      });
-      const verData = await resp.json();
-      if (!verData.status || verData.data.status !== 'success') {
-        return res.status(400).json({ message: 'Payment verification failed or transaction not completed.' });
-      }
-      if (verData.data.amount < WEDDING_PLAN_PRICE_KOBO) {
-        return res.status(400).json({ message: 'Payment amount mismatch.' });
-      }
-    }
-
     const weddingId = crypto.randomUUID();
-    const bride_first_name = payload.bride_first_name ? payload.bride_first_name.trim().slice(0, 100) : '';
-    const bride_other_names = payload.bride_other_names ? payload.bride_other_names.trim().slice(0, 100) : '';
-    const groom_first_name = payload.groom_first_name ? payload.groom_first_name.trim().slice(0, 100) : '';
-    const groom_other_names = payload.groom_other_names ? payload.groom_other_names.trim().slice(0, 100) : '';
-    
-    // Legacy fallback format
     const fallbackCoupleNames = payload.couple_names?.trim() || `${bride_first_name} & ${groom_first_name}`;
     const slug = generateWeddingSlug(bride_first_name || fallbackCoupleNames, groom_first_name || '');
     const now = new Date().toISOString();
+    const ref = `AMORAH_WEDDING_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 
     const theme_id = payload.theme_id && VALID_THEME_IDS.has(payload.theme_id) ? payload.theme_id : 'classic-burgundy';
     const color_variant = payload.color_variant && VALID_COLOR_VARIANTS.has(payload.color_variant) ? payload.color_variant : 'royal-gold';
@@ -1878,16 +1852,15 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
       love_story: payload.love_story || null,
       music_track: payload.music_track || null,
       registry_info: payload.registry_info || null,
-      is_paid: true,
-      payment_reference: reference,
+      is_paid: false,
+      payment_reference: ref,
       created_at: now,
       updated_at: now,
     };
 
-    // Process Multi-Event Creation Array
     const eventRecords: WeddingEvent[] = [];
-    if (payload.events && Array.isArray(payload.events) && payload.events.length > 0) {
-      for (const ev of payload.events) {
+    if (hasEvents) {
+      for (const ev of payload.events!) {
         eventRecords.push({
           id: crypto.randomUUID(),
           wedding_id: weddingId,
@@ -1926,12 +1899,140 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
     weddingsStore.set(weddingId, weddingRecord);
     weddingEventsStore.set(weddingId, eventRecords);
 
-    return res.status(201).json({
+    // Return callback URL for Paystack redirect back
+    const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer as string).origin : `${req.protocol}://${req.get('host')}`);
+    const callback_url = `${origin}/weddings/create?step=payment-return&reference=${ref}`;
+
+    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+    if (!PAYSTACK_SECRET_KEY) {
+      return res.json({
+        authorization_url: callback_url,
+        reference: ref,
+        weddingId,
+        slug,
+        amount: WEDDING_PLAN_PRICE_KOBO,
+      });
+    }
+
+    const response = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: couple.email,
+        amount: WEDDING_PLAN_PRICE_KOBO,
+        reference: ref,
+        callback_url,
+        metadata: {
+          couple_id: couple.id,
+          wedding_id: weddingId,
+          type: 'wedding',
+        },
+      }),
+    });
+
+    const data = await response.json();
+    if (!data.status) {
+      return res.status(400).json({ message: data.message || 'Failed to initialize Paystack checkout.' });
+    }
+
+    return res.json({
+      authorization_url: data.data.authorization_url,
+      reference: ref,
+      weddingId,
+      slug,
+      amount: WEDDING_PLAN_PRICE_KOBO,
+    });
+  } catch (err: unknown) {
+    console.error('Error initializing wedding payment:', err);
+    return res.status(500).json({ message: 'Payment initialization failed.' });
+  }
+});
+
+// POST /api/weddings/verify-payment — Verify Paystack reference and mark wedding as paid
+apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { reference } = req.body;
+
+    if (!reference || typeof reference !== 'string') {
+      return res.status(400).json({ message: 'Payment reference is required.' });
+    }
+
+    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+    if (PAYSTACK_SECRET_KEY && !reference.startsWith('LW_REF_') && !reference.startsWith('AMORAH_WEDDING_MOCK')) {
+      const resp = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+        headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
+      });
+      const verData = await resp.json();
+      if (!verData.status || verData.data.status !== 'success') {
+        return res.status(400).json({ message: 'Payment verification failed or transaction not completed.' });
+      }
+      if (verData.data.amount < WEDDING_PLAN_PRICE_KOBO) {
+        return res.status(400).json({ message: 'Payment amount mismatch.' });
+      }
+    }
+
+    // Find pre-created wedding record by payment_reference
+    let targetWedding: Wedding | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('weddings')
+        .select('*')
+        .eq('payment_reference', reference)
+        .single();
+      if (data) targetWedding = data;
+    }
+
+    if (!targetWedding) {
+      for (const w of weddingsStore.values()) {
+        if (w.payment_reference === reference) {
+          targetWedding = w;
+          break;
+        }
+      }
+    }
+
+    if (!targetWedding) {
+      return res.status(404).json({ message: 'Wedding record not found for this payment reference.' });
+    }
+
+    // Ownership Enforcement
+    if (targetWedding.couple_account_id !== couple.id) {
+      return res.status(403).json({ message: 'Access denied: You do not have permission to verify this wedding.' });
+    }
+
+    // Flip is_paid to true
+    if (!targetWedding.is_paid) {
+      targetWedding.is_paid = true;
+      targetWedding.updated_at = new Date().toISOString();
+
+      if (isSupabaseConfigured && supabase) {
+        await supabase
+          .from('weddings')
+          .update({ is_paid: true, updated_at: targetWedding.updated_at })
+          .eq('id', targetWedding.id);
+      }
+      weddingsStore.set(targetWedding.id, targetWedding);
+    }
+
+    let eventRecords = weddingEventsStore.get(targetWedding.id) || [];
+    if (isSupabaseConfigured && supabase && eventRecords.length === 0) {
+      const { data: evData } = await supabase
+        .from('wedding_events')
+        .select('*')
+        .eq('wedding_id', targetWedding.id);
+      if (evData) eventRecords = evData;
+    }
+
+    return res.json({
       success: true,
-      wedding: weddingRecord,
+      wedding: targetWedding,
       events: eventRecords,
-      event: eventRecords[0],
-      shareUrl: `/w/wedding/${slug}`,
+      event: eventRecords[0] || null,
+      shareUrl: `/w/wedding/${targetWedding.slug}`,
     });
   } catch (err: unknown) {
     console.error('Error verifying wedding payment:', err);

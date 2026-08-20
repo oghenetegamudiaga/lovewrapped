@@ -315,11 +315,15 @@ export async function submitWeddingRsvpApi(
 export async function createWeddingPaymentApi(payload: CreateWeddingPayload): Promise<{
   authorization_url: string;
   reference: string;
+  weddingId?: string;
+  slug?: string;
   amount: number;
 }> {
   return apiFetch<{
     authorization_url: string;
     reference: string;
+    weddingId?: string;
+    slug?: string;
     amount: number;
   }>('/weddings/create-payment', {
     method: 'POST',
@@ -328,24 +332,23 @@ export async function createWeddingPaymentApi(payload: CreateWeddingPayload): Pr
 }
 
 export async function verifyWeddingPaymentApi(
-  reference: string,
-  payload: CreateWeddingPayload
+  reference: string
 ): Promise<{
   success: boolean;
   wedding: Wedding;
-  events: WeddingEvent[];
-  event: WeddingEvent;
+  events?: WeddingEvent[];
+  event?: WeddingEvent;
   shareUrl: string;
 }> {
   return apiFetch<{
     success: boolean;
     wedding: Wedding;
-    events: WeddingEvent[];
-    event: WeddingEvent;
+    events?: WeddingEvent[];
+    event?: WeddingEvent;
     shareUrl: string;
   }>('/weddings/verify-payment', {
     method: 'POST',
-    body: JSON.stringify({ reference, payload }),
+    body: JSON.stringify({ reference }),
   });
 }
 

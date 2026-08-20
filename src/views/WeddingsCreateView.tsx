@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type } from 'lucide-react';
 import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
 import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount } from '../types';
@@ -102,6 +102,44 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
     });
   };
 
+  useEffect(() => {
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const stepParam = searchParams.get('step');
+    const refParam = searchParams.get('reference') || searchParams.get('trxref');
+
+    if ((stepParam === 'payment-return' || refParam) && refParam) {
+      verifyReturnPayment(refParam);
+    }
+  }, []);
+
+  const verifyReturnPayment = async (ref: string) => {
+    setIsLoading(true);
+    setError(null);
+    setStep(5);
+
+    try {
+      const verRes = await verifyWeddingPaymentApi(ref);
+      if (verRes.success && verRes.wedding) {
+        setCreatedShareUrl(verRes.shareUrl || `/w/wedding/${verRes.wedding.slug}`);
+        setCreatedWeddingId(verRes.wedding.id);
+        setStep(6);
+
+        if (typeof window !== 'undefined' && window.history?.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } else {
+        throw new Error('Payment verification was not successful.');
+      }
+    } catch (err: unknown) {
+      console.error('Error verifying returned wedding payment:', err);
+      const msg = err instanceof Error ? err.message : 'Payment verification failed. Please try again.';
+      setError(msg);
+      setStep(5);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleProceedToPayment = async () => {
     setError(null);
     setIsLoading(true);
@@ -139,19 +177,14 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
 
     try {
       const payRes = await createWeddingPaymentApi(payload);
-      const verRes = await verifyWeddingPaymentApi(payRes.reference, payload);
-
-      if (verRes.success) {
-        setCreatedShareUrl(verRes.shareUrl);
-        setCreatedWeddingId(verRes.wedding.id);
-        setStep(6); // Success Step
+      if (payRes.authorization_url) {
+        window.location.href = payRes.authorization_url;
       } else {
-        setError('Payment verification failed.');
+        throw new Error('Failed to initialize Paystack checkout.');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to process payment checkout.';
       setError(msg);
-    } finally {
       setIsLoading(false);
     }
   };
