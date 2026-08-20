@@ -33,6 +33,13 @@ export const WEDDING_THEMES: Record<string, WeddingTheme> = {
     sealMonogramColor: '#D4AF37',
     frameStyle: 'ornate-gold',
     ribbonColor: '#D4AF37',
+    coverPhotoFramePosition: {
+      x: '50%',
+      y: '42%',
+      width: '40%',
+      height: '38%',
+      borderRadius: '1.25rem',
+    },
   },
   'modern-emerald': {
     id: 'modern-emerald',
@@ -49,6 +56,13 @@ export const WEDDING_THEMES: Record<string, WeddingTheme> = {
     sealMonogramColor: '#E6C280',
     frameStyle: 'sleek-bronze',
     ribbonColor: '#E6C280',
+    coverPhotoFramePosition: {
+      x: '50%',
+      y: '40%',
+      width: '42%',
+      height: '40%',
+      borderRadius: '1rem',
+    },
   },
   'boho-champagne': {
     id: 'boho-champagne',
@@ -65,6 +79,13 @@ export const WEDDING_THEMES: Record<string, WeddingTheme> = {
     sealMonogramColor: '#F7D6D0',
     frameStyle: 'rose-botanical',
     ribbonColor: '#B76E79',
+    coverPhotoFramePosition: {
+      x: '50%',
+      y: '44%',
+      width: '38%',
+      height: '38%',
+      borderRadius: '9999px',
+    },
   },
 };
 

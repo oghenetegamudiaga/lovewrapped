@@ -147,6 +147,14 @@ export interface WeddingTheme {
   sealMonogramColor: string;
   frameStyle: string;
   ribbonColor: string;
+  coverPhotoFramePosition?: {
+    x: string;
+    y: string;
+    width: string;
+    height: string;
+    borderRadius?: string;
+    rotation?: string;
+  };
 }
 
 export interface Wedding {

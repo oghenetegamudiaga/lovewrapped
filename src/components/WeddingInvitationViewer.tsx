@@ -137,7 +137,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   onNavigate,
   isSpike = false,
 }) => {
-  const [stage, setStage] = useState<'cover' | 'opening' | 'unveiled'>('cover');
+  const [stage, setStage] = useState<'cover' | 'doors_opening' | 'drone_zooming' | 'view_prompt' | 'unveiled'>('cover');
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
 
   // Dynamic Theme & Variant Styles Computation
@@ -303,13 +303,20 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   const handleUnseal = () => {
     if (isReducedMotion) {
-      setStage('unveiled');
+      setStage('view_prompt');
     } else {
-      setStage('opening');
+      setStage('doors_opening');
       setTimeout(() => {
-        setStage('unveiled');
-      }, 1200);
+        setStage('drone_zooming');
+      }, 1000);
+      setTimeout(() => {
+        setStage('view_prompt');
+      }, 2600);
     }
+  };
+
+  const handleEnterInvitation = () => {
+    setStage('unveiled');
   };
 
   const handleReplay = () => {
@@ -727,165 +734,233 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         className="relative max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl overflow-hidden shadow-2xl border flex flex-col"
         style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}50` }}
       >
-        {/* Animated Cover & Opening Doors (Scenes 1 & 2) */}
+        {/* Animated Cover & 3D Opening Doors (Scenes 1 & 2) */}
         <AnimatePresence mode="wait">
           {stage !== 'unveiled' && (
             <motion.div
               key="cover-layer"
               initial={{ opacity: 1 }}
-              exit={isReducedMotion ? { opacity: 0 } : { opacity: 1 }}
-              transition={{ duration: isReducedMotion ? 0.4 : 0.8 }}
-              className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 text-center"
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 text-center overflow-hidden [perspective:1200px]"
             >
-              {/* Background Hero Layer */}
-              <div className="absolute inset-0 z-0">
+              {/* Layer 1: Background Scene Image (Drone Parallax Base) */}
+              <motion.div
+                className="absolute inset-0 z-0 pointer-events-none"
+                animate={
+                  !isReducedMotion && (stage === 'drone_zooming' || stage === 'view_prompt')
+                    ? { scale: 1.15, y: -15 }
+                    : { scale: 1.0, y: 0 }
+                }
+                transition={{ duration: 1.6, ease: [0.25, 1, 0.5, 1] }}
+              >
                 {themeAssets[activeThemeId]?.cover_background_url ? (
                   <img
                     src={themeAssets[activeThemeId]!.cover_background_url!}
                     alt="Theme Cover Backdrop Scene"
-                    className="w-full h-full object-cover opacity-75"
+                    className="w-full h-full object-cover opacity-85"
                   />
                 ) : (
-                  <img src={coverPhoto} alt="Cover backdrop" className="w-full h-full object-cover opacity-25 filter blur-xs" />
+                  <div
+                    className="w-full h-full"
+                    style={{
+                      backgroundImage: `radial-gradient(circle at center, ${activeTheme.cardBgColor}, ${activeTheme.bgColor})`,
+                    }}
+                  />
                 )}
                 <div
                   className="absolute inset-0 bg-gradient-to-t"
                   style={{
-                    backgroundImage: `linear-gradient(to top, ${activeTheme.bgColor}, ${activeTheme.cardBgColor}99, ${activeTheme.bgColor}D9)`,
+                    backgroundImage: `linear-gradient(to top, ${activeTheme.bgColor}E6, ${activeTheme.cardBgColor}80, ${activeTheme.bgColor}B3)`,
                   }}
                 />
-              </div>
+              </motion.div>
 
-              {/* Decorative Corner Filigree Frame */}
-              <div
-                className="absolute inset-4 z-10 border rounded-2xl pointer-events-none flex flex-col justify-between p-3"
-                style={{ borderColor: `${accentColor}40` }}
-              >
-                <div className="flex justify-between">
-                  <svg className="w-8 h-8 opacity-80" style={{ color: accentColor }} viewBox="0 0 40 40">
-                    <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
-                  </svg>
-                  <svg className="w-8 h-8 opacity-80 rotate-90" style={{ color: accentColor }} viewBox="0 0 40 40">
-                    <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
-                  </svg>
-                </div>
-                <div className="flex justify-between">
-                  <svg className="w-8 h-8 opacity-80 -rotate-90" style={{ color: accentColor }} viewBox="0 0 40 40">
-                    <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
-                  </svg>
-                  <svg className="w-8 h-8 opacity-80 rotate-180" style={{ color: accentColor }} viewBox="0 0 40 40">
-                    <path fill="currentColor" d="M0,0 L15,0 L15,2 L2,2 L2,15 L0,15 Z M5,5 L12,5 L12,7 L7,7 L7,12 L5,12 Z" />
-                  </svg>
-                </div>
-              </div>
+              {/* Layer 2: Composited Couple Photo Frame (2-Layer Parallax Foreground) */}
+              {(() => {
+                const framePos = activeTheme.coverPhotoFramePosition || {
+                  x: '50%',
+                  y: '42%',
+                  width: '40%',
+                  height: '38%',
+                  borderRadius: '1.25rem',
+                };
 
-              {/* Split Opening Doors (Scene 2 Transition) */}
+                return (
+                  <motion.div
+                    className="absolute z-10 overflow-hidden shadow-2xl border-2 pointer-events-none"
+                    style={{
+                      left: framePos.x,
+                      top: framePos.y,
+                      transform: 'translate(-50%, -50%)',
+                      width: framePos.width,
+                      height: framePos.height,
+                      borderRadius: framePos.borderRadius || '1rem',
+                      borderColor: `${accentColor}80`,
+                    }}
+                    animate={
+                      !isReducedMotion && (stage === 'drone_zooming' || stage === 'view_prompt')
+                        ? { scale: 1.38, y: -32 }
+                        : { scale: 1.0, y: 0 }
+                    }
+                    transition={{ duration: 1.6, ease: [0.25, 1, 0.5, 1] }}
+                  >
+                    <img
+                      src={coverPhoto}
+                      alt="Couple Portrait"
+                      className="w-full h-full object-cover filter brightness-[1.03]"
+                    />
+                    <div className="absolute inset-0 ring-1 ring-inset ring-white/20 pointer-events-none" />
+                  </motion.div>
+                );
+              })()}
+
+              {/* 3D Swinging Door Panels (Scene 2 Transition) */}
               {!isReducedMotion && (
                 <>
                   <motion.div
-                    animate={stage === 'opening' ? { x: '-100%' } : { x: 0 }}
+                    initial={{ rotateY: 0 }}
+                    animate={{ rotateY: stage !== 'cover' ? -105 : 0, opacity: stage === 'view_prompt' ? 0 : 1 }}
                     transition={{ duration: 1.1, ease: [0.77, 0, 0.175, 1] }}
-                    className="absolute inset-y-0 left-0 w-1/2 border-r z-15 pointer-events-none"
-                    style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}
+                    className="absolute inset-y-0 left-0 w-1/2 border-r z-20 pointer-events-none shadow-2xl"
+                    style={{
+                      backgroundColor: activeTheme.cardBgColor,
+                      borderColor: `${accentColor}40`,
+                      transformOrigin: 'left center',
+                    }}
                   />
                   <motion.div
-                    animate={stage === 'opening' ? { x: '100%' } : { x: 0 }}
+                    initial={{ rotateY: 0 }}
+                    animate={{ rotateY: stage !== 'cover' ? 105 : 0, opacity: stage === 'view_prompt' ? 0 : 1 }}
                     transition={{ duration: 1.1, ease: [0.77, 0, 0.175, 1] }}
-                    className="absolute inset-y-0 right-0 w-1/2 border-l z-15 pointer-events-none"
-                    style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}
+                    className="absolute inset-y-0 right-0 w-1/2 border-l z-20 pointer-events-none shadow-2xl"
+                    style={{
+                      backgroundColor: activeTheme.cardBgColor,
+                      borderColor: `${accentColor}40`,
+                      transformOrigin: 'right center',
+                    }}
                   />
                 </>
               )}
 
-              {/* Cover Typography */}
-              <div className="relative z-20 pt-8 space-y-4 max-w-xs mx-auto">
-                <motion.p
-                  initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                  className="text-[11px] tracking-[0.3em] uppercase font-semibold"
-                  style={{ color: accentColor }}
-                >
-                  {guest ? `Special Invitation For ${guest.name}` : 'Together With Their Families'}
-                </motion.p>
+              {/* Cover Header & Typography (Visible when cover is closed) */}
+              {stage === 'cover' && (
+                <div className="relative z-30 pt-8 space-y-4 max-w-xs mx-auto">
+                  <motion.p
+                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    className="text-[11px] tracking-[0.3em] uppercase font-semibold"
+                    style={{ color: accentColor }}
+                  >
+                    {guest ? `Special Invitation For ${guest.name}` : 'Together With Their Families'}
+                  </motion.p>
 
-                <motion.div
-                  initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 1, delay: 0.4 }}
-                  className="py-2"
-                >
-                  <h1 className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass}`} style={{ color: secondaryColor }}>
-                    {coupleNames}
-                  </h1>
-                </motion.div>
+                  <motion.div
+                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 1, delay: 0.4 }}
+                    className="py-2"
+                  >
+                    <h1 className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass}`} style={{ color: secondaryColor }}>
+                      {coupleNames}
+                    </h1>
+                  </motion.div>
 
-                <motion.p
-                  initial={isReducedMotion ? { opacity: 1 } : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.7 }}
-                  className="text-xs opacity-80 italic font-light"
-                >
-                  request the honor of your presence at their wedding celebration
-                </motion.p>
-              </div>
+                  <motion.p
+                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 0.7 }}
+                    className="text-xs opacity-80 italic font-light"
+                  >
+                    request the honor of your presence at their wedding celebration
+                  </motion.p>
 
-              {/* Date & Location Pill */}
-              <motion.div
-                initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.9 }}
-                className="relative z-20 py-2 px-4 rounded-full border text-[11px] flex items-center gap-2"
-                style={{ backgroundColor: `${activeTheme.bgColor}CC`, borderColor: `${accentColor}40`, color: accentColor }}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>
-                  {(activeEvents[0] ? formatEventDateTime(activeEvents[0].date, activeEvents[0].time).formattedDate : '').toUpperCase()} • {activeEvents[0]?.venue_name.toUpperCase()}
-                </span>
-              </motion.div>
+                  <motion.div
+                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.9 }}
+                    className="inline-flex py-1.5 px-3.5 rounded-full border text-[10px] items-center gap-1.5"
+                    style={{ backgroundColor: `${activeTheme.bgColor}E6`, borderColor: `${accentColor}40`, color: accentColor }}
+                  >
+                    <Calendar className="w-3 h-3" />
+                    <span>
+                      {(activeEvents[0] ? formatEventDateTime(activeEvents[0].date, activeEvents[0].time).formattedDate : '').toUpperCase()}
+                    </span>
+                  </motion.div>
+                </div>
+              )}
 
-              {/* Interactive Wax Seal */}
-              <div className="relative z-20 pb-6 flex flex-col items-center gap-3">
-                <div className="relative flex items-center justify-center">
-                  {!isReducedMotion && (
-                    <motion.div
-                      animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.8, 0.4] }}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                      className="absolute inset-0 -m-3 rounded-full border"
-                      style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}50` }}
-                    />
-                  )}
+              {/* Interactive Wax Seal Trigger (Cover Stage) */}
+              {stage === 'cover' && (
+                <div className="relative z-30 pb-6 flex flex-col items-center gap-3">
+                  <div className="relative flex items-center justify-center">
+                    {!isReducedMotion && (
+                      <motion.div
+                        animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.8, 0.4] }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                        className="absolute inset-0 -m-3 rounded-full border"
+                        style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}50` }}
+                      />
+                    )}
 
-                  <div className="relative">
                     <motion.button
                       type="button"
                       onClick={handleUnseal}
-                      animate={
-                        stage === 'opening' && !isReducedMotion
-                          ? { x: -40, rotate: -25, opacity: 0, scale: 0.8 }
-                          : { x: 0, rotate: 0, opacity: 1, scale: 1 }
-                      }
-                      transition={{ duration: 0.7, ease: 'easeOut' }}
-                      className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${activeTheme.sealColor} border-2 shadow-xl flex items-center justify-center cursor-pointer active:scale-95`}
+                      className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${activeTheme.sealColor} border-2 shadow-2xl flex items-center justify-center cursor-pointer active:scale-95`}
                       style={{ borderColor: accentColor }}
                     >
                       <div className="w-16 h-16 rounded-full border flex flex-col items-center justify-center shadow-inner" style={{ borderColor: `${accentColor}40`, backgroundColor: `${activeTheme.bgColor}99` }}>
                         <span className={`font-bold text-lg tracking-widest ${serifClass}`} style={{ color: accentColor }}>{initials}</span>
-                        <span className="text-[8px] uppercase tracking-widest opacity-80 mt-0.5" style={{ color: accentColor }}>Unseal</span>
+                        <span className="text-[8px] uppercase tracking-widest opacity-80 mt-0.5" style={{ color: accentColor }}>Open</span>
                       </div>
                     </motion.button>
                   </div>
-                </div>
 
-                <motion.p
-                  animate={{ opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 1.8, repeat: Infinity }}
-                  className="text-[10px] tracking-[0.25em] uppercase font-semibold"
-                  style={{ color: accentColor }}
+                  <motion.p
+                    animate={{ opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 1.8, repeat: Infinity }}
+                    className="text-[10px] tracking-[0.25em] uppercase font-semibold"
+                    style={{ color: accentColor }}
+                  >
+                    Click to Open Invitation
+                  </motion.p>
+                </div>
+              )}
+
+              {/* End State: "View Invitation" Prompt (Appears after Drone Zoom) */}
+              {stage === 'view_prompt' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.6 }}
+                  className="relative z-30 my-auto p-6 rounded-3xl border text-center space-y-4 shadow-2xl max-w-xs mx-auto backdrop-blur-md"
+                  style={{ backgroundColor: `${activeTheme.bgColor}EE`, borderColor: `${accentColor}60` }}
                 >
-                  Tap Wax Seal to Open
-                </motion.p>
-              </div>
+                  <div className="w-14 h-14 mx-auto rounded-full border flex items-center justify-center shadow-md animate-bounce" style={{ backgroundColor: `${accentColor}20`, borderColor: accentColor, color: accentColor }}>
+                    <Gift className="w-7 h-7" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                      {coupleNames}
+                    </h3>
+                    <p className="text-xs text-white/80 italic">
+                      Warmly welcome you to their celebration
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleEnterInvitation}
+                    className="w-full py-3.5 px-6 rounded-full font-bold text-xs uppercase tracking-wider shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                    style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>View Official Invitation</span>
+                  </button>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
