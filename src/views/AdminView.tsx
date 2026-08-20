@@ -32,6 +32,7 @@ import {
   Plus,
   Eye,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -138,7 +139,8 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [blogError, setBlogError] = useState<string | null>(null);
   const [blogSuccess, setBlogSuccess] = useState<string | null>(null);
   const [blogIsSaving, setBlogIsSaving] = useState(false);
-  
+  const [uploadingThemeSlot, setUploadingThemeSlot] = useState<{ themeId: string; field: 'cover' | 'reveal' } | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -257,6 +259,83 @@ export const AdminView: React.FC<AdminViewProps> = () => {
     }
     checkSession();
   }, [loadData]);
+
+  // Image compression helper for Theme Scene Backdrops
+  const compressThemeImageFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.size > 10 * 1024 * 1024) {
+        reject(new Error('Image file size must be smaller than 10MB.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const scale = Math.min(1, MAX_WIDTH / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve(compressedUrl);
+          } else {
+            reject(new Error('Failed to create canvas context'));
+          }
+        };
+        img.onerror = () => reject(new Error('Failed to load image file'));
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Failed to read image file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleThemeAssetUpload = async (themeId: string, field: 'cover' | 'reveal', file: File) => {
+    try {
+      setUploadingThemeSlot({ themeId, field });
+      const compressedDataUrl = await compressThemeImageFile(file);
+      const payload = field === 'cover'
+        ? { cover_background_url: compressedDataUrl }
+        : { reveal_background_url: compressedDataUrl };
+
+      const res = await updateAdminThemeAssetsApi(themeId, payload);
+      if (res.success && res.asset) {
+        setThemeAssetsMap((prev) => ({
+          ...prev,
+          [themeId]: res.asset,
+        }));
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload theme backdrop image.');
+    } finally {
+      setUploadingThemeSlot(null);
+    }
+  };
+
+  const handleThemeAssetRemove = async (themeId: string, field: 'cover' | 'reveal') => {
+    if (!confirm(`Are you sure you want to remove the ${field} backdrop image for this theme?`)) return;
+    try {
+      setUploadingThemeSlot({ themeId, field });
+      const payload = field === 'cover'
+        ? { cover_background_url: null }
+        : { reveal_background_url: null };
+
+      const res = await updateAdminThemeAssetsApi(themeId, payload);
+      if (res.success && res.asset) {
+        setThemeAssetsMap((prev) => ({
+          ...prev,
+          [themeId]: res.asset,
+        }));
+      }
+    } catch (err: any) {
+      alert('Failed to remove theme backdrop image.');
+    } finally {
+      setUploadingThemeSlot(null);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2239,6 +2318,174 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* Theme Scene Backdrops Section */}
+              <div className="bg-cream-card rounded-3xl border border-cream-border p-6 space-y-6">
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-maroon">Theme Scene Backdrops</h3>
+                  <p className="text-xs text-mauve">
+                    Upload rich photographic or illustrated backdrop images for each wedding theme. Cover Backdrops render in Scene 1 (Opening Cover), and Reveal Backdrops render in Scene 3 (Save-the-Date Reveal).
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {Object.values(WEDDING_THEMES).map((theme) => {
+                    const currentAsset = themeAssetsMap[theme.id];
+                    const isUploadingCover = uploadingThemeSlot?.themeId === theme.id && uploadingThemeSlot?.field === 'cover';
+                    const isUploadingReveal = uploadingThemeSlot?.themeId === theme.id && uploadingThemeSlot?.field === 'reveal';
+
+                    return (
+                      <div key={theme.id} className="p-5 rounded-2xl bg-cream border border-cream-border flex flex-col justify-between space-y-4">
+                        {/* Theme Header */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-serif font-bold text-maroon text-base">{theme.name}</h4>
+                            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-cream-card border border-cream-border text-mauve">
+                              {theme.id}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-mauve leading-snug">{theme.description}</p>
+                        </div>
+
+                        {/* Backdrop Slots */}
+                        <div className="space-y-4">
+                          {/* Slot 1: Cover Background */}
+                          <div className="space-y-2">
+                            <label className="text-[11px] font-semibold text-maroon uppercase tracking-wider block">
+                              Cover Background (Scene 1)
+                            </label>
+                            <div className="relative h-32 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
+                              {currentAsset?.cover_background_url ? (
+                                <>
+                                  <img
+                                    src={currentAsset.cover_background_url}
+                                    alt={`${theme.name} Cover Backdrop`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/20" />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleThemeAssetRemove(theme.id, 'cover')}
+                                    disabled={isUploadingCover}
+                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-red-600 text-white transition-colors cursor-pointer"
+                                    title="Remove Cover Backdrop"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <div
+                                  className="w-full h-full flex flex-col items-center justify-center p-3 text-center"
+                                  style={{ backgroundColor: theme.cardBgColor, color: theme.textColor }}
+                                >
+                                  <p className="text-[10px] font-semibold opacity-75">Default Theme Gradient</p>
+                                  <p className="text-[9px] opacity-50 mt-0.5">No custom image uploaded</p>
+                                </div>
+                              )}
+
+                              {isUploadingCover && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-semibold gap-2">
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  <span>Uploading...</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <label className="block w-full">
+                              <span className="sr-only">Choose Cover Backdrop File</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                disabled={isUploadingCover}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleThemeAssetUpload(theme.id, 'cover', file);
+                                  e.target.value = '';
+                                }}
+                                className="hidden"
+                                id={`upload-cover-${theme.id}`}
+                              />
+                              <label
+                                htmlFor={`upload-cover-${theme.id}`}
+                                className="w-full py-2 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                              >
+                                <Upload className="w-3.5 h-3.5 text-coral" />
+                                <span>{currentAsset?.cover_background_url ? 'Replace Cover Image' : 'Upload Cover Image'}</span>
+                              </label>
+                            </label>
+                          </div>
+
+                          {/* Slot 2: Reveal Background */}
+                          <div className="space-y-2">
+                            <label className="text-[11px] font-semibold text-maroon uppercase tracking-wider block">
+                              Reveal Background (Scene 3)
+                            </label>
+                            <div className="relative h-32 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
+                              {currentAsset?.reveal_background_url ? (
+                                <>
+                                  <img
+                                    src={currentAsset.reveal_background_url}
+                                    alt={`${theme.name} Reveal Backdrop`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/20" />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleThemeAssetRemove(theme.id, 'reveal')}
+                                    disabled={isUploadingReveal}
+                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-red-600 text-white transition-colors cursor-pointer"
+                                    title="Remove Reveal Backdrop"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <div
+                                  className="w-full h-full flex flex-col items-center justify-center p-3 text-center"
+                                  style={{ backgroundColor: theme.bgColor, color: theme.textColor }}
+                                >
+                                  <p className="text-[10px] font-semibold opacity-75">Default Theme Color</p>
+                                  <p className="text-[9px] opacity-50 mt-0.5">No custom image uploaded</p>
+                                </div>
+                              )}
+
+                              {isUploadingReveal && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xs font-semibold gap-2">
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  <span>Uploading...</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <label className="block w-full">
+                              <span className="sr-only">Choose Reveal Backdrop File</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                disabled={isUploadingReveal}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleThemeAssetUpload(theme.id, 'reveal', file);
+                                  e.target.value = '';
+                                }}
+                                className="hidden"
+                                id={`upload-reveal-${theme.id}`}
+                              />
+                              <label
+                                htmlFor={`upload-reveal-${theme.id}`}
+                                className="w-full py-2 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                              >
+                                <Upload className="w-3.5 h-3.5 text-coral" />
+                                <span>{currentAsset?.reveal_background_url ? 'Replace Reveal Image' : 'Upload Reveal Image'}</span>
+                              </label>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </>
