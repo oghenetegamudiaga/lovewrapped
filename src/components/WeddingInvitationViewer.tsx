@@ -141,7 +141,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   className="py-2"
                 >
                   <h1 className="text-4xl sm:text-5xl font-serif font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FDFBF7] via-[#F4E3B2] to-[#D4AF37] leading-tight">
-                    Amara & Tega
+                    Becky & Martins
                   </h1>
                 </motion.div>
 
@@ -193,7 +193,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#80182C] via-[#5C101E] to-[#3B0E1B] border-2 border-[#D4AF37] shadow-xl flex items-center justify-center cursor-pointer group active:scale-95"
                     >
                       <div className="w-16 h-16 rounded-full border border-[#D4AF37]/40 flex flex-col items-center justify-center bg-[#4A1525]/60 text-[#D4AF37] shadow-inner">
-                        <span className="font-serif font-bold text-lg tracking-widest text-shadow">A & T</span>
+                        <span className="font-serif font-bold text-lg tracking-widest text-shadow">B & M</span>
                         <span className="text-[8px] font-sans uppercase tracking-widest text-[#D4AF37]/80 mt-0.5">Unseal</span>
                       </div>
                     </motion.button>
