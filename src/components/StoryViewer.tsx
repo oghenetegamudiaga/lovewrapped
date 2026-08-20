@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import confetti from 'canvas-confetti';
-import { Heart, Volume2, VolumeX, RotateCcw, Sparkles, ChevronLeft, ChevronRight, Share2, Copy, Check, X, Send, ArrowUpRight, Mic, Play, Pause } from 'lucide-react';
+import { Heart, Volume2, VolumeX, RotateCcw, Plus, ChevronLeft, ChevronRight, Share2, Copy, Check, X, Send, ArrowUpRight, Mic, Play, Pause } from 'lucide-react';
 import { Experience, Slide } from '../types';
 import { SlideCard } from './SlideCard';
 import { soundSynth } from '../lib/sound';
@@ -428,7 +428,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                   onClick={onNavigateToCreate}
                   className="w-full py-3 px-4 rounded-full bg-white/10 hover:bg-white/20 text-rose-100 font-medium text-sm border border-white/20 flex items-center justify-center gap-2 backdrop-blur-sm transition-all"
                 >
-                  <Sparkles className="w-4 h-4 text-rose-300" />
+                  <Plus className="w-4 h-4 text-rose-300" />
                   <span>Create Your Own Amorah</span>
                 </button>
               )}

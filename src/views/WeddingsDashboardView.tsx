@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, MapPin, Edit3, UserCheck, X, Check, AlertCircle, Copy, Share2, Shield, Heart, Users, Plus, Upload, Download, Search, Filter, Trash2, Link as LinkIcon, Eye, CheckCircle2, Gift, BookOpen, Save, ArrowUp, ArrowDown, Palette, Type, Layers } from 'lucide-react';
+import { RefreshCw, Calendar, MapPin, Edit3, UserCheck, X, Check, AlertCircle, Copy, Share2, Shield, Heart, Users, Plus, Upload, Download, Search, Filter, Trash2, Link as LinkIcon, Eye, CheckCircle2, Gift, BookOpen, Save, ArrowUp, ArrowDown, Palette, Type, Layers } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingRSVP, WeddingGuestWithEvents, CoupleAccount } from '../types';
 import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
 import {
@@ -125,7 +125,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-6 text-center">
-        <Sparkles className="w-8 h-8 text-coral animate-spin mb-3" />
+        <RefreshCw className="w-8 h-8 text-coral animate-spin mb-3" />
         <p className="text-xs font-semibold text-mauve">Loading Couple Dashboard...</p>
       </div>
     );

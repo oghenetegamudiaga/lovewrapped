@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingGuest } from '../types';
 import { getPublicWeddingBySlugApi } from '../lib/api';
 import { WeddingInvitationViewer } from '../components/WeddingInvitationViewer';
@@ -50,7 +50,7 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavi
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#2A0812] flex flex-col items-center justify-center p-6 text-center text-[#FDFBF7]">
-        <Sparkles className="w-8 h-8 text-[#D4AF37] animate-spin mb-3" />
+        <RefreshCw className="w-8 h-8 text-[#D4AF37] animate-spin mb-3" />
         <p className="text-xs font-serif tracking-widest uppercase text-[#D4AF37]">Opening Wedding Invitation...</p>
       </div>
     );

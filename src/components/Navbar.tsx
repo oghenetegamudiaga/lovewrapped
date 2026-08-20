@@ -131,7 +131,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
               >
                 <span>Weddings by Amorah</span>
-                <Sparkles className="w-4 h-4 text-coral" />
               </button>
 
               <button

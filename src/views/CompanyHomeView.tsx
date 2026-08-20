@@ -105,13 +105,9 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
 
             {/* Product Card 2: Weddings by Amorah */}
             <div className="bg-cream border border-cream-border p-8 sm:p-10 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Sparkles className="w-32 h-32 text-coral" />
-              </div>
-
               <div className="relative z-10 mb-8">
                 <div className="w-12 h-12 rounded-2xl bg-maroon/10 text-maroon flex items-center justify-center mb-6">
-                  <Sparkles className="w-6 h-6 text-coral" />
+                  <Heart className="w-6 h-6 text-coral" />
                 </div>
                 <span className="text-xs font-semibold text-coral uppercase tracking-wider">Product line</span>
                 <h3 className="font-serif text-2xl sm:text-3xl font-bold text-maroon mt-1 mb-3">

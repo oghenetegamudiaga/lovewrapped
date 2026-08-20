@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, BookOpen, AlertCircle } from 'lucide-react';
 import { BlogPost } from '../types';
 import { getPublicBlogPostsApi } from '../lib/api';
 
@@ -68,7 +68,7 @@ export const BlogIndexView: React.FC<BlogIndexViewProps> = ({ onNavigate }) => {
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-20 bg-cream-card border border-cream-border rounded-3xl max-w-xl mx-auto p-8">
-            <Sparkles className="w-10 h-10 text-coral mx-auto mb-3" />
+            <BookOpen className="w-10 h-10 text-coral mx-auto mb-3" />
             <h3 className="font-serif text-2xl font-bold text-maroon mb-2">No Stories Published Yet</h3>
             <p className="text-mauve text-sm">Check back soon for new articles and wedding advice!</p>
           </div>

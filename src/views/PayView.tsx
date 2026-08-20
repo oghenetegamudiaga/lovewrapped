@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, Copy, Share2, Sparkles, RefreshCw, ExternalLink, Heart, ShieldCheck, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Copy, Share2, Check, RefreshCw, ExternalLink, Heart, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Experience } from '../types';
 import { verifyPaymentApi } from '../lib/api';
 import { PAID_PLAN_PRICE_FORMATTED, DEFAULT_PAYMENT_REF } from '../constants.js';
@@ -180,7 +180,7 @@ export const PayView: React.FC<PayViewProps> = ({
               </div>
               {copied && (
                 <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-coral" /> Link copied to clipboard!
+                  <Check className="w-3 h-3 text-emerald-600" /> Link copied to clipboard!
                 </p>
               )}
             </div>

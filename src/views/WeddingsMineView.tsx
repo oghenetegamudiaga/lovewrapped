@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Plus, Calendar, ArrowRight, ExternalLink, LogOut, Sparkles, Shield, CheckCircle2, Clock } from 'lucide-react';
+import { Heart, Plus, Calendar, ArrowRight, ExternalLink, LogOut, RefreshCw, Shield, CheckCircle2, Clock } from 'lucide-react';
 import { getCoupleMyWeddingsApi, getCoupleMeApi, logoutCoupleApi } from '../lib/api';
 import { CoupleAccount } from '../types';
 
@@ -65,7 +65,7 @@ export const WeddingsMineView: React.FC<WeddingsMineViewProps> = ({ onNavigate, 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-6 text-center font-sans">
-        <Sparkles className="w-8 h-8 text-coral animate-spin mb-3" />
+        <RefreshCw className="w-8 h-8 text-coral animate-spin mb-3" />
         <p className="text-xs font-semibold text-mauve">Loading your weddings...</p>
       </div>
     );

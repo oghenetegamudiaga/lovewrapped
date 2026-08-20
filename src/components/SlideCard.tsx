@@ -1,6 +1,6 @@
 import React from 'react';
 import { Slide, PlanTier } from '../types';
-import { Heart, Sparkles, Quote } from 'lucide-react';
+import { Heart, ChevronRight, Quote } from 'lucide-react';
 
 interface SlideCardProps {
   slide: Slide;
@@ -46,7 +46,6 @@ export const SlideCard: React.FC<SlideCardProps> = ({
           )}
           {occasion && (
             <span className="inline-flex items-center gap-1 mt-2 text-[11px] uppercase tracking-widest text-rose-300/80 font-medium bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
-              <Sparkles className="w-3 h-3 text-rose-300" />
               {occasion}
             </span>
           )}
@@ -92,7 +91,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
 
       {/* Footer Accent */}
       <div className="relative z-10 flex items-center justify-center text-rose-300/60 text-[11px] font-medium tracking-wider uppercase">
-        <Sparkles className="w-3 h-3 text-rose-400 mr-1 animate-pulse" />
+        <ChevronRight className="w-3.5 h-3.5 text-rose-400 mr-1" />
         Tap to continue
       </div>
     </div>

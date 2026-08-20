@@ -942,7 +942,6 @@ export const CreateView: React.FC<CreateViewProps> = ({
             <div className="glass-card p-6 rounded-3xl border border-cream-border">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-serif font-bold text-lg text-maroon flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-coral" />
                   Live Story Layout
                 </h3>
                 <span className="text-xs font-medium text-dustyRose bg-cream-card px-2.5 py-1 rounded-full border border-cream-border">

@@ -758,7 +758,6 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                       activeTab === 'weddings' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
                     }`}
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-coral" />
                     <span>Weddings ({adminWeddings.length})</span>
                   </button>
                 </>

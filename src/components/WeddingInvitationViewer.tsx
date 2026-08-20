@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image } from 'lucide-react';
+import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest, ThemeAssetsMap } from '../types';
 import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
 import { submitWeddingRsvpApi, getPublicThemeAssetsApi } from '../lib/api';
@@ -509,7 +509,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-white" />
+                      <Image className="w-5 h-5 text-white" />
                     </div>
                   </div>
                 ))}
@@ -937,11 +937,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   className="relative z-30 my-auto p-6 rounded-3xl border text-center space-y-4 shadow-2xl max-w-xs mx-auto backdrop-blur-md"
                   style={{ backgroundColor: `${activeTheme.bgColor}EE`, borderColor: `${accentColor}60` }}
                 >
-                  <div className="w-14 h-14 mx-auto rounded-full border flex items-center justify-center shadow-md animate-bounce" style={{ backgroundColor: `${accentColor}20`, borderColor: accentColor, color: accentColor }}>
-                    <Gift className="w-7 h-7" />
-                  </div>
-
-                  <div className="space-y-1">
+                  <div className="space-y-1 pt-2">
                     <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
                       {coupleNames}
                     </h3>
@@ -956,7 +952,6 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                     className="w-full py-3.5 px-6 rounded-full font-bold text-xs uppercase tracking-wider shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                     style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
                   >
-                    <Sparkles className="w-4 h-4" />
                     <span>View Official Invitation</span>
                   </button>
                 </motion.div>
@@ -972,28 +967,32 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="relative flex-1 overflow-y-auto p-6 space-y-8 text-white"
+            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0"
             style={{ backgroundColor: activeTheme.bgColor }}
           >
-            {/* Scene 3 Reveal Background Image Overlay (if admin uploaded) */}
+            {/* Full-Bleed Edge-to-Edge Reveal Background Image (Vivid Clarity) */}
             {themeAssets[activeThemeId]?.reveal_background_url && (
-              <div className="absolute inset-0 z-0 opacity-30 pointer-events-none overflow-hidden">
+              <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                 <img
                   src={themeAssets[activeThemeId]!.reveal_background_url!}
                   alt="Theme Reveal Backdrop Scene"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/40" />
+                {/* Targeted gradient overlay for text readability without washing out the photo */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none z-1" />
               </div>
             )}
-            {/* Scene 3: Save-the-Date Graphic & Countdown */}
-            <div className="text-center space-y-4 pt-4 border-b border-white/10 pb-8">
-              <span
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider"
-                style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
-              >
-                <Sparkles className="w-3 h-3" /> Official Invitation
-              </span>
+
+            {/* Separately Padded Content Layer Stacked On Top (z-10) */}
+            <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
+              {/* Scene 3: Save-the-Date Graphic & Countdown */}
+              <div className="text-center space-y-4 pt-4 border-b border-white/10 pb-8">
+                <span
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider"
+                  style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+                >
+                  Official Invitation
+                </span>
 
               {guest && (
                 <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
@@ -1072,6 +1071,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               <span className="text-[10px] opacity-50">
                 Weddings by Amorah
               </span>
+            </div>
             </div>
           </motion.div>
         )}

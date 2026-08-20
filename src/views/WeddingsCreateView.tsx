@@ -332,7 +332,6 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                     <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold uppercase tracking-wider">
                       Free Tier
                     </span>
-                    <Sparkles className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition-transform" />
                   </div>
                   <h3 className="font-serif text-xl font-bold text-maroon mb-1">
                     Free Save-the-Date Card
@@ -412,7 +411,6 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                   className="w-full py-3 rounded-full bg-maroon text-cream text-xs font-semibold shadow-md transition-all flex items-center justify-center gap-1.5"
                 >
                   <span>Choose Premium ({WEDDING_PLAN_PRICE_FORMATTED})</span>
-                  <Sparkles className="w-3.5 h-3.5 text-coral" />
                 </button>
               </div>
             </div>
@@ -559,7 +557,6 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       className="px-6 py-3 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                       <span>{isLoading ? 'Generating Card...' : 'Generate Card Preview'}</span>
-                      <Sparkles className="w-4 h-4 text-coral" />
                     </button>
                   </div>
                 </form>
@@ -591,7 +588,6 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
 
                   {/* Watermark & Resolution Cap Notice */}
                   <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-center gap-2 max-w-md mx-auto">
-                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>Free Tier Output: Watermarked "Made with Amorah" mark & 800px maximum width.</span>
                   </div>
 
@@ -734,8 +730,8 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                               </div>
                               <p className="text-xs text-mauve mt-1 leading-relaxed">{t.description}</p>
                               {themeAssets[t.id]?.cover_background_url && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-coral bg-coral/10 px-2.5 py-0.5 rounded-full mt-2 border border-coral/20">
-                                  <Sparkles className="w-3 h-3 text-coral" /> Photographic Backdrop Included
+                                <span className="inline-flex items-center text-[10px] font-semibold text-coral bg-coral/10 px-2.5 py-0.5 rounded-full mt-2 border border-coral/20">
+                                  Photographic Backdrop Included
                                 </span>
                               )}
                             </div>
@@ -1230,7 +1226,6 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       className="px-8 py-3.5 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                       <span>{isLoading ? 'Processing Checkout...' : `Pay ${WEDDING_PLAN_PRICE_FORMATTED} & Publish`}</span>
-                      <Sparkles className="w-4 h-4 text-coral" />
                     </button>
                   </div>
                 </div>
