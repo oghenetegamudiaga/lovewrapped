@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { CompanyHomeView } from './views/CompanyHomeView';
 import { LandingView } from './views/LandingView';
 import { PricingView } from './views/PricingView';
 import { CreateView } from './views/CreateView';
@@ -59,6 +60,8 @@ export default function App() {
         setCurrentPath('/blog/' + bSlug);
       } else if (path === '/blog') {
         setCurrentPath('/blog');
+      } else if (path === '/love-stories') {
+        setCurrentPath('/love-stories');
       } else if (path === '/pricing') {
         setCurrentPath('/pricing');
       } else if (path === '/create') {
@@ -149,7 +152,9 @@ export default function App() {
       )}
 
       <main className="flex-1">
-        {currentPath === '/' && <LandingView onNavigate={navigate} />}
+        {currentPath === '/' && <CompanyHomeView onNavigate={navigate} />}
+
+        {currentPath === '/love-stories' && <LandingView onNavigate={navigate} />}
 
         {currentPath === '/pricing' && (
           <PricingView onSelectPlan={handleSelectPlan} />
@@ -219,5 +224,6 @@ export default function App() {
     </div>
   );
 }
+
 
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, ArrowRight, Menu, X, PlayCircle, Layers, Sparkles, BookOpen } from 'lucide-react';
+import { Heart, ArrowRight, Menu, X, Sparkles, BookOpen, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -22,7 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
         <button
           id="nav-logo-button"
           onClick={() => handleMobileNav('/')}
-          className="flex items-center group focus:outline-none text-left"
+          className="flex items-center group focus:outline-none text-left cursor-pointer"
         >
           <img
             src="/logo.png"
@@ -34,9 +34,21 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
         {/* Desktop Links & CTA */}
         <div className="hidden sm:flex items-center gap-4">
           <button
+            id="nav-love-stories-button"
+            onClick={() => onNavigate('/love-stories')}
+            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
+              currentPath === '/love-stories'
+                ? 'bg-cream-card text-maroon border border-cream-border font-semibold'
+                : 'text-mauve hover:text-maroon hover:bg-cream-card'
+            }`}
+          >
+            Love Stories
+          </button>
+
+          <button
             id="nav-weddings-button"
             onClick={() => onNavigate('/weddings')}
-            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
+            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               currentPath.startsWith('/weddings')
                 ? 'bg-cream-card text-maroon border border-cream-border font-semibold'
                 : 'text-mauve hover:text-maroon hover:bg-cream-card'
@@ -48,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           <button
             id="nav-blog-button"
             onClick={() => onNavigate('/blog')}
-            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
+            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               currentPath.startsWith('/blog')
                 ? 'bg-cream-card text-maroon border border-cream-border font-semibold'
                 : 'text-mauve hover:text-maroon hover:bg-cream-card'
@@ -58,23 +70,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           </button>
 
           <button
-            id="nav-demo-button"
-            onClick={() => onNavigate('/w/demo')}
-            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
-              currentPath === '/w/demo'
-                ? 'bg-cream-card text-maroon border border-cream-border'
-                : 'text-mauve hover:text-maroon hover:bg-cream-card'
-            }`}
-          >
-            Watch demo
-          </button>
-
-          <button
-            id="nav-tiers-button"
+            id="nav-create-yours-button"
             onClick={() => onNavigate('/pricing')}
-            className="group flex items-center gap-1.5 px-4 py-2 rounded-full bg-maroon hover:bg-maroon-light text-cream font-medium text-xs sm:text-sm shadow-md transition-all active:scale-95 border border-maroon/20"
+            className="group flex items-center gap-1.5 px-4.5 py-2 rounded-full bg-maroon hover:bg-maroon-light text-cream font-medium text-xs sm:text-sm shadow-md transition-all active:scale-95 border border-maroon/20 cursor-pointer"
           >
-            <span>Choose a tier</span>
+            <span>Create Yours</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-coral" />
           </button>
         </div>
@@ -86,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             id="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="p-2 rounded-xl text-maroon hover:text-coral bg-cream-card border border-cream-border focus:outline-none"
+            className="p-2 rounded-xl text-maroon hover:text-coral bg-cream-card border border-cream-border focus:outline-none cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -110,8 +110,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 onClick={() => handleMobileNav('/')}
                 className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
               >
-                <span>Home</span>
+                <span>Company Home</span>
                 <Heart className="w-4 h-4 text-coral" />
+              </button>
+
+              <button
+                type="button"
+                id="mobile-nav-love-stories"
+                onClick={() => handleMobileNav('/love-stories')}
+                className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
+              >
+                <span>Love Stories</span>
+                <Heart className="w-4 h-4 text-coral fill-coral" />
               </button>
 
               <button
@@ -136,21 +146,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
               <button
                 type="button"
-                id="mobile-nav-demo"
-                onClick={() => handleMobileNav('/w/demo')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
-              >
-                <span>Watch demo</span>
-                <PlayCircle className="w-4 h-4 text-coral" />
-              </button>
-
-              <button
-                type="button"
-                id="mobile-nav-tiers"
+                id="mobile-nav-create"
                 onClick={() => handleMobileNav('/pricing')}
                 className="w-full text-left px-4 py-3 rounded-2xl bg-maroon text-cream font-semibold text-sm flex items-center justify-between shadow-md"
               >
-                <span>Choose a tier</span>
+                <span>Create Yours</span>
                 <Layers className="w-4 h-4 text-coral" />
               </button>
             </div>
@@ -160,3 +160,4 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
     </header>
   );
 };
+
