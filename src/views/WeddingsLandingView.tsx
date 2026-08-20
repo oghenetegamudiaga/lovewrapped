@@ -174,7 +174,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
             </div>
 
             {/* Embedded Live Interactive Viewer Component */}
-            <div className="relative rounded-[36px] overflow-hidden min-h-[640px] max-h-[680px]">
+            <div className="relative rounded-[36px] overflow-hidden h-[680px] w-full">
               <WeddingInvitationViewer isSpike onNavigate={onNavigate} />
             </div>
           </div>

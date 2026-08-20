@@ -726,12 +726,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   return (
     <div
-      className={`relative min-h-screen text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center p-4 sm:p-6 select-none`}
+      className={`relative ${isSpike ? 'h-full w-full p-0' : 'min-h-screen p-4 sm:p-6'} text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center select-none`}
       style={{ backgroundColor: activeTheme.bgColor }}
     >
 
       <div
-        className="relative max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl overflow-hidden shadow-2xl border flex flex-col"
+        className={`relative max-w-md w-full ${isSpike ? 'h-full min-h-0 rounded-none border-0 shadow-none' : 'min-h-[640px] sm:min-h-[740px] rounded-3xl border shadow-2xl'} overflow-hidden flex flex-col`}
         style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}50` }}
       >
         {/* Animated Cover & 3D Opening Doors (Scenes 1 & 2) */}
