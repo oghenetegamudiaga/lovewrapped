@@ -14,6 +14,7 @@ import { WeddingsSignupView } from './views/WeddingsSignupView';
 import { WeddingsLoginView } from './views/WeddingsLoginView';
 import { BlogIndexView } from './views/BlogIndexView';
 import { BlogPostView } from './views/BlogPostView';
+import { WeddingInvitationViewer } from './components/WeddingInvitationViewer';
 import { Experience, PlanTier, CoupleAccount } from './types';
 import { DEFAULT_PAYMENT_REF } from './constants.js';
 
@@ -62,6 +63,8 @@ export default function App() {
         setCurrentPath('/blog');
       } else if (path === '/love-stories') {
         setCurrentPath('/love-stories');
+      } else if (path === '/dev/wedding-spike') {
+        setCurrentPath('/dev/wedding-spike');
       } else if (path === '/pricing') {
         setCurrentPath('/pricing');
       } else if (path === '/create') {
@@ -146,8 +149,8 @@ export default function App() {
 
   return (
     <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans antialiased">
-      {/* Hide standard navbar on fullscreen recipient viewer /w/[slug] */}
-      {!currentPath.startsWith('/w/') && (
+      {/* Hide standard navbar on fullscreen recipient viewer /w/[slug] and dev spike /dev/wedding-spike */}
+      {!currentPath.startsWith('/w/') && currentPath !== '/dev/wedding-spike' && (
         <Navbar currentPath={currentPath} onNavigate={navigate} />
       )}
 
@@ -155,6 +158,8 @@ export default function App() {
         {currentPath === '/' && <CompanyHomeView onNavigate={navigate} />}
 
         {currentPath === '/love-stories' && <LandingView onNavigate={navigate} />}
+
+        {currentPath === '/dev/wedding-spike' && <WeddingInvitationViewer onNavigate={navigate} />}
 
         {currentPath === '/pricing' && (
           <PricingView onSelectPlan={handleSelectPlan} />
@@ -220,10 +225,11 @@ export default function App() {
         )}
       </main>
 
-      {!currentPath.startsWith('/w/') && <Footer onNavigate={navigate} />}
+      {!currentPath.startsWith('/w/') && currentPath !== '/dev/wedding-spike' && <Footer onNavigate={navigate} />}
     </div>
   );
 }
+
 
 
 
