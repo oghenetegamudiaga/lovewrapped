@@ -18,7 +18,14 @@ interface WeddingInvitationViewerProps {
 
 // Helper to parse date strings into Date objects
 function parseEventDate(dateStr: string, timeStr?: string): Date {
+  if (!dateStr) return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   try {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const timePart = timeStr && /^\d{2}:\d{2}/.test(timeStr) ? timeStr : '10:00';
+      const d = new Date(`${dateStr}T${timePart}:00`);
+      if (!isNaN(d.getTime())) return d;
+    }
+
     const combined = `${dateStr} ${timeStr || '10:00 AM'}`;
     const d = new Date(combined);
     if (!isNaN(d.getTime())) return d;
@@ -29,6 +36,49 @@ function parseEventDate(dateStr: string, timeStr?: string): Date {
     // fallback
   }
   return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // fallback +30 days
+}
+
+// Helper to format ISO dates into human readable strings
+function formatEventDateTime(dateStr: string, timeStr?: string): { formattedDate: string; formattedTime: string; fullString: string } {
+  try {
+    if (dateStr) {
+      const dateObj = parseEventDate(dateStr, timeStr);
+      if (!isNaN(dateObj.getTime())) {
+        const formattedDate = new Intl.DateTimeFormat('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        }).format(dateObj);
+
+        let formattedTime = '';
+        if (timeStr && /^\d{2}:\d{2}/.test(timeStr)) {
+          const [hh, mm] = timeStr.split(':').map(Number);
+          const timeObj = new Date(2026, 0, 1, hh, mm);
+          formattedTime = new Intl.DateTimeFormat('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }).format(timeObj);
+        } else {
+          formattedTime = timeStr || '';
+        }
+
+        return {
+          formattedDate,
+          formattedTime,
+          fullString: formattedTime ? `${formattedDate} at ${formattedTime}` : formattedDate,
+        };
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+  return {
+    formattedDate: dateStr || '',
+    formattedTime: timeStr || '',
+    fullString: `${dateStr}${timeStr ? ' at ' + timeStr : ''}`,
+  };
 }
 
 // Helper to format ISO dates for Google Calendar URLs
@@ -147,13 +197,21 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [isPastAllEvents, setIsPastAllEvents] = useState<boolean>(false);
   const [targetEventTitle, setTargetEventTitle] = useState<string>('');
 
-  // Fallback data
-  const coupleNames = wedding?.couple_names || 'Becky & Martins';
+  // Name display computation (First Names for primary cards, Full Names for legal/details)
+  const firstNames = wedding?.bride_first_name && wedding?.groom_first_name
+    ? `${wedding.bride_first_name} & ${wedding.groom_first_name}`
+    : (wedding?.couple_names ? wedding.couple_names.split('&').map((n) => n.trim().split(' ')[0]).join(' & ') : 'Becky & Martins');
+
+  const fullCoupleNames = wedding?.bride_first_name && wedding?.groom_first_name
+    ? `${wedding.bride_first_name}${wedding.bride_other_names ? ' ' + wedding.bride_other_names : ''} & ${wedding.groom_first_name}${wedding.groom_other_names ? ' ' + wedding.groom_other_names : ''}`
+    : (wedding?.couple_names || 'Becky & Martins');
+
+  const coupleNames = firstNames;
   const coverPhoto = wedding?.cover_photo_url || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80';
   const loveStory = wedding?.love_story || 'From quiet morning walks to a lifetime of laughter, we are overjoyed to celebrate our special day with the people who mean the world to us.';
   const registryInfo = wedding?.registry_info || 'Your presence at our wedding is the greatest gift of all. If you wish to honor us with a gift, a monetary contribution towards our new home would be warmly appreciated.';
 
-  const nameParts = coupleNames.split('&').map((n) => n.trim());
+  const nameParts = firstNames.split('&').map((n) => n.trim());
   const initials = nameParts.length >= 2 ? `${nameParts[0][0]} & ${nameParts[1][0]}` : 'B & M';
 
   // Live Countdown Interval Effect
@@ -274,13 +332,14 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             </h3>
 
             {activeEvents.map((ev, idx) => {
+              const formattedDT = formatEventDateTime(ev.date, ev.time);
               const startDate = parseEventDate(ev.date, ev.time);
               const endDate = new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
               const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
                 `${coupleNames} - ${ev.title}`
               )}&dates=${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(endDate)}&location=${encodeURIComponent(
                 `${ev.venue_name}, ${ev.venue_address || ''}`
-              )}&details=${encodeURIComponent(`Wedding Celebration for ${coupleNames}`)}`;
+              )}&details=${encodeURIComponent(`Wedding Celebration for ${fullCoupleNames}`)}`;
 
               const mapQuery = `${ev.venue_name}${ev.venue_address ? `, ${ev.venue_address}` : ''}`;
 
@@ -304,7 +363,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   <div className="space-y-2 opacity-90">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
-                      <span>{ev.date} at {ev.time}</span>
+                      <span>{formattedDT.fullString}</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accentColor }} />
@@ -664,7 +723,9 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 style={{ backgroundColor: `${activeTheme.bgColor}CC`, borderColor: `${accentColor}40`, color: accentColor }}
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>{activeEvents[0]?.date.toUpperCase()} • {activeEvents[0]?.venue_name.toUpperCase()}</span>
+                <span>
+                  {(activeEvents[0] ? formatEventDateTime(activeEvents[0].date, activeEvents[0].time).formattedDate : '').toUpperCase()} • {activeEvents[0]?.venue_name.toUpperCase()}
+                </span>
               </motion.div>
 
               {/* Interactive Wax Seal */}

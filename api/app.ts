@@ -120,8 +120,9 @@ const VALID_FONT_VARIANTS = new Set(['classic-serif', 'modern-sans', 'editorial-
 const VALID_SECTIONS = new Set(['schedule', 'love_story', 'registry', 'gallery', 'rsvp']);
 
 // Helper to generate wedding slug using crypto.randomBytes
-function generateWeddingSlug(coupleNames: string): string {
-  const cleanNames = (coupleNames || 'wedding').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/(^-|-$)/g, '');
+function generateWeddingSlug(brideFirstName: string, groomFirstName: string): string {
+  const nameStr = `${brideFirstName || ''}-and-${groomFirstName || ''}`;
+  const cleanNames = nameStr.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/(^-|-$)/g, '') || 'wedding';
   const randomSuffix = crypto.randomBytes(6).toString('hex');
   return `${cleanNames}-${randomSuffix}`;
 }
@@ -1086,12 +1087,22 @@ apiRouter.get('/weddings/me', requireCoupleAuth, (req, res) => {
 apiRouter.get('/weddings/mine', requireCoupleAuth, async (req, res) => {
   try {
     const couple = (req as any).coupleSession;
-    let list: Array<{ id: string; slug: string; couple_names: string; is_paid: boolean; created_at: string }> = [];
+    let list: Array<{
+      id: string;
+      slug: string;
+      bride_first_name?: string;
+      bride_other_names?: string;
+      groom_first_name?: string;
+      groom_other_names?: string;
+      couple_names?: string;
+      is_paid: boolean;
+      created_at: string;
+    }> = [];
 
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('weddings')
-        .select('id, slug, couple_names, is_paid, created_at')
+        .select('id, slug, bride_first_name, bride_other_names, groom_first_name, groom_other_names, couple_names, is_paid, created_at')
         .eq('couple_account_id', couple.id)
         .order('created_at', { ascending: false });
       if (data && !error) {
@@ -1103,7 +1114,11 @@ apiRouter.get('/weddings/mine', requireCoupleAuth, async (req, res) => {
           list.push({
             id: w.id,
             slug: w.slug,
-            couple_names: w.couple_names,
+            bride_first_name: w.bride_first_name || undefined,
+            bride_other_names: w.bride_other_names || undefined,
+            groom_first_name: w.groom_first_name || undefined,
+            groom_other_names: w.groom_other_names || undefined,
+            couple_names: w.couple_names || undefined,
             is_paid: w.is_paid,
             created_at: w.created_at,
           });
@@ -1745,8 +1760,13 @@ apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitialize
     const couple = (req as any).coupleSession;
     const payload: CreateWeddingPayload = req.body;
 
-    if (!payload.couple_names || !payload.couple_names.trim()) {
-      return res.status(400).json({ message: 'Couple names are required.' });
+    const bride_first_name = payload.bride_first_name ? payload.bride_first_name.trim().slice(0, 100) : '';
+    const groom_first_name = payload.groom_first_name ? payload.groom_first_name.trim().slice(0, 100) : '';
+    const bride_other_names = payload.bride_other_names ? payload.bride_other_names.trim().slice(0, 100) : '';
+    const groom_other_names = payload.groom_other_names ? payload.groom_other_names.trim().slice(0, 100) : '';
+
+    if (!bride_first_name && !groom_first_name && (!payload.couple_names || !payload.couple_names.trim())) {
+      return res.status(400).json({ message: "Bride's first name and Groom's first name are required." });
     }
     if (!payload.event_date || !payload.event_venue_name) {
       return res.status(400).json({ message: 'Event date and venue name are required.' });
@@ -1824,7 +1844,14 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
     }
 
     const weddingId = crypto.randomUUID();
-    const slug = generateWeddingSlug(payload.couple_names);
+    const bride_first_name = payload.bride_first_name ? payload.bride_first_name.trim().slice(0, 100) : '';
+    const bride_other_names = payload.bride_other_names ? payload.bride_other_names.trim().slice(0, 100) : '';
+    const groom_first_name = payload.groom_first_name ? payload.groom_first_name.trim().slice(0, 100) : '';
+    const groom_other_names = payload.groom_other_names ? payload.groom_other_names.trim().slice(0, 100) : '';
+    
+    // Legacy fallback format
+    const fallbackCoupleNames = payload.couple_names?.trim() || `${bride_first_name} & ${groom_first_name}`;
+    const slug = generateWeddingSlug(bride_first_name || fallbackCoupleNames, groom_first_name || '');
     const now = new Date().toISOString();
 
     const theme_id = payload.theme_id && VALID_THEME_IDS.has(payload.theme_id) ? payload.theme_id : 'classic-burgundy';
@@ -1838,7 +1865,11 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
       id: weddingId,
       couple_account_id: couple.id,
       slug,
-      couple_names: payload.couple_names.trim(),
+      bride_first_name: bride_first_name || null,
+      bride_other_names: bride_other_names || null,
+      groom_first_name: groom_first_name || null,
+      groom_other_names: groom_other_names || null,
+      couple_names: fallbackCoupleNames,
       cover_photo_url: payload.cover_photo_url || null,
       theme_id,
       color_variant,
@@ -2417,6 +2448,18 @@ apiRouter.patch('/weddings/dashboard/:weddingId/info', requireCoupleAuth, async 
     }
 
     const updates: Partial<Wedding> = { updated_at: new Date().toISOString() };
+    if (req.body.bride_first_name && typeof req.body.bride_first_name === 'string') {
+      updates.bride_first_name = req.body.bride_first_name.trim().slice(0, 100);
+    }
+    if (typeof req.body.bride_other_names === 'string') {
+      updates.bride_other_names = req.body.bride_other_names.trim().slice(0, 100) || null;
+    }
+    if (req.body.groom_first_name && typeof req.body.groom_first_name === 'string') {
+      updates.groom_first_name = req.body.groom_first_name.trim().slice(0, 100);
+    }
+    if (typeof req.body.groom_other_names === 'string') {
+      updates.groom_other_names = req.body.groom_other_names.trim().slice(0, 100) || null;
+    }
     if (couple_names && typeof couple_names === 'string') {
       updates.couple_names = couple_names.trim().slice(0, 200);
     }
@@ -2477,7 +2520,7 @@ apiRouter.get('/admin/weddings', requireRole(['super_admin', 'admin']), async (r
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('weddings')
-        .select('id, couple_names, slug, theme_id, is_paid, payment_reference, created_at')
+        .select('id, bride_first_name, bride_other_names, groom_first_name, groom_other_names, couple_names, slug, theme_id, is_paid, payment_reference, created_at')
         .order('created_at', { ascending: false });
 
       if (data && !error) {
@@ -2488,6 +2531,10 @@ apiRouter.get('/admin/weddings', requireRole(['super_admin', 'admin']), async (r
     const weddingsList = Array.from(weddingsStore.values())
       .map((w) => ({
         id: w.id,
+        bride_first_name: w.bride_first_name,
+        bride_other_names: w.bride_other_names,
+        groom_first_name: w.groom_first_name,
+        groom_other_names: w.groom_other_names,
         couple_names: w.couple_names,
         slug: w.slug,
         theme_id: w.theme_id,

@@ -16,7 +16,10 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [colorVariant, setColorVariant] = useState<string>('royal-gold');
   const [fontVariant, setFontVariant] = useState<string>('classic-serif');
 
-  const [coupleNames, setCoupleNames] = useState<string>('');
+  const [brideFirstName, setBrideFirstName] = useState<string>('');
+  const [brideOtherNames, setBrideOtherNames] = useState<string>('');
+  const [groomFirstName, setGroomFirstName] = useState<string>('');
+  const [groomOtherNames, setGroomOtherNames] = useState<string>('');
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string>('');
   const [loveStory, setLoveStory] = useState<string>('');
   const [musicTrack, setMusicTrack] = useState<string>('romantic-strings');
@@ -27,7 +30,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
     {
       title: 'Wedding Celebration & Reception',
       date: '',
-      time: '10:00 AM',
+      time: '10:00',
       venue_name: '',
       venue_address: '',
     },
@@ -110,12 +113,18 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
       return;
     }
 
+    const fullCoupleNames = `${brideFirstName}${brideOtherNames ? ' ' + brideOtherNames : ''} & ${groomFirstName}${groomOtherNames ? ' ' + groomOtherNames : ''}`;
+
     const payload: CreateWeddingPayload = {
       theme_id: themeId,
       color_variant: colorVariant,
       font_variant: fontVariant,
       section_order: ['schedule', 'love_story', 'registry', 'rsvp'],
-      couple_names: coupleNames,
+      bride_first_name: brideFirstName,
+      bride_other_names: brideOtherNames,
+      groom_first_name: groomFirstName,
+      groom_other_names: groomOtherNames,
+      couple_names: fullCoupleNames,
       cover_photo_url: coverPhotoUrl,
       love_story: loveStory,
       music_track: musicTrack,
@@ -296,16 +305,52 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                 <p className="text-xs text-mauve">Enter your names and upload a featured photo for the cover.</p>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-maroon mb-1">Couple Names *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Becky & Martins"
-                  value={coupleNames}
-                  onChange={(e) => setCoupleNames(e.target.value)}
-                  className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-maroon mb-1">Bride's First Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Temilolu"
+                    value={brideFirstName}
+                    onChange={(e) => setBrideFirstName(e.target.value)}
+                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-maroon mb-1">Bride's Other Names (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Adeola"
+                    value={brideOtherNames}
+                    onChange={(e) => setBrideOtherNames(e.target.value)}
+                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-maroon mb-1">Groom's First Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Juwon"
+                    value={groomFirstName}
+                    onChange={(e) => setGroomFirstName(e.target.value)}
+                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-maroon mb-1">Groom's Other Names (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Oluwaseun"
+                    value={groomOtherNames}
+                    onChange={(e) => setGroomOtherNames(e.target.value)}
+                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                  />
+                </div>
               </div>
 
               <div>
@@ -354,7 +399,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                 </button>
                 <button
                   type="button"
-                  disabled={!coupleNames.trim()}
+                  disabled={!brideFirstName.trim() || !groomFirstName.trim()}
                   onClick={() => setStep(3)}
                   className="px-6 py-3 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
@@ -434,23 +479,21 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       <div>
                         <label className="block text-xs font-semibold text-maroon mb-1">Date *</label>
                         <input
-                          type="text"
+                          type="date"
                           required
-                          placeholder="e.g. Friday, Dec 17, 2026"
                           value={ev.date}
                           onChange={(e) => handleEventChange(index, 'date', e.target.value)}
-                          className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                          className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-maroon mb-1">Time *</label>
                         <input
-                          type="text"
+                          type="time"
                           required
-                          placeholder="e.g. 10:00 AM Prompt"
                           value={ev.time}
                           onChange={(e) => handleEventChange(index, 'time', e.target.value)}
-                          className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                          className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
                         />
                       </div>
                     </div>
@@ -560,7 +603,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
               <div className="p-5 rounded-2xl bg-cream border border-cream-border space-y-3 text-xs text-maroon">
                 <div className="flex justify-between">
                   <span className="font-semibold text-mauve">Couple:</span>
-                  <span className="font-bold">{coupleNames}</span>
+                  <span className="font-bold">{brideFirstName} & {groomFirstName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold text-mauve">Base Theme:</span>

@@ -385,11 +385,31 @@ export async function updateCoupleWeddingInfoApi(
 
 export async function getCoupleMyWeddingsApi(): Promise<{
   success: boolean;
-  weddings: Array<{ id: string; slug: string; couple_names: string; is_paid: boolean; created_at: string }>;
+  weddings: Array<{
+    id: string;
+    slug: string;
+    bride_first_name?: string;
+    bride_other_names?: string;
+    groom_first_name?: string;
+    groom_other_names?: string;
+    couple_names?: string;
+    is_paid: boolean;
+    created_at: string;
+  }>;
 }> {
   return apiFetch<{
     success: boolean;
-    weddings: Array<{ id: string; slug: string; couple_names: string; is_paid: boolean; created_at: string }>;
+    weddings: Array<{
+      id: string;
+      slug: string;
+      bride_first_name?: string;
+      bride_other_names?: string;
+      groom_first_name?: string;
+      groom_other_names?: string;
+      couple_names?: string;
+      is_paid: boolean;
+      created_at: string;
+    }>;
   }>('/weddings/mine');
 }
 
@@ -471,7 +491,11 @@ export function exportCoupleWeddingGuestsCsvUrl(weddingId: string): string {
 export async function getAdminWeddingsApi(): Promise<
   {
     id: string;
-    couple_names: string;
+    bride_first_name?: string;
+    bride_other_names?: string;
+    groom_first_name?: string;
+    groom_other_names?: string;
+    couple_names?: string;
     slug: string;
     theme_id: string;
     is_paid: boolean;
@@ -482,7 +506,11 @@ export async function getAdminWeddingsApi(): Promise<
   return apiFetch<
     {
       id: string;
-      couple_names: string;
+      bride_first_name?: string;
+      bride_other_names?: string;
+      groom_first_name?: string;
+      groom_other_names?: string;
+      couple_names?: string;
       slug: string;
       theme_id: string;
       is_paid: boolean;

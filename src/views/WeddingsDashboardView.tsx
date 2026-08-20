@@ -49,8 +49,12 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   const [editColorVariant, setEditColorVariant] = useState('royal-gold');
   const [editFontVariant, setEditFontVariant] = useState('classic-serif');
   const [editSectionOrder, setEditSectionOrder] = useState<string[]>(['schedule', 'love_story', 'registry', 'rsvp']);
-  const [editRegistryInfo, setEditRegistryInfo] = useState('');
   const [editLoveStory, setEditLoveStory] = useState('');
+  const [editRegistryInfo, setEditRegistryInfo] = useState('');
+  const [editBrideFirstName, setEditBrideFirstName] = useState('');
+  const [editBrideOtherNames, setEditBrideOtherNames] = useState('');
+  const [editGroomFirstName, setEditGroomFirstName] = useState('');
+  const [editGroomOtherNames, setEditGroomOtherNames] = useState('');
   const [editCoupleNames, setEditCoupleNames] = useState('');
   const [isSavingInfo, setIsSavingInfo] = useState(false);
   const [infoSaveSuccess, setInfoSaveSuccess] = useState(false);
@@ -96,6 +100,10 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
         );
         setEditRegistryInfo(dashRes.wedding.registry_info || '');
         setEditLoveStory(dashRes.wedding.love_story || '');
+        setEditBrideFirstName(dashRes.wedding.bride_first_name || '');
+        setEditBrideOtherNames(dashRes.wedding.bride_other_names || '');
+        setEditGroomFirstName(dashRes.wedding.groom_first_name || '');
+        setEditGroomOtherNames(dashRes.wedding.groom_other_names || '');
         setEditCoupleNames(dashRes.wedding.couple_names || '');
       }
 
@@ -189,8 +197,13 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
     setInfoSaveSuccess(false);
 
     try {
+      const fullCoupleNames = `${editBrideFirstName}${editBrideOtherNames ? ' ' + editBrideOtherNames : ''} & ${editGroomFirstName}${editGroomOtherNames ? ' ' + editGroomOtherNames : ''}`;
       const res = await updateCoupleWeddingInfoApi(weddingId, {
-        couple_names: editCoupleNames,
+        bride_first_name: editBrideFirstName,
+        bride_other_names: editBrideOtherNames,
+        groom_first_name: editGroomFirstName,
+        groom_other_names: editGroomOtherNames,
+        couple_names: fullCoupleNames,
         theme_id: editThemeId,
         color_variant: editColorVariant,
         font_variant: editFontVariant,
@@ -323,7 +336,9 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
         <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-cream-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
-              {wedding.couple_names}
+              {wedding.bride_first_name && wedding.groom_first_name
+                ? `${wedding.bride_first_name}${wedding.bride_other_names ? ' ' + wedding.bride_other_names : ''} & ${wedding.groom_first_name}${wedding.groom_other_names ? ' ' + wedding.groom_other_names : ''}`
+                : wedding.couple_names || 'Wedding Dashboard'}
             </h1>
             <p className="text-xs text-mauve mt-1">
               Manage multi-event schedules, guest RSVPs, visual customization, and section order.
@@ -572,15 +587,48 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
 
                 {/* 5. Text Information Inputs */}
                 <div className="space-y-4 pt-3 border-t border-cream-border">
-                  <div>
-                    <label className="block font-semibold text-maroon mb-1">Couple Names</label>
-                    <input
-                      type="text"
-                      required
-                      value={editCoupleNames}
-                      onChange={(e) => setEditCoupleNames(e.target.value)}
-                      className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-maroon mb-1 text-xs">Bride's First Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={editBrideFirstName}
+                        onChange={(e) => setEditBrideFirstName(e.target.value)}
+                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-maroon mb-1 text-xs">Bride's Other Names</label>
+                      <input
+                        type="text"
+                        value={editBrideOtherNames}
+                        onChange={(e) => setEditBrideOtherNames(e.target.value)}
+                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-maroon mb-1 text-xs">Groom's First Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={editGroomFirstName}
+                        onChange={(e) => setEditGroomFirstName(e.target.value)}
+                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-maroon mb-1 text-xs">Groom's Other Names</label>
+                      <input
+                        type="text"
+                        value={editGroomOtherNames}
+                        onChange={(e) => setEditGroomOtherNames(e.target.value)}
+                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      />
+                    </div>
                   </div>
 
                   <div>

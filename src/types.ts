@@ -153,7 +153,11 @@ export interface Wedding {
   id: string;
   couple_account_id: string;
   slug: string;
-  couple_names: string;
+  bride_first_name?: string | null;
+  bride_other_names?: string | null;
+  groom_first_name?: string | null;
+  groom_other_names?: string | null;
+  couple_names?: string | null;
   cover_photo_url?: string | null;
   theme_id: string;
   color_variant?: string | null;
@@ -230,7 +234,11 @@ export interface CreateWeddingPayload {
   color_variant?: string;
   font_variant?: string;
   section_order?: string[];
-  couple_names: string;
+  bride_first_name: string;
+  bride_other_names?: string;
+  groom_first_name: string;
+  groom_other_names?: string;
+  couple_names?: string;
   cover_photo_url?: string;
   love_story?: string;
   music_track?: string;

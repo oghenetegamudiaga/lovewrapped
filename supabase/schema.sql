@@ -169,7 +169,11 @@ CREATE TABLE IF NOT EXISTS public.weddings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   couple_account_id UUID NOT NULL REFERENCES public.couple_accounts(id) ON DELETE CASCADE,
   slug TEXT UNIQUE NOT NULL,
-  couple_names TEXT NOT NULL,
+  bride_first_name TEXT,
+  bride_other_names TEXT,
+  groom_first_name TEXT,
+  groom_other_names TEXT,
+  couple_names TEXT,
   cover_photo_url TEXT,
   theme_id TEXT NOT NULL DEFAULT 'classic-burgundy',
   love_story TEXT,
@@ -297,6 +301,22 @@ CREATE INDEX IF NOT EXISTS idx_wedding_rsvps_event_id ON public.wedding_rsvps(ev
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS color_variant TEXT NOT NULL DEFAULT 'royal-gold';
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS font_variant TEXT NOT NULL DEFAULT 'classic-serif';
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS section_order TEXT[] NOT NULL DEFAULT ARRAY['schedule', 'love_story', 'registry', 'rsvp'];
+
+-- ==================== Migration: Weddings Phase 5 (Bride & Groom Name Splitting) ====================
+-- Run this block in Supabase SQL Editor to support separate Bride and Groom names.
+
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS bride_first_name TEXT;
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS bride_other_names TEXT;
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS groom_first_name TEXT;
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS groom_other_names TEXT;
+
+-- Migration script to populate first names from existing legacy couple_names rows (e.g. 'Becky & Martins')
+UPDATE public.weddings
+SET
+  bride_first_name = TRIM(SPLIT_PART(couple_names, '&', 1)),
+  groom_first_name = TRIM(SPLIT_PART(couple_names, '&', 2))
+WHERE bride_first_name IS NULL AND couple_names IS NOT NULL AND couple_names LIKE '%&%';
+
 
 
 

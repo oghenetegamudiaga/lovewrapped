@@ -12,7 +12,11 @@ interface WeddingsMineViewProps {
 interface WeddingSummary {
   id: string;
   slug: string;
-  couple_names: string;
+  bride_first_name?: string;
+  bride_other_names?: string;
+  groom_first_name?: string;
+  groom_other_names?: string;
+  couple_names?: string;
   is_paid: boolean;
   created_at: string;
 }
@@ -156,7 +160,9 @@ export const WeddingsMineView: React.FC<WeddingsMineViewProps> = ({ onNavigate, 
                   </div>
 
                   <h3 className="font-serif text-xl font-bold text-maroon pt-1">
-                    {w.couple_names}
+                    {w.bride_first_name && w.groom_first_name
+                      ? `${w.bride_first_name}${w.bride_other_names ? ' ' + w.bride_other_names : ''} & ${w.groom_first_name}${w.groom_other_names ? ' ' + w.groom_other_names : ''}`
+                      : w.couple_names || 'Wedding Invitation'}
                   </h3>
                   <p className="text-xs text-mauve font-mono truncate">
                     slug: /w/wedding/{w.slug}

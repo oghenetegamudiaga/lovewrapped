@@ -2191,7 +2191,11 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                       ) : (
                         adminWeddings.map((w) => (
                           <tr key={w.id} className="hover:bg-cream/40 transition-colors">
-                            <td className="py-4 px-6 font-semibold text-maroon">{w.couple_names}</td>
+                            <td className="py-4 px-6 font-semibold text-maroon">
+                              {w.bride_first_name && w.groom_first_name
+                                ? `${w.bride_first_name}${w.bride_other_names ? ' ' + w.bride_other_names : ''} & ${w.groom_first_name}${w.groom_other_names ? ' ' + w.groom_other_names : ''}`
+                                : w.couple_names || 'Wedding Invitation'}
+                            </td>
                             <td className="py-4 px-6 font-mono text-[11px] text-mauve">/w/wedding/{w.slug}</td>
                             <td className="py-4 px-6 text-mauve capitalize">{w.theme_id}</td>
                             <td className="py-4 px-6">
