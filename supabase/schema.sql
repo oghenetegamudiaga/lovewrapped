@@ -244,4 +244,52 @@ ALTER TABLE public.wedding_rsvps ENABLE ROW LEVEL SECURITY;
 -- Enable Public Read access for displaying cover photos. Public Writes are disabled. All uploads take place server-side or via signed URLs.
 
 
+-- ==================== Migration: Weddings Phase 2 (Guest Management & Multi-Event) ====================
+-- Run this block in Supabase SQL Editor to support Phase 2 multi-event & guest features.
+
+-- 1. Proactive Wedding Guests Table
+CREATE TABLE IF NOT EXISTS public.wedding_guests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  wedding_id UUID NOT NULL REFERENCES public.weddings(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT,
+  unique_link_token TEXT UNIQUE NOT NULL,
+  plus_one_allowed BOOLEAN NOT NULL DEFAULT false,
+  plus_one_name TEXT,
+  dietary_notes TEXT,
+  added_by TEXT NOT NULL DEFAULT 'couple',
+  opened_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wedding_guests_wedding_id ON public.wedding_guests(wedding_id);
+CREATE INDEX IF NOT EXISTS idx_wedding_guests_unique_link_token ON public.wedding_guests(unique_link_token);
+
+-- Enable RLS for public.wedding_guests
+ALTER TABLE public.wedding_guests ENABLE ROW LEVEL SECURITY;
+
+-- 2. Wedding Guest Events Join Table (Guests invited to specific subset of events)
+CREATE TABLE IF NOT EXISTS public.wedding_guest_events (
+  guest_id UUID NOT NULL REFERENCES public.wedding_guests(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES public.wedding_events(id) ON DELETE CASCADE,
+  PRIMARY KEY (guest_id, event_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wedding_guest_events_guest_id ON public.wedding_guest_events(guest_id);
+CREATE INDEX IF NOT EXISTS idx_wedding_guest_events_event_id ON public.wedding_guest_events(event_id);
+
+-- Enable RLS for public.wedding_guest_events
+ALTER TABLE public.wedding_guest_events ENABLE ROW LEVEL SECURITY;
+
+-- 3. Extend wedding_rsvps Table for Per-Event & Guest Attribution
+ALTER TABLE public.wedding_rsvps ADD COLUMN IF NOT EXISTS guest_id UUID REFERENCES public.wedding_guests(id) ON DELETE SET NULL;
+ALTER TABLE public.wedding_rsvps ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES public.wedding_events(id) ON DELETE SET NULL;
+ALTER TABLE public.wedding_rsvps ADD COLUMN IF NOT EXISTS plus_one_name TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_wedding_rsvps_guest_id ON public.wedding_rsvps(guest_id);
+CREATE INDEX IF NOT EXISTS idx_wedding_rsvps_event_id ON public.wedding_rsvps(event_id);
+
+
+
 

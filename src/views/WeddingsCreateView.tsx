@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers } from 'lucide-react';
+import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2 } from 'lucide-react';
 import { WEDDING_THEMES } from '../config/weddingThemes';
-import { CreateWeddingPayload, CoupleAccount } from '../types';
+import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount } from '../types';
 import { createWeddingPaymentApi, verifyWeddingPaymentApi } from '../lib/api';
 import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants';
 
@@ -17,12 +17,18 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [coverPhotoUrl, setCoverPhotoUrl] = useState<string>('');
   const [loveStory, setLoveStory] = useState<string>('');
   const [musicTrack, setMusicTrack] = useState<string>('romantic-strings');
-  const [eventTitle, setEventTitle] = useState<string>('Wedding Celebration');
-  const [eventDate, setEventDate] = useState<string>('');
-  const [eventTime, setEventTime] = useState<string>('10:00 AM');
-  const [eventVenueName, setEventVenueName] = useState<string>('');
-  const [eventVenueAddress, setEventVenueAddress] = useState<string>('');
   const [registryInfo, setRegistryInfo] = useState<string>('');
+
+  // Multi-event schedule state
+  const [events, setEvents] = useState<WeddingEventPayload[]>([
+    {
+      title: 'Wedding Celebration & Reception',
+      date: '',
+      time: '10:00 AM',
+      venue_name: '',
+      venue_address: '',
+    },
+  ]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +67,45 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
     reader.readAsDataURL(file);
   };
 
+  const handleAddEvent = (presetTitle?: string) => {
+    setEvents((prev) => [
+      ...prev,
+      {
+        title: presetTitle || `Event #${prev.length + 1}`,
+        date: prev[0]?.date || '',
+        time: '12:00 PM',
+        venue_name: '',
+        venue_address: '',
+      },
+    ]);
+  };
+
+  const handleRemoveEvent = (index: number) => {
+    if (events.length <= 1) {
+      alert('You must have at least one wedding event.');
+      return;
+    }
+    setEvents((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEventChange = (index: number, field: keyof WeddingEventPayload, value: string) => {
+    setEvents((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
   const handleProceedToPayment = async () => {
     setError(null);
     setIsLoading(true);
+
+    const validEvents = events.filter((e) => e.title.trim() && e.date.trim() && e.venue_name.trim());
+    if (validEvents.length === 0) {
+      setError('Please provide date and venue for at least one event.');
+      setIsLoading(false);
+      return;
+    }
 
     const payload: CreateWeddingPayload = {
       theme_id: themeId,
@@ -72,17 +114,17 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
       love_story: loveStory,
       music_track: musicTrack,
       registry_info: registryInfo,
-      event_title: eventTitle,
-      event_date: eventDate,
-      event_time: eventTime,
-      event_venue_name: eventVenueName,
-      event_venue_address: eventVenueAddress,
+      events: validEvents,
+      // Backward compatibility fields for legacy receivers
+      event_title: validEvents[0].title,
+      event_date: validEvents[0].date,
+      event_time: validEvents[0].time,
+      event_venue_name: validEvents[0].venue_name,
+      event_venue_address: validEvents[0].venue_address,
     };
 
     try {
       const payRes = await createWeddingPaymentApi(payload);
-
-      // Verify payment (simulated / real Paystack loop)
       const verRes = await verifyWeddingPaymentApi(payRes.reference, payload);
 
       if (verRes.success) {
@@ -112,7 +154,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
             Create Your Wedding Invitation
           </h1>
           <p className="text-xs sm:text-sm text-mauve">
-            Craft a cinematic digital invitation experience for your special day.
+            Craft a multi-event digital invitation experience for your special celebration.
           </p>
         </div>
 
@@ -254,79 +296,136 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                   onClick={() => setStep(3)}
                   className="px-6 py-3 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <span>Next: Event Details</span>
+                  <span>Next: Event Schedule</span>
                   <ArrowRight className="w-4 h-4 text-coral" />
                 </button>
               </div>
             </div>
           )}
 
-          {/* STEP 3: Single Event Details */}
+          {/* STEP 3: Multi-Event Schedule */}
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h2 className="font-serif text-xl font-bold text-maroon mb-1">Wedding Event Schedule</h2>
-                <p className="text-xs text-mauve">Enter the date, time, and venue for your celebration.</p>
+                <h2 className="font-serif text-xl font-bold text-maroon mb-1">Multi-Event Schedule</h2>
+                <p className="text-xs text-mauve">Add all events for your celebration (e.g. Traditional, White Wedding, Reception).</p>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-maroon mb-1">Event Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Wedding Celebration & Reception"
-                  value={eventTitle}
-                  onChange={(e) => setEventTitle(e.target.value)}
-                  className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                />
+              {/* Preset Quick-Add Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-semibold text-mauve">Quick Add Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => handleAddEvent('Traditional Ceremony / Engagement')}
+                  className="px-3 py-1.5 rounded-full bg-cream border border-cream-border hover:border-coral text-maroon text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3 text-coral" /> Traditional / Engagement
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddEvent('Holy Matrimony / Church Service')}
+                  className="px-3 py-1.5 rounded-full bg-cream border border-cream-border hover:border-coral text-maroon text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3 text-coral" /> Holy Matrimony
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddEvent('Grand Reception')}
+                  className="px-3 py-1.5 rounded-full bg-cream border border-cream-border hover:border-coral text-maroon text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3 text-coral" /> Reception
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-maroon mb-1">Event Date *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Saturday, December 18, 2026"
-                    value={eventDate}
-                    onChange={(e) => setEventDate(e.target.value)}
-                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-maroon mb-1">Event Time *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 10:00 AM Prompt"
-                    value={eventTime}
-                    onChange={(e) => setEventTime(e.target.value)}
-                    className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                  />
-                </div>
+              {/* Events List Cards */}
+              <div className="space-y-4">
+                {events.map((ev, index) => (
+                  <div key={index} className="p-5 rounded-2xl bg-cream/70 border border-cream-border space-y-4 relative">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-coral">
+                        <Calendar className="w-3.5 h-3.5" /> Event #{index + 1}
+                      </span>
+                      {events.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEvent(index)}
+                          className="p-1 rounded-lg text-red-600 hover:bg-red-50 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-maroon mb-1">Event Title *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Traditional Ceremony / Engagement"
+                        value={ev.title}
+                        onChange={(e) => handleEventChange(index, 'title', e.target.value)}
+                        className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-maroon mb-1">Date *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Friday, Dec 17, 2026"
+                          value={ev.date}
+                          onChange={(e) => handleEventChange(index, 'date', e.target.value)}
+                          className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-maroon mb-1">Time *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. 10:00 AM Prompt"
+                          value={ev.time}
+                          onChange={(e) => handleEventChange(index, 'time', e.target.value)}
+                          className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-maroon mb-1">Venue Name *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Eko Hotel Grand Ballroom"
+                        value={ev.venue_name}
+                        onChange={(e) => handleEventChange(index, 'venue_name', e.target.value)}
+                        className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-maroon mb-1">Venue Address / City (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Victoria Island, Lagos"
+                        value={ev.venue_address || ''}
+                        onChange={(e) => handleEventChange(index, 'venue_address', e.target.value)}
+                        className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-maroon mb-1">Venue Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Eko Grand Ballroom"
-                  value={eventVenueName}
-                  onChange={(e) => setEventVenueName(e.target.value)}
-                  className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-maroon mb-1">Venue Address / City (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Victoria Island, Lagos, Nigeria"
-                  value={eventVenueAddress}
-                  onChange={(e) => setEventVenueAddress(e.target.value)}
-                  className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => handleAddEvent()}
+                className="w-full py-3 rounded-2xl bg-cream border border-dashed border-maroon/40 hover:border-maroon text-maroon text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              >
+                <Plus className="w-4 h-4 text-coral" /> Add Another Event
+              </button>
 
               <div className="pt-4 border-t border-cream-border flex items-center justify-between">
                 <button
@@ -338,7 +437,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                 </button>
                 <button
                   type="button"
-                  disabled={!eventDate.trim() || !eventVenueName.trim()}
+                  disabled={events.some((e) => !e.title.trim() || !e.date.trim() || !e.venue_name.trim())}
                   onClick={() => setStep(4)}
                   className="px-6 py-3 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
@@ -402,8 +501,15 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                   <span className="font-bold">{coupleNames}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-semibold text-mauve">Date & Venue:</span>
-                  <span className="font-medium">{eventDate} • {eventVenueName}</span>
+                  <span className="font-semibold text-mauve">Events Count:</span>
+                  <span className="font-bold">{events.length} Event(s)</span>
+                </div>
+                <div className="space-y-1 pt-1 border-t border-cream-border">
+                  {events.map((ev, i) => (
+                    <p key={i} className="text-[11px] text-mauve">
+                      • <strong className="text-maroon">{ev.title}</strong>: {ev.date} @ {ev.venue_name}
+                    </p>
+                  ))}
                 </div>
                 <div className="flex justify-between border-t border-cream-border pt-2">
                   <span className="font-semibold text-mauve">Package Price:</span>
@@ -444,7 +550,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                   Your Wedding Invitation is Live!
                 </h2>
                 <p className="text-xs text-mauve max-w-sm mx-auto">
-                  Share this link with your family and guests to start collecting RSVPs.
+                  Share your general link or manage your guest list to send personalized links.
                 </p>
               </div>
 

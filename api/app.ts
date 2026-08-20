@@ -6,7 +6,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import { sealData, unsealData } from 'iron-session';
-import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, CoupleAccount, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload } from '../src/types.js';
+import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, CoupleAccount, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestEvent, WeddingGuestWithEvents, WeddingEventPayload } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED, WEDDING_PLAN_PRICE_KOBO, WEDDING_PLAN_PRICE_NGN, WEDDING_PLAN_PRICE_FORMATTED } from '../src/constants.js';
@@ -110,12 +110,19 @@ const blogPostsStore: Map<string, BlogPost> = new Map();
 const weddingsStore: Map<string, Wedding> = new Map();
 const weddingEventsStore: Map<string, WeddingEvent[]> = new Map();
 const weddingRsvpsStore: Map<string, WeddingRSVP[]> = new Map();
+const weddingGuestsStore: Map<string, WeddingGuest> = new Map();
+const weddingGuestEventsStore: Map<string, string[]> = new Map(); // guestId -> event_id[]
 
 // Helper to generate wedding slug using crypto.randomBytes
 function generateWeddingSlug(coupleNames: string): string {
   const cleanNames = (coupleNames || 'wedding').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/(^-|-$)/g, '');
   const randomSuffix = crypto.randomBytes(6).toString('hex');
   return `${cleanNames}-${randomSuffix}`;
+}
+
+// Helper to generate secure guest token using crypto.randomBytes (24 hex chars = 96 bits entropy)
+function generateGuestToken(): string {
+  return crypto.randomBytes(12).toString('hex');
 }
 
 // Seed Demo Blog Post
@@ -1491,48 +1498,108 @@ apiRouter.get('/blog/:slug', async (req, res) => {
 
 /* ==================== Weddings API Endpoints (Phase 1) ==================== */
 
-// GET /api/weddings/slug/:slug — Public fetch of paid wedding + event
+// GET /api/weddings/slug/:slug — Public fetch of paid wedding + events (with optional ?g=:token for personalized guest context)
 apiRouter.get('/weddings/slug/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
+    const token = req.query.g ? String(req.query.g).trim() : null;
+
+    let wedding: Wedding | null = null;
+    let events: WeddingEvent[] = [];
 
     if (isSupabaseConfigured && supabase) {
-      const { data: wedding, error: wErr } = await supabase
+      const { data: wData } = await supabase
         .from('weddings')
         .select('*')
         .eq('slug', slug)
         .eq('is_paid', true)
         .single();
+      if (wData) wedding = wData;
+    }
 
-      if (wedding && !wErr) {
-        const { data: events } = await supabase
-          .from('wedding_events')
-          .select('*')
-          .eq('wedding_id', wedding.id);
-
-        return res.json({
-          wedding,
-          event: events && events.length > 0 ? events[0] : null,
-        });
+    if (!wedding) {
+      for (const w of weddingsStore.values()) {
+        if (w.slug === slug && w.is_paid) {
+          wedding = w;
+          break;
+        }
       }
     }
 
-    let foundWedding: Wedding | undefined;
-    for (const w of weddingsStore.values()) {
-      if (w.slug === slug && w.is_paid) {
-        foundWedding = w;
-        break;
-      }
-    }
-
-    if (!foundWedding) {
+    if (!wedding) {
       return res.status(404).json({ message: 'Wedding invitation not found or payment pending.' });
     }
 
-    const events = weddingEventsStore.get(foundWedding.id) || [];
+    if (isSupabaseConfigured && supabase) {
+      const { data: eData } = await supabase
+        .from('wedding_events')
+        .select('*')
+        .eq('wedding_id', wedding.id);
+      if (eData) events = eData;
+    } else {
+      events = weddingEventsStore.get(wedding.id) || [];
+    }
+
+    // Personalized Guest Token Handling (?g=:token)
+    let activeGuest: WeddingGuest | null = null;
+    let assignedEventIds: string[] = [];
+
+    if (token) {
+      if (isSupabaseConfigured && supabase) {
+        const { data: gData } = await supabase
+          .from('wedding_guests')
+          .select('*')
+          .eq('unique_link_token', token)
+          .eq('wedding_id', wedding.id)
+          .single();
+
+        if (gData) {
+          activeGuest = gData;
+          // Open tracking: timestamp when guest opened personalized link
+          if (!activeGuest.opened_at) {
+            const openedAt = new Date().toISOString();
+            activeGuest.opened_at = openedAt;
+            await supabase.from('wedding_guests').update({ opened_at: openedAt }).eq('id', activeGuest.id);
+          }
+
+          // Fetch guest assigned events
+          const { data: geData } = await supabase
+            .from('wedding_guest_events')
+            .select('event_id')
+            .eq('guest_id', activeGuest.id);
+          if (geData && geData.length > 0) {
+            assignedEventIds = geData.map((ge) => ge.event_id);
+          }
+        }
+      } else {
+        for (const g of weddingGuestsStore.values()) {
+          if (g.unique_link_token === token && g.wedding_id === wedding.id) {
+            activeGuest = g;
+            if (!g.opened_at) {
+              g.opened_at = new Date().toISOString();
+            }
+            assignedEventIds = weddingGuestEventsStore.get(g.id) || [];
+            break;
+          }
+        }
+      }
+
+      if (!activeGuest) {
+        // SECURITY CHECK: Invalid token fails cleanly to generic 404 without exposing other guests' data
+        return res.status(404).json({ message: 'Personalized wedding invitation link not found or invalid token.' });
+      }
+
+      // Filter events to ONLY show events assigned to this guest (if custom event assignment exists)
+      if (assignedEventIds.length > 0) {
+        events = events.filter((e) => assignedEventIds.includes(e.id));
+      }
+    }
+
     return res.json({
-      wedding: foundWedding,
+      wedding,
+      events,
       event: events.length > 0 ? events[0] : null,
+      guest: activeGuest,
     });
   } catch (err: unknown) {
     console.error('Error fetching wedding by slug:', err);
@@ -1540,11 +1607,11 @@ apiRouter.get('/weddings/slug/:slug', async (req, res) => {
   }
 });
 
-// POST /api/weddings/:slug/rsvp — Public guest RSVP submission with rate limiting
+// POST /api/weddings/:slug/rsvp — Public guest RSVP submission (per-event & plus-one supported)
 apiRouter.post('/weddings/:slug/rsvp', weddingRsvpLimiter, async (req, res) => {
   try {
     const { slug } = req.params;
-    const { guest_name, attending, guest_count, dietary_notes, message } = req.body;
+    const { guest_name, attending, guest_count, dietary_notes, message, guest_id, event_id, plus_one_name } = req.body;
 
     if (!guest_name || typeof guest_name !== 'string' || !guest_name.trim()) {
       return res.status(400).json({ message: 'Guest name is required.' });
@@ -1583,9 +1650,12 @@ apiRouter.post('/weddings/:slug/rsvp', weddingRsvpLimiter, async (req, res) => {
     const rsvp: WeddingRSVP = {
       id,
       wedding_id: weddingId,
+      guest_id: guest_id && typeof guest_id === 'string' ? guest_id : null,
+      event_id: event_id && typeof event_id === 'string' ? event_id : null,
       guest_name: guest_name.trim(),
       attending,
       guest_count: typeof guest_count === 'number' && guest_count > 0 ? guest_count : 1,
+      plus_one_name: plus_one_name && typeof plus_one_name === 'string' ? plus_one_name.trim() : null,
       dietary_notes: dietary_notes && typeof dietary_notes === 'string' ? dietary_notes.trim() : null,
       message: message && typeof message === 'string' ? message.trim() : null,
       created_at: now,
@@ -1596,6 +1666,22 @@ apiRouter.post('/weddings/:slug/rsvp', weddingRsvpLimiter, async (req, res) => {
       if (error) {
         console.error('Supabase wedding_rsvps insert error:', error);
         return res.status(500).json({ message: 'Failed to record RSVP submission.' });
+      }
+
+      // Update plus_one_name on wedding_guests if applicable
+      if (guest_id && plus_one_name) {
+        await supabase
+          .from('wedding_guests')
+          .update({ plus_one_name: plus_one_name.trim(), updated_at: now })
+          .eq('id', guest_id);
+      }
+    }
+
+    if (guest_id && plus_one_name) {
+      const g = weddingGuestsStore.get(guest_id);
+      if (g) {
+        g.plus_one_name = plus_one_name.trim();
+        g.updated_at = now;
       }
     }
 
@@ -1714,16 +1800,33 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
       updated_at: now,
     };
 
-    const eventRecord: WeddingEvent = {
-      id: crypto.randomUUID(),
-      wedding_id: weddingId,
-      title: payload.event_title || 'Wedding Celebration',
-      date: payload.event_date.trim(),
-      time: payload.event_time ? payload.event_time.trim() : '10:00 AM',
-      venue_name: payload.event_venue_name.trim(),
-      venue_address: payload.event_venue_address ? payload.event_venue_address.trim() : null,
-      created_at: now,
-    };
+    // Process Multi-Event Creation Array
+    const eventRecords: WeddingEvent[] = [];
+    if (payload.events && Array.isArray(payload.events) && payload.events.length > 0) {
+      for (const ev of payload.events) {
+        eventRecords.push({
+          id: crypto.randomUUID(),
+          wedding_id: weddingId,
+          title: ev.title ? ev.title.trim() : 'Wedding Celebration',
+          date: ev.date.trim(),
+          time: ev.time ? ev.time.trim() : '10:00 AM',
+          venue_name: ev.venue_name.trim(),
+          venue_address: ev.venue_address ? ev.venue_address.trim() : null,
+          created_at: now,
+        });
+      }
+    } else {
+      eventRecords.push({
+        id: crypto.randomUUID(),
+        wedding_id: weddingId,
+        title: payload.event_title || 'Wedding Celebration',
+        date: payload.event_date ? payload.event_date.trim() : 'December 18, 2026',
+        time: payload.event_time ? payload.event_time.trim() : '10:00 AM',
+        venue_name: payload.event_venue_name ? payload.event_venue_name.trim() : 'Main Venue',
+        venue_address: payload.event_venue_address ? payload.event_venue_address.trim() : null,
+        created_at: now,
+      });
+    }
 
     if (isSupabaseConfigured && supabase) {
       const { error: wErr } = await supabase.from('weddings').insert(weddingRecord);
@@ -1731,19 +1834,19 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
         console.error('Supabase weddings insert error:', wErr);
         return res.status(500).json({ message: 'Failed to create wedding record.' });
       }
-      const { error: eErr } = await supabase.from('wedding_events').insert(eventRecord);
-      if (eErr) {
-        console.error('Supabase wedding_events insert error:', eErr);
+      for (const evRec of eventRecords) {
+        await supabase.from('wedding_events').insert(evRec);
       }
     }
 
     weddingsStore.set(weddingId, weddingRecord);
-    weddingEventsStore.set(weddingId, [eventRecord]);
+    weddingEventsStore.set(weddingId, eventRecords);
 
     return res.status(201).json({
       success: true,
       wedding: weddingRecord,
-      event: eventRecord,
+      events: eventRecords,
+      event: eventRecords[0],
       shareUrl: `/w/wedding/${slug}`,
     });
   } catch (err: unknown) {
@@ -1799,12 +1902,381 @@ apiRouter.get('/weddings/dashboard/:weddingId', requireCoupleAuth, async (req, r
 
     return res.json({
       wedding: targetWedding,
+      events,
       event: events.length > 0 ? events[0] : null,
       rsvps,
     });
   } catch (err: unknown) {
     console.error('Error fetching wedding dashboard:', err);
     return res.status(500).json({ message: 'Failed to fetch wedding dashboard.' });
+  }
+});
+
+/* ==================== Phase 2 Guest Management API Routes ==================== */
+
+// Helper to verify couple ownership of a wedding
+async function checkWeddingOwnership(weddingId: string, coupleId: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    const { data } = await supabase.from('weddings').select('couple_account_id').eq('id', weddingId).single();
+    if (data && data.couple_account_id === coupleId) return true;
+  }
+  const w = weddingsStore.get(weddingId);
+  return !!(w && w.couple_account_id === coupleId);
+}
+
+// GET /api/weddings/dashboard/:weddingId/guests — Fetch guest list with assigned events & RSVP breakdown
+apiRouter.get('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId } = req.params;
+
+    const isOwner = await checkWeddingOwnership(weddingId, couple.id);
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
+    }
+
+    let guests: WeddingGuest[] = [];
+    let guestEvents: WeddingGuestEvent[] = [];
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: gData } = await supabase
+        .from('wedding_guests')
+        .select('*')
+        .eq('wedding_id', weddingId)
+        .order('name', { ascending: true });
+      if (gData) guests = gData;
+
+      const { data: geData } = await supabase
+        .from('wedding_guest_events')
+        .select('*');
+      if (geData) guestEvents = geData;
+    } else {
+      guests = Array.from(weddingGuestsStore.values())
+        .filter((g) => g.wedding_id === weddingId)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Attach event_ids array to each guest
+    const guestsWithEvents: WeddingGuestWithEvents[] = guests.map((g) => {
+      let event_ids: string[] = [];
+      if (isSupabaseConfigured && supabase) {
+        event_ids = guestEvents.filter((ge) => ge.guest_id === g.id).map((ge) => ge.event_id);
+      } else {
+        event_ids = weddingGuestEventsStore.get(g.id) || [];
+      }
+      return { ...g, event_ids };
+    });
+
+    return res.json(guestsWithEvents);
+  } catch (err: unknown) {
+    console.error('Error fetching wedding guests:', err);
+    return res.status(500).json({ message: 'Failed to fetch guest list.' });
+  }
+});
+
+// POST /api/weddings/dashboard/:weddingId/guests — Manually add a guest
+apiRouter.post('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId } = req.params;
+    const { name, email, plus_one_allowed, dietary_notes, event_ids } = req.body;
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ message: 'Guest name is required.' });
+    }
+
+    const isOwner = await checkWeddingOwnership(weddingId, couple.id);
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
+    }
+
+    const guestId = crypto.randomUUID();
+    const token = generateGuestToken();
+    const now = new Date().toISOString();
+
+    const guestRecord: WeddingGuest = {
+      id: guestId,
+      wedding_id: weddingId,
+      name: name.trim(),
+      email: email && typeof email === 'string' ? email.trim() : null,
+      unique_link_token: token,
+      plus_one_allowed: !!plus_one_allowed,
+      plus_one_name: null,
+      dietary_notes: dietary_notes && typeof dietary_notes === 'string' ? dietary_notes.trim() : null,
+      added_by: 'couple',
+      opened_at: null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const targetEvents: string[] = Array.isArray(event_ids) ? event_ids : [];
+
+    if (isSupabaseConfigured && supabase) {
+      const { error: gErr } = await supabase.from('wedding_guests').insert(guestRecord);
+      if (gErr) {
+        console.error('Supabase wedding_guests insert error:', gErr);
+        return res.status(500).json({ message: 'Failed to create guest record.' });
+      }
+      for (const evId of targetEvents) {
+        await supabase.from('wedding_guest_events').insert({ guest_id: guestId, event_id: evId });
+      }
+    }
+
+    weddingGuestsStore.set(guestId, guestRecord);
+    weddingGuestEventsStore.set(guestId, targetEvents);
+
+    return res.status(201).json({
+      success: true,
+      guest: { ...guestRecord, event_ids: targetEvents },
+    });
+  } catch (err: unknown) {
+    console.error('Error adding wedding guest:', err);
+    return res.status(500).json({ message: 'Failed to add guest.' });
+  }
+});
+
+// PATCH /api/weddings/dashboard/:weddingId/guests/:guestId — Edit guest details & event assignments
+apiRouter.patch('/weddings/dashboard/:weddingId/guests/:guestId', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId, guestId } = req.params;
+    const { name, email, plus_one_allowed, dietary_notes, event_ids } = req.body;
+
+    const isOwner = await checkWeddingOwnership(weddingId, couple.id);
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
+    }
+
+    const now = new Date().toISOString();
+    const updates: Partial<WeddingGuest> = { updated_at: now };
+
+    if (name && typeof name === 'string') updates.name = name.trim();
+    if (email !== undefined) updates.email = email ? email.trim() : null;
+    if (typeof plus_one_allowed === 'boolean') updates.plus_one_allowed = plus_one_allowed;
+    if (dietary_notes !== undefined) updates.dietary_notes = dietary_notes ? dietary_notes.trim() : null;
+
+    let updatedGuest: WeddingGuest | null = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('wedding_guests')
+        .update(updates)
+        .eq('id', guestId)
+        .eq('wedding_id', weddingId)
+        .select()
+        .single();
+      if (data && !error) updatedGuest = data;
+
+      if (Array.isArray(event_ids)) {
+        await supabase.from('wedding_guest_events').delete().eq('guest_id', guestId);
+        for (const evId of event_ids) {
+          await supabase.from('wedding_guest_events').insert({ guest_id: guestId, event_id: evId });
+        }
+      }
+    }
+
+    const g = weddingGuestsStore.get(guestId);
+    if (g && g.wedding_id === weddingId) {
+      Object.assign(g, updates);
+      updatedGuest = g;
+      if (Array.isArray(event_ids)) {
+        weddingGuestEventsStore.set(guestId, event_ids);
+      }
+    }
+
+    if (!updatedGuest) {
+      return res.status(404).json({ message: 'Guest record not found.' });
+    }
+
+    const assignedEvents = Array.isArray(event_ids) ? event_ids : (weddingGuestEventsStore.get(guestId) || []);
+
+    return res.json({
+      success: true,
+      guest: { ...updatedGuest, event_ids: assignedEvents },
+    });
+  } catch (err: unknown) {
+    console.error('Error updating wedding guest:', err);
+    return res.status(500).json({ message: 'Failed to update guest.' });
+  }
+});
+
+// DELETE /api/weddings/dashboard/:weddingId/guests/:guestId — Delete guest record
+apiRouter.delete('/weddings/dashboard/:weddingId/guests/:guestId', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId, guestId } = req.params;
+
+    const isOwner = await checkWeddingOwnership(weddingId, couple.id);
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('wedding_guests').delete().eq('id', guestId).eq('wedding_id', weddingId);
+    }
+
+    weddingGuestsStore.delete(guestId);
+    weddingGuestEventsStore.delete(guestId);
+
+    return res.json({ success: true, message: 'Guest deleted successfully.' });
+  } catch (err: unknown) {
+    console.error('Error deleting wedding guest:', err);
+    return res.status(500).json({ message: 'Failed to delete guest.' });
+  }
+});
+
+// POST /api/weddings/dashboard/:weddingId/guests/import — Bulk CSV import with server-side validation & dedup
+apiRouter.post('/weddings/dashboard/:weddingId/guests/import', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId } = req.params;
+    const { guests: rawGuests } = req.body;
+
+    if (!Array.isArray(rawGuests) || rawGuests.length === 0) {
+      return res.status(400).json({ message: 'No guest items provided for CSV import.' });
+    }
+
+    // SERVER-SIDE VALIDATION: Max 500 rows per CSV import call
+    if (rawGuests.length > 500) {
+      return res.status(400).json({ message: 'CSV import exceeds the limit of 500 guests per batch.' });
+    }
+
+    const isOwner = await checkWeddingOwnership(weddingId, couple.id);
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
+    }
+
+    // Existing guests for deduplication
+    let existingGuests: WeddingGuest[] = [];
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('wedding_guests').select('*').eq('wedding_id', weddingId);
+      if (data) existingGuests = data;
+    } else {
+      existingGuests = Array.from(weddingGuestsStore.values()).filter((g) => g.wedding_id === weddingId);
+    }
+
+    const existingEmails = new Set(existingGuests.map((g) => g.email?.toLowerCase()).filter(Boolean));
+    const existingNames = new Set(existingGuests.map((g) => g.name.toLowerCase().trim()));
+
+    const imported: WeddingGuestWithEvents[] = [];
+    const now = new Date().toISOString();
+
+    for (const raw of rawGuests) {
+      const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+      if (!name) continue; // skip blank names
+
+      const email = typeof raw.email === 'string' ? raw.email.trim().toLowerCase() : '';
+
+      // DEDUP STRATEGY: Skip if email matches existing, or exact name matches if email is missing
+      if (email && existingEmails.has(email)) continue;
+      if (!email && existingNames.has(name.toLowerCase())) continue;
+
+      const guestId = crypto.randomUUID();
+      const token = generateGuestToken();
+      const plus_one_allowed = !!raw.plus_one_allowed;
+      const dietary_notes = typeof raw.dietary_notes === 'string' ? raw.dietary_notes.trim() : null;
+
+      const guestRecord: WeddingGuest = {
+        id: guestId,
+        wedding_id: weddingId,
+        name,
+        email: email || null,
+        unique_link_token: token,
+        plus_one_allowed,
+        plus_one_name: null,
+        dietary_notes,
+        added_by: 'couple',
+        opened_at: null,
+        created_at: now,
+        updated_at: now,
+      };
+
+      const event_ids: string[] = Array.isArray(raw.event_ids) ? raw.event_ids : [];
+
+      if (isSupabaseConfigured && supabase) {
+        await supabase.from('wedding_guests').insert(guestRecord);
+        for (const evId of event_ids) {
+          await supabase.from('wedding_guest_events').insert({ guest_id: guestId, event_id: evId });
+        }
+      }
+
+      weddingGuestsStore.set(guestId, guestRecord);
+      weddingGuestEventsStore.set(guestId, event_ids);
+
+      if (email) existingEmails.add(email);
+      existingNames.add(name.toLowerCase());
+
+      imported.push({ ...guestRecord, event_ids });
+    }
+
+    return res.status(201).json({
+      success: true,
+      imported_count: imported.length,
+      guests: imported,
+    });
+  } catch (err: unknown) {
+    console.error('Error importing guests CSV:', err);
+    return res.status(500).json({ message: 'Failed to import guests.' });
+  }
+});
+
+// GET /api/weddings/dashboard/:weddingId/guests/export — Download CSV of guest list + RSVP status
+apiRouter.get('/weddings/dashboard/:weddingId/guests/export', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { weddingId } = req.params;
+
+    const isOwner = await checkWeddingOwnership(weddingId, couple.id);
+    if (!isOwner) {
+      return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
+    }
+
+    let guests: WeddingGuest[] = [];
+    let rsvps: WeddingRSVP[] = [];
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: gData } = await supabase.from('wedding_guests').select('*').eq('wedding_id', weddingId);
+      if (gData) guests = gData;
+
+      const { data: rData } = await supabase.from('wedding_rsvps').select('*').eq('wedding_id', weddingId);
+      if (rData) rsvps = rData;
+    } else {
+      guests = Array.from(weddingGuestsStore.values()).filter((g) => g.wedding_id === weddingId);
+      rsvps = weddingRsvpsStore.get(weddingId) || [];
+    }
+
+    const csvRows = [
+      ['Guest Name', 'Email', 'Plus One Allowed', 'Plus One Name', 'Dietary Notes', 'Opened At', 'RSVP Status', 'Guest Count', 'Personal Message', 'Unique Link Token'],
+    ];
+
+    for (const g of guests) {
+      const gRsvps = rsvps.filter((r) => r.guest_id === g.id);
+      const isAttending = gRsvps.some((r) => r.attending);
+      const hasResponded = gRsvps.length > 0;
+      const status = hasResponded ? (isAttending ? 'Attending' : 'Declined') : 'Pending';
+      const guestCount = isAttending ? Math.max(...gRsvps.map((r) => r.guest_count || 1)) : 0;
+      const messages = gRsvps.map((r) => r.message).filter(Boolean).join(' | ');
+
+      csvRows.push([
+        `"${g.name.replace(/"/g, '""')}"`,
+        `"${(g.email || '').replace(/"/g, '""')}"`,
+        g.plus_one_allowed ? 'Yes' : 'No',
+        `"${(g.plus_one_name || '').replace(/"/g, '""')}"`,
+        `"${(g.dietary_notes || '').replace(/"/g, '""')}"`,
+        g.opened_at ? new Date(g.opened_at).toLocaleString() : 'Not Opened',
+        status,
+        String(guestCount),
+        `"${messages.replace(/"/g, '""')}"`,
+        g.unique_link_token,
+      ]);
+    }
+
+    const csvContent = csvRows.map((r) => r.join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="wedding-guests-${weddingId}.csv"`);
+    return res.send(csvContent);
+  } catch (err: unknown) {
+    console.error('Error exporting guest list CSV:', err);
+    return res.status(500).json({ message: 'Failed to export guest list.' });
   }
 });
 

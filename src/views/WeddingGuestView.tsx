@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, AlertCircle } from 'lucide-react';
-import { Wedding, WeddingEvent } from '../types';
+import { Wedding, WeddingEvent, WeddingGuest } from '../types';
 import { getPublicWeddingBySlugApi } from '../lib/api';
 import { WeddingInvitationViewer } from '../components/WeddingInvitationViewer';
 
@@ -11,7 +11,8 @@ interface WeddingGuestViewProps {
 
 export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavigate }) => {
   const [wedding, setWedding] = useState<Wedding | null>(null);
-  const [event, setEvent] = useState<WeddingEvent | null>(null);
+  const [events, setEvents] = useState<WeddingEvent[]>([]);
+  const [guest, setGuest] = useState<WeddingGuest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,11 +21,18 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavi
       setIsLoading(true);
       setError(null);
       try {
-        const res = await getPublicWeddingBySlugApi(slug);
+        // Extract token from query params ?g=:token
+        const searchParams = new URLSearchParams(window.location.search);
+        const token = searchParams.get('g') || undefined;
+
+        const res = await getPublicWeddingBySlugApi(slug, token);
         setWedding(res.wedding);
-        setEvent(res.event);
+        setEvents(res.events || (res.event ? [res.event] : []));
+        setGuest(res.guest || null);
+
         if (res.wedding) {
-          document.title = `${res.wedding.couple_names} — Wedding Invitation | Amorah`;
+          const guestPrefix = res.guest ? `Invitation for ${res.guest.name} | ` : '';
+          document.title = `${guestPrefix}${res.wedding.couple_names} — Wedding Invitation | Amorah`;
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Wedding invitation not found.';
@@ -54,7 +62,7 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavi
         <div className="p-8 rounded-3xl bg-[#3B0E1B] border border-[#D4AF37]/30 max-w-md w-full shadow-2xl space-y-4">
           <AlertCircle className="w-10 h-10 text-coral mx-auto" />
           <h2 className="font-serif text-2xl font-bold text-[#F4E3B2]">Invitation Not Found</h2>
-          <p className="text-xs text-[#FDFBF7]/70 font-sans">{error || 'This wedding invitation does not exist or is pending payment.'}</p>
+          <p className="text-xs text-[#FDFBF7]/70 font-sans">{error || 'This wedding invitation link is invalid or payment is pending.'}</p>
           <button
             onClick={() => onNavigate('/')}
             className="px-6 py-2.5 rounded-full bg-[#D4AF37] text-[#2A0812] font-semibold text-xs font-sans"
@@ -69,7 +77,8 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavi
   return (
     <WeddingInvitationViewer
       wedding={wedding}
-      event={event}
+      events={events}
+      guest={guest}
       slug={slug}
       onNavigate={onNavigate}
     />

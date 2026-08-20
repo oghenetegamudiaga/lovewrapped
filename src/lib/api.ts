@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload } from '../types.js';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents } from '../types.js';
 
 const API_BASE = '/api';
 
@@ -281,10 +281,16 @@ export async function changeAdminPasswordApi(
   });
 }
 
-/* ==================== Weddings API Helpers (Phase 1) ==================== */
+/* ==================== Weddings API Helpers (Phase 1 & 2) ==================== */
 
-export async function getPublicWeddingBySlugApi(slug: string): Promise<{ wedding: Wedding; event: WeddingEvent | null }> {
-  return apiFetch<{ wedding: Wedding; event: WeddingEvent | null }>(`/weddings/slug/${slug}`);
+export async function getPublicWeddingBySlugApi(
+  slug: string,
+  token?: string
+): Promise<{ wedding: Wedding; events: WeddingEvent[]; event: WeddingEvent | null; guest?: WeddingGuest | null }> {
+  const query = token ? `?g=${encodeURIComponent(token)}` : '';
+  return apiFetch<{ wedding: Wedding; events: WeddingEvent[]; event: WeddingEvent | null; guest?: WeddingGuest | null }>(
+    `/weddings/slug/${slug}${query}`
+  );
 }
 
 export async function submitWeddingRsvpApi(
@@ -293,8 +299,11 @@ export async function submitWeddingRsvpApi(
     guest_name: string;
     attending: boolean;
     guest_count?: number;
+    plus_one_name?: string;
     dietary_notes?: string;
     message?: string;
+    guest_id?: string;
+    event_id?: string;
   }
 ): Promise<{ success: boolean; rsvp: WeddingRSVP }> {
   return apiFetch<{ success: boolean; rsvp: WeddingRSVP }>(`/weddings/${slug}/rsvp`, {
@@ -324,12 +333,14 @@ export async function verifyWeddingPaymentApi(
 ): Promise<{
   success: boolean;
   wedding: Wedding;
+  events: WeddingEvent[];
   event: WeddingEvent;
   shareUrl: string;
 }> {
   return apiFetch<{
     success: boolean;
     wedding: Wedding;
+    events: WeddingEvent[];
     event: WeddingEvent;
     shareUrl: string;
   }>('/weddings/verify-payment', {
@@ -340,11 +351,13 @@ export async function verifyWeddingPaymentApi(
 
 export async function getCoupleWeddingDashboardApi(weddingId: string): Promise<{
   wedding: Wedding;
+  events: WeddingEvent[];
   event: WeddingEvent | null;
   rsvps: WeddingRSVP[];
 }> {
   return apiFetch<{
     wedding: Wedding;
+    events: WeddingEvent[];
     event: WeddingEvent | null;
     rsvps: WeddingRSVP[];
   }>(`/weddings/dashboard/${weddingId}`);
@@ -358,6 +371,68 @@ export async function updateCoupleWeddingDetailsApi(
     method: 'PATCH',
     body: JSON.stringify(updates),
   });
+}
+
+/* ==================== Phase 2 Guest Management API Helpers ==================== */
+
+export async function getCoupleWeddingGuestsApi(weddingId: string): Promise<WeddingGuestWithEvents[]> {
+  return apiFetch<WeddingGuestWithEvents[]>(`/weddings/dashboard/${weddingId}/guests`);
+}
+
+export async function addCoupleWeddingGuestApi(
+  weddingId: string,
+  payload: {
+    name: string;
+    email?: string;
+    plus_one_allowed?: boolean;
+    dietary_notes?: string;
+    event_ids?: string[];
+  }
+): Promise<{ success: boolean; guest: WeddingGuestWithEvents }> {
+  return apiFetch<{ success: boolean; guest: WeddingGuestWithEvents }>(`/weddings/dashboard/${weddingId}/guests`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCoupleWeddingGuestApi(
+  weddingId: string,
+  guestId: string,
+  updates: {
+    name?: string;
+    email?: string;
+    plus_one_allowed?: boolean;
+    dietary_notes?: string;
+    event_ids?: string[];
+  }
+): Promise<{ success: boolean; guest: WeddingGuestWithEvents }> {
+  return apiFetch<{ success: boolean; guest: WeddingGuestWithEvents }>(`/weddings/dashboard/${weddingId}/guests/${guestId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteCoupleWeddingGuestApi(weddingId: string, guestId: string): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(`/weddings/dashboard/${weddingId}/guests/${guestId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function importCoupleWeddingGuestsCsvApi(
+  weddingId: string,
+  guests: { name: string; email?: string; plus_one_allowed?: boolean; dietary_notes?: string; event_ids?: string[] }[]
+): Promise<{ success: boolean; imported_count: number; guests: WeddingGuestWithEvents[] }> {
+  return apiFetch<{ success: boolean; imported_count: number; guests: WeddingGuestWithEvents[] }>(
+    `/weddings/dashboard/${weddingId}/guests/import`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ guests }),
+    }
+  );
+}
+
+export function exportCoupleWeddingGuestsCsvUrl(weddingId: string): string {
+  return `/api/weddings/dashboard/${weddingId}/guests/export`;
 }
 
 export async function getAdminWeddingsApi(): Promise<
@@ -389,4 +464,5 @@ export async function deleteAdminWeddingApi(id: string): Promise<{ success: bool
     method: 'DELETE',
   });
 }
+
 

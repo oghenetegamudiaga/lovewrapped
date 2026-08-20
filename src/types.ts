@@ -179,12 +179,47 @@ export interface WeddingEvent {
 export interface WeddingRSVP {
   id: string;
   wedding_id: string;
+  guest_id?: string | null;
+  event_id?: string | null;
   guest_name: string;
   attending: boolean;
   guest_count: number;
+  plus_one_name?: string | null;
   dietary_notes?: string | null;
   message?: string | null;
   created_at: string;
+}
+
+export interface WeddingGuest {
+  id: string;
+  wedding_id: string;
+  name: string;
+  email?: string | null;
+  unique_link_token: string;
+  plus_one_allowed: boolean;
+  plus_one_name?: string | null;
+  dietary_notes?: string | null;
+  added_by: 'couple' | 'self';
+  opened_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WeddingGuestEvent {
+  guest_id: string;
+  event_id: string;
+}
+
+export interface WeddingGuestWithEvents extends WeddingGuest {
+  event_ids: string[];
+}
+
+export interface WeddingEventPayload {
+  title: string;
+  date: string;
+  time: string;
+  venue_name: string;
+  venue_address?: string;
 }
 
 export interface CreateWeddingPayload {
@@ -194,10 +229,14 @@ export interface CreateWeddingPayload {
   love_story?: string;
   music_track?: string;
   registry_info?: string;
-  event_title: string;
-  event_date: string;
-  event_time: string;
-  event_venue_name: string;
+  // Multi-event array (backward compatible with single event)
+  events?: WeddingEventPayload[];
+  // Legacy single-event fields for backward compatibility
+  event_title?: string;
+  event_date?: string;
+  event_time?: string;
+  event_venue_name?: string;
   event_venue_address?: string;
 }
+
 
