@@ -1798,6 +1798,59 @@ apiRouter.post('/weddings/:slug/rsvp', weddingRsvpLimiter, async (req, res) => {
   }
 });
 
+// POST /api/weddings/create-free — Create free-tier Save-the-Date wedding card record (no events, no rsvps, requireCoupleAuth)
+apiRouter.post('/weddings/create-free', requireCoupleAuth, async (req, res) => {
+  try {
+    const couple = (req as any).coupleSession;
+    const { theme_id, bride_first_name, groom_first_name, event_date } = req.body;
+
+    const bFirstName = bride_first_name ? bride_first_name.trim().slice(0, 100) : '';
+    const gFirstName = groom_first_name ? groom_first_name.trim().slice(0, 100) : '';
+
+    if (!bFirstName || !gFirstName) {
+      return res.status(400).json({ message: "Bride's first name and Groom's first name are required." });
+    }
+
+    const weddingId = crypto.randomUUID();
+    const coupleNames = `${bFirstName} & ${gFirstName}`;
+    const slug = generateWeddingSlug(bFirstName, gFirstName);
+    const now = new Date().toISOString();
+    const validTheme = theme_id && VALID_THEME_IDS.has(theme_id) ? theme_id : 'classic-burgundy';
+
+    const weddingRecord: Wedding = {
+      id: weddingId,
+      couple_account_id: couple.id,
+      slug,
+      bride_first_name: bFirstName,
+      groom_first_name: gFirstName,
+      couple_names: coupleNames,
+      theme_id: validTheme,
+      tier: 'free',
+      is_paid: false,
+      created_at: now,
+      updated_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error: wErr } = await supabase.from('weddings').insert(weddingRecord);
+      if (wErr) {
+        console.error('Supabase free wedding insert error:', wErr);
+        return res.status(500).json({ message: 'Failed to create free wedding card.' });
+      }
+    }
+
+    weddingsStore.set(weddingId, weddingRecord);
+
+    return res.status(201).json({
+      success: true,
+      wedding: weddingRecord,
+    });
+  } catch (err: unknown) {
+    console.error('Error creating free wedding card:', err);
+    return res.status(500).json({ message: 'Failed to create free wedding card.' });
+  }
+});
+
 // POST /api/weddings/create-payment — Create wedding record (is_paid: false) & initialize Paystack transaction
 apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitializeLimiter, async (req, res) => {
   try {
@@ -1846,6 +1899,7 @@ apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitialize
       couple_names: fallbackCoupleNames,
       cover_photo_url: payload.cover_photo_url || null,
       theme_id,
+      tier: payload.tier || 'premium',
       color_variant,
       font_variant,
       section_order: section_order.length > 0 ? section_order : ['schedule', 'love_story', 'registry', 'rsvp'],

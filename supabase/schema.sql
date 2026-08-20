@@ -176,6 +176,7 @@ CREATE TABLE IF NOT EXISTS public.weddings (
   couple_names TEXT,
   cover_photo_url TEXT,
   theme_id TEXT NOT NULL DEFAULT 'classic-burgundy',
+  tier TEXT NOT NULL DEFAULT 'premium' CHECK (tier IN ('free', 'premium')),
   love_story TEXT,
   music_track TEXT,
   registry_info TEXT,
@@ -316,6 +317,13 @@ SET
   bride_first_name = TRIM(SPLIT_PART(couple_names, '&', 1)),
   groom_first_name = TRIM(SPLIT_PART(couple_names, '&', 2))
 WHERE bride_first_name IS NULL AND couple_names IS NOT NULL AND couple_names LIKE '%&%';
+
+-- ==================== Migration: Weddings Tier (Free Tier & Card Engine) ====================
+-- Run this block manually in Supabase SQL Editor to add the tier column to existing weddings table.
+-- Existing premium weddings created before this migration will default to tier = 'premium'.
+
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'premium' CHECK (tier IN ('free', 'premium'));
+
 
 
 

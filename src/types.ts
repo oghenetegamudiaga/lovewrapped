@@ -160,6 +160,7 @@ export interface Wedding {
   couple_names?: string | null;
   cover_photo_url?: string | null;
   theme_id: string;
+  tier?: 'free' | 'premium';
   color_variant?: string | null;
   font_variant?: string | null;
   section_order?: string[] | null;
@@ -231,6 +232,7 @@ export interface WeddingEventPayload {
 
 export interface CreateWeddingPayload {
   theme_id: string;
+  tier?: 'free' | 'premium';
   color_variant?: string;
   font_variant?: string;
   section_order?: string[];

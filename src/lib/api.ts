@@ -331,6 +331,24 @@ export async function createWeddingPaymentApi(payload: CreateWeddingPayload): Pr
   });
 }
 
+export async function createFreeWeddingApi(payload: {
+  theme_id: string;
+  bride_first_name: string;
+  groom_first_name: string;
+  event_date: string;
+}): Promise<{
+  success: boolean;
+  wedding: Wedding;
+}> {
+  return apiFetch<{
+    success: boolean;
+    wedding: Wedding;
+  }>('/weddings/create-free', {
+    method: 'POST',
+    body: JSON.stringify({ ...payload, tier: 'free' }),
+  });
+}
+
 export async function verifyWeddingPaymentApi(
   reference: string
 ): Promise<{
