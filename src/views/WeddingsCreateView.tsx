@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type, Download, Image, FileText, Music, Volume2, VolumeX } from 'lucide-react';
 import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
-import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount } from '../types';
-import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi } from '../lib/api';
+import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount, ThemeAssetsMap } from '../types';
+import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi, getPublicThemeAssetsApi } from '../lib/api';
 import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants';
 import { StaticInviteCard } from '../components/StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
@@ -32,6 +32,11 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [musicTrack, setMusicTrack] = useState<string>('romantic-strings');
   const [registryInfo, setRegistryInfo] = useState<string>('');
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+  const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
+
+  useEffect(() => {
+    getPublicThemeAssetsApi().then(setThemeAssets).catch(() => {});
+  }, []);
 
   // Multi-event schedule state for Premium
   const [events, setEvents] = useState<WeddingEventPayload[]>([
@@ -728,6 +733,11 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                                 <h3 className="font-serif text-base font-bold text-maroon">{t.name}</h3>
                               </div>
                               <p className="text-xs text-mauve mt-1 leading-relaxed">{t.description}</p>
+                              {themeAssets[t.id]?.cover_background_url && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-coral bg-coral/10 px-2.5 py-0.5 rounded-full mt-2 border border-coral/20">
+                                  <Sparkles className="w-3 h-3 text-coral" /> Photographic Backdrop Included
+                                </span>
+                              )}
                             </div>
                             <div className="w-5 h-5 rounded-full border-2 border-maroon flex items-center justify-center shrink-0">
                               {themeId === t.id && <div className="w-2.5 h-2.5 rounded-full bg-maroon" />}

@@ -43,7 +43,7 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType, AdminRole, AdminRecord, BlogPost } from '../types';
+import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType, AdminRole, AdminRecord, BlogPost, ThemeAssetsMap, ThemeAssetRecord } from '../types';
 import {
   getAdminMeApi,
   adminLoginApi,
@@ -70,9 +70,12 @@ import {
   deleteAdminBlogPostApi,
   getAdminWeddingsApi,
   deleteAdminWeddingApi,
+  getPublicThemeAssetsApi,
+  updateAdminThemeAssetsApi,
   AdminTimeseriesPoint,
 } from '../lib/api';
 import { fetchSiteContentApi, invalidateSiteContentCache } from '../lib/useSiteContent';
+import { WEDDING_THEMES } from '../config/weddingThemes';
 
 interface AdminViewProps {}
 
@@ -118,6 +121,8 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [adminWeddings, setAdminWeddings] = useState<
     { id: string; couple_names: string; slug: string; theme_id: string; is_paid: boolean; payment_reference?: string; created_at: string }[]
   >([]);
+  const [themeAssetsMap, setThemeAssetsMap] = useState<ThemeAssetsMap>({});
+  const [themeAssetSaving, setThemeAssetSaving] = useState<string | null>(null);
 
   // Blog Management State
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -218,6 +223,9 @@ export const AdminView: React.FC<AdminViewProps> = () => {
 
         const wList = await getAdminWeddingsApi().catch(() => []);
         setAdminWeddings(wList);
+
+        const tAssets = await getPublicThemeAssetsApi().catch(() => ({}));
+        setThemeAssetsMap(tAssets);
       }
     } catch (err: unknown) {
       console.error('Failed to load admin data:', err);

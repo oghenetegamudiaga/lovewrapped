@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents, CoupleAccount } from '../types.js';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents, CoupleAccount, ThemeAssetRecord, ThemeAssetsMap } from '../types.js';
 
 const API_BASE = '/api';
 
@@ -544,6 +544,26 @@ export async function getAdminWeddingsApi(): Promise<
 export async function deleteAdminWeddingApi(id: string): Promise<{ success: boolean }> {
   return apiFetch<{ success: boolean }>(`/admin/weddings/${id}`, {
     method: 'DELETE',
+  });
+}
+
+/**
+ * Public Theme Assets API: Fetch map of background scene images keyed by theme_id.
+ */
+export async function getPublicThemeAssetsApi(): Promise<ThemeAssetsMap> {
+  return apiFetch<ThemeAssetsMap>('/theme-assets');
+}
+
+/**
+ * Admin Theme Assets API: Upload/replace cover & reveal background scene images for a theme.
+ */
+export async function updateAdminThemeAssetsApi(
+  themeId: string,
+  payload: { cover_background_url?: string | null; reveal_background_url?: string | null }
+): Promise<{ success: boolean; asset: ThemeAssetRecord }> {
+  return apiFetch<{ success: boolean; asset: ThemeAssetRecord }>(`/admin/theme-assets/${themeId}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
   });
 }
 

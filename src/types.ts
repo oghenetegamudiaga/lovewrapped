@@ -257,5 +257,15 @@ export interface CreateWeddingPayload {
   event_venue_address?: string;
 }
 
+export interface ThemeAssetRecord {
+  theme_id: string;
+  cover_background_url?: string | null;
+  reveal_background_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type ThemeAssetsMap = Record<string, ThemeAssetRecord>;
+
 
 

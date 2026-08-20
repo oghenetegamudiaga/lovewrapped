@@ -330,6 +330,34 @@ ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 
 
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS gallery_photos TEXT[] NOT NULL DEFAULT ARRAY[]::text[];
 
+-- ==================== Migration: Theme Assets & Scene Backdrops ====================
+-- Run this block manually in Supabase SQL Editor to support background scene images per wedding theme.
+
+CREATE TABLE IF NOT EXISTS public.theme_assets (
+  theme_id TEXT PRIMARY KEY,
+  cover_background_url TEXT,
+  reveal_background_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Enable RLS (Public read, Server/Service Role write)
+ALTER TABLE public.theme_assets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read access for theme_assets"
+  ON public.theme_assets FOR SELECT
+  USING (true);
+
+-- Storage Bucket Setup for Theme Assets (Public Read, Admin Write Only)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('theme-assets', 'theme-assets', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public read access for theme-assets bucket"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'theme-assets');
+
+
 
 
 

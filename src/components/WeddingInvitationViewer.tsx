@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image } from 'lucide-react';
-import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest } from '../types';
+import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest, ThemeAssetsMap } from '../types';
 import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
-import { submitWeddingRsvpApi } from '../lib/api';
+import { submitWeddingRsvpApi, getPublicThemeAssetsApi } from '../lib/api';
 import { StaticInviteCard } from './StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
 import { MusicPlayerToggle } from './MusicPlayerToggle';
@@ -147,6 +147,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     wedding?.font_variant
   );
 
+  const activeThemeId = wedding?.theme_id || 'classic-burgundy';
   const activeTheme = customTheme || themeStyles.baseTheme;
   const accentColor = themeStyles.accentColor;
   const secondaryColor = themeStyles.secondaryColor;
@@ -196,7 +197,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [rsvpError, setRsvpError] = useState<string | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [isDownloadingCard, setIsDownloadingCard] = useState<boolean>(false);
+  const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
   const personalizedCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getPublicThemeAssetsApi().then(setThemeAssets).catch(() => {});
+  }, []);
 
   const handleDownloadPersonalizedCard = async (format: 'jpeg' | 'png') => {
     if (!personalizedCardRef.current) return;
@@ -731,16 +737,21 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               transition={{ duration: isReducedMotion ? 0.4 : 0.8 }}
               className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 text-center"
             >
+              {/* Background Hero Layer */}
               <div className="absolute inset-0 z-0">
-                <img
-                  src={coverPhoto}
-                  alt={coupleNames}
-                  className="w-full h-full object-cover opacity-35 scale-105"
-                />
+                {themeAssets[activeThemeId]?.cover_background_url ? (
+                  <img
+                    src={themeAssets[activeThemeId]!.cover_background_url!}
+                    alt="Theme Cover Backdrop Scene"
+                    className="w-full h-full object-cover opacity-75"
+                  />
+                ) : (
+                  <img src={coverPhoto} alt="Cover backdrop" className="w-full h-full object-cover opacity-25 filter blur-xs" />
+                )}
                 <div
                   className="absolute inset-0 bg-gradient-to-t"
                   style={{
-                    backgroundImage: `linear-gradient(to top, ${activeTheme.bgColor}, ${activeTheme.cardBgColor}B3, ${activeTheme.bgColor}E6)`,
+                    backgroundImage: `linear-gradient(to top, ${activeTheme.bgColor}, ${activeTheme.cardBgColor}99, ${activeTheme.bgColor}D9)`,
                   }}
                 />
               </div>
@@ -886,9 +897,20 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="flex-1 overflow-y-auto p-6 space-y-8 text-white"
+            className="relative flex-1 overflow-y-auto p-6 space-y-8 text-white"
             style={{ backgroundColor: activeTheme.bgColor }}
           >
+            {/* Scene 3 Reveal Background Image Overlay (if admin uploaded) */}
+            {themeAssets[activeThemeId]?.reveal_background_url && (
+              <div className="absolute inset-0 z-0 opacity-30 pointer-events-none overflow-hidden">
+                <img
+                  src={themeAssets[activeThemeId]!.reveal_background_url!}
+                  alt="Theme Reveal Backdrop Scene"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+              </div>
+            )}
             {/* Scene 3: Save-the-Date Graphic & Countdown */}
             <div className="text-center space-y-4 pt-4 border-b border-white/10 pb-8">
               <span

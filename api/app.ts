@@ -112,6 +112,7 @@ const weddingEventsStore: Map<string, WeddingEvent[]> = new Map();
 const weddingRsvpsStore: Map<string, WeddingRSVP[]> = new Map();
 const weddingGuestsStore: Map<string, WeddingGuest> = new Map();
 const weddingGuestEventsStore: Map<string, string[]> = new Map(); // guestId -> event_id[]
+const themeAssetsStore: Map<string, any> = new Map();
 
 // Phase 4 Allowlists for Server-Side Input Validation
 const VALID_THEME_IDS = new Set(['classic-burgundy', 'modern-emerald', 'boho-champagne']);
@@ -2742,6 +2743,86 @@ apiRouter.delete('/admin/weddings/:id', requireRole(['super_admin', 'admin']), a
   } catch (err: unknown) {
     console.error('Error deleting wedding:', err);
     return res.status(500).json({ message: 'Failed to delete wedding.' });
+  }
+});
+
+/* ==================== Theme Scene Backdrops API Routes ==================== */
+
+// GET /api/theme-assets — Public endpoint to fetch theme background assets map
+apiRouter.get('/theme-assets', async (req, res) => {
+  try {
+    const assetsMap: Record<string, any> = {};
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('theme_assets').select('*');
+      if (data && !error) {
+        data.forEach((row) => {
+          assetsMap[row.theme_id] = row;
+        });
+        return res.json(assetsMap);
+      }
+    }
+
+    for (const [tId, asset] of themeAssetsStore.entries()) {
+      assetsMap[tId] = asset;
+    }
+
+    return res.json(assetsMap);
+  } catch (err: unknown) {
+    console.error('Error fetching theme assets:', err);
+    return res.status(500).json({ message: 'Failed to fetch theme assets.' });
+  }
+});
+
+// POST /api/admin/theme-assets/:themeId — Admin endpoint to upload/replace theme background scene images
+apiRouter.post('/admin/theme-assets/:themeId', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const { themeId } = req.params;
+    const { cover_background_url, reveal_background_url } = req.body;
+
+    if (!VALID_THEME_IDS.has(themeId)) {
+      return res.status(400).json({ message: `Invalid theme_id. Must be one of: ${Array.from(VALID_THEME_IDS).join(', ')}` });
+    }
+
+    // Size & format validation on image URL payloads (cap base64 data URLs at 10MB)
+    if (cover_background_url && typeof cover_background_url === 'string' && cover_background_url.length > 15 * 1024 * 1024) {
+      return res.status(400).json({ message: 'Cover background image payload exceeds size limit.' });
+    }
+    if (reveal_background_url && typeof reveal_background_url === 'string' && reveal_background_url.length > 15 * 1024 * 1024) {
+      return res.status(400).json({ message: 'Reveal background image payload exceeds size limit.' });
+    }
+
+    const now = new Date().toISOString();
+    const existing = themeAssetsStore.get(themeId) || { theme_id: themeId };
+    const updatedRecord = {
+      theme_id: themeId,
+      cover_background_url: cover_background_url !== undefined ? (typeof cover_background_url === 'string' && cover_background_url.trim() ? cover_background_url.trim() : null) : (existing.cover_background_url || null),
+      reveal_background_url: reveal_background_url !== undefined ? (typeof reveal_background_url === 'string' && reveal_background_url.trim() ? reveal_background_url.trim() : null) : (existing.reveal_background_url || null),
+      updated_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('theme_assets')
+        .upsert(updatedRecord, { onConflict: 'theme_id' })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase theme_assets upsert error:', error);
+        return res.status(500).json({ message: 'Failed to update theme assets in database.' });
+      }
+      if (data) {
+        themeAssetsStore.set(themeId, data);
+        return res.json({ success: true, asset: data });
+      }
+    }
+
+    themeAssetsStore.set(themeId, updatedRecord);
+    return res.json({ success: true, asset: updatedRecord });
+  } catch (err: unknown) {
+    console.error('Error updating theme assets:', err);
+    return res.status(500).json({ message: 'Failed to update theme assets.' });
   }
 });
 
