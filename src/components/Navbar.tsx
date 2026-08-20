@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, ArrowRight, Menu, X, PlayCircle, Layers } from 'lucide-react';
+import { Heart, ArrowRight, Menu, X, PlayCircle, Layers, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -33,6 +33,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
         {/* Desktop Links & CTA */}
         <div className="hidden sm:flex items-center gap-4">
+          <button
+            id="nav-weddings-button"
+            onClick={() => onNavigate('/weddings')}
+            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
+              currentPath.startsWith('/weddings')
+                ? 'bg-cream-card text-maroon border border-cream-border font-semibold'
+                : 'text-mauve hover:text-maroon hover:bg-cream-card'
+            }`}
+          >
+            Weddings
+          </button>
+
           <button
             id="nav-demo-button"
             onClick={() => onNavigate('/w/demo')}
@@ -88,6 +100,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
               >
                 <span>Home</span>
                 <Heart className="w-4 h-4 text-coral" />
+              </button>
+
+              <button
+                type="button"
+                id="mobile-nav-weddings"
+                onClick={() => handleMobileNav('/weddings')}
+                className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
+              >
+                <span>Weddings by Amorah</span>
+                <Sparkles className="w-4 h-4 text-coral" />
               </button>
 
               <button

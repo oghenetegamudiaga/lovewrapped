@@ -46,6 +46,14 @@ export interface AdminRecord {
   created_by?: string | null;
 }
 
+export interface CoupleAccount {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  created_at: string;
+}
+
+
 export interface AdminMetrics {
   totalUsers: number;
   totalExperiences: number;

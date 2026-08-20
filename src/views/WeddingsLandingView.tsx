@@ -1,0 +1,124 @@
+import React from 'react';
+import { Heart, Sparkles, Calendar, CheckCircle2, ArrowRight, ShieldCheck, UserCheck, Layers, Mail } from 'lucide-react';
+
+interface WeddingsLandingViewProps {
+  onNavigate: (path: string) => void;
+}
+
+export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavigate }) => {
+  return (
+    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
+      {/* Hero Section */}
+      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-coral/10 border border-coral/20 text-coral text-xs font-semibold tracking-wide uppercase mb-6 shadow-xs">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Introducing Weddings by Amorah</span>
+        </div>
+
+        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6 max-w-4xl">
+          Digital Wedding Invitations<br />
+          <em className="italic font-normal text-coral">as unforgettable as your love story.</em>
+        </h1>
+
+        <p className="text-lg sm:text-xl text-mauve max-w-2xl mb-10 font-normal leading-relaxed">
+          Transform your special day into a captivating, scene-based digital experience. Collect RSVPs, share your schedule, and give your guests a memorable preview of your wedding day.
+        </p>
+
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-8 w-full sm:w-auto">
+          <button
+            id="weddings-hero-signup-button"
+            onClick={() => onNavigate('/weddings/signup')}
+            className="px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
+          >
+            <span>Create Couple Account</span>
+            <ArrowRight className="w-5 h-5 text-coral" />
+          </button>
+
+          <button
+            id="weddings-hero-login-button"
+            onClick={() => onNavigate('/weddings/login')}
+            className="px-6 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-medium text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Couple Sign In</span>
+          </button>
+        </div>
+
+        <p className="text-xs text-mauve/80 font-medium tracking-wide flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-coral inline" />
+          <span>Private couple accounts • Instant setup • Built for Nigerian & Global Weddings</span>
+        </p>
+      </section>
+
+      {/* Feature Highlights Grid */}
+      <section className="py-16 px-4 sm:px-6 bg-cream-card/60 border-y border-cream-border/60">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-maroon mb-3">
+              Crafted for Your Special Day
+            </h2>
+            <p className="text-mauve text-base max-w-xl mx-auto">
+              Everything you need to invite, excite, and manage your wedding guests effortlessly.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="bg-cream border border-cream-border p-6 sm:p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-coral/10 text-coral flex items-center justify-center">
+                <Layers className="w-6 h-6" />
+              </div>
+              <h3 className="font-serif text-xl font-semibold text-maroon">Scene-Based Invitations</h3>
+              <p className="text-mauve text-sm leading-relaxed">
+                Step away from flat static PDFs. Deliver cinematic, multi-scene digital invitations complete with music, dynamic typography, and personalized details.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="bg-cream border border-cream-border p-6 sm:p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-maroon/10 text-maroon flex items-center justify-center">
+                <UserCheck className="w-6 h-6" />
+              </div>
+              <h3 className="font-serif text-xl font-semibold text-maroon">Seamless RSVP Tracking</h3>
+              <p className="text-mauve text-sm leading-relaxed">
+                Real-time RSVP collection with guest details, dietary preferences, and custom messages delivered straight to your couple dashboard.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-cream border border-cream-border p-6 sm:p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-coral/10 text-coral flex items-center justify-center">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <h3 className="font-serif text-xl font-semibold text-maroon">Multi-Event Support</h3>
+              <p className="text-mauve text-sm leading-relaxed">
+                Whether you have a Traditional ceremony, White Wedding, or Reception, seamlessly manage and share event schedules in one place.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Footer Section */}
+      <section className="py-20 px-4 text-center max-w-4xl mx-auto">
+        <div className="p-8 sm:p-12 rounded-3xl bg-maroon text-cream shadow-xl relative overflow-hidden">
+          <div className="relative z-10">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-4 text-cream">
+              Ready to create your wedding story?
+            </h2>
+            <p className="text-cream/80 text-base max-w-lg mx-auto mb-8">
+              Sign up today to lock in early access to our full invitation suite and couple dashboard.
+            </p>
+            <button
+              id="weddings-cta-signup-button"
+              onClick={() => onNavigate('/weddings/signup')}
+              className="px-8 py-4 rounded-full bg-coral hover:bg-coral-dark text-white font-semibold text-base shadow-lg hover:scale-105 transition-all inline-flex items-center gap-2 cursor-pointer"
+            >
+              <span>Get Started Now</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};

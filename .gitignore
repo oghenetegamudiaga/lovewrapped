@@ -7,3 +7,6 @@ coverage/
 .env*
 !.env.example
 lovewrapped.zip
+lovewrapped v2.zip
+lovewrapped v2/
+

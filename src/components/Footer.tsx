@@ -33,6 +33,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             Home
           </button>
           <button
+            id="footer-weddings-link"
+            onClick={() => onNavigate('/weddings')}
+            className="hover:text-maroon transition-colors"
+          >
+            Weddings
+          </button>
+          <button
             id="footer-pricing-link"
             onClick={() => onNavigate('/pricing')}
             className="hover:text-maroon transition-colors"

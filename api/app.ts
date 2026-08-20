@@ -6,7 +6,7 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import { sealData, unsealData } from 'iron-session';
-import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap } from '../src/types.js';
+import { CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, CoupleAccount } from '../src/types.js';
 import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED } from '../src/constants.js';
@@ -51,6 +51,14 @@ const adminLoginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const weddingsAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: { message: 'Too many authentication attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const createExperienceLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20,
@@ -77,10 +85,19 @@ interface AdminRecordInternal {
   created_by?: string | null;
 }
 
+interface CoupleAccountInternal {
+  id: string;
+  email: string;
+  password_hash: string;
+  full_name?: string | null;
+  created_at: string;
+}
+
 const experiencesStore: Map<string, Experience> = new Map();
 const usersStore: Map<string, UserRecord> = new Map();
 const crmContactsStore: Map<string, CRMContact> = new Map();
 const adminsStore: Map<string, AdminRecordInternal> = new Map();
+const coupleAccountsStore: Map<string, CoupleAccountInternal> = new Map();
 const siteContentStore: Map<string, string> = new Map([
   ['hero_eyebrow', 'Made for your favourite person'],
   ['hero_title_prefix', 'Turn your love into'],
@@ -808,6 +825,214 @@ function requireRole(allowedRoles: Array<'super_admin' | 'admin' | 'support'>) {
 async function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
   return requireRole(['super_admin', 'admin', 'support'])(req, res, next);
 }
+
+// Weddings Authentication & Session Management
+async function requireCoupleAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  try {
+    const sessionCookie = req.cookies?.couple_session;
+    if (!sessionCookie) {
+      return res.status(401).json({ message: 'Unauthorized. Couple session required.' });
+    }
+
+    const session = await unsealData<{
+      id: string;
+      email: string;
+      full_name?: string | null;
+      loggedInAt: number;
+    }>(sessionCookie, { password: SESSION_SECRET });
+
+    if (session && session.id && session.email) {
+      (req as any).coupleSession = session;
+      return next();
+    }
+
+    return res.status(401).json({ message: 'Unauthorized. Invalid or expired couple session.' });
+  } catch (err) {
+    return res.status(401).json({ message: 'Unauthorized. Invalid session token.' });
+  }
+}
+
+// POST /api/weddings/signup
+apiRouter.post('/weddings/signup', weddingsAuthLimiter, async (req, res) => {
+  try {
+    const { email, password, full_name } = req.body;
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ message: 'A valid email address is required.' });
+    }
+
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanFullName = full_name && typeof full_name === 'string' ? full_name.trim() : null;
+
+    // Check if email already exists in Supabase or store
+    if (isSupabaseConfigured && supabase) {
+      const { data: existing } = await supabase.from('couple_accounts').select('id').eq('email', cleanEmail).single();
+      if (existing) {
+        return res.status(400).json({ message: 'An account with this email address already exists.' });
+      }
+    }
+
+    for (const acc of coupleAccountsStore.values()) {
+      if (acc.email.toLowerCase() === cleanEmail) {
+        return res.status(400).json({ message: 'An account with this email address already exists.' });
+      }
+    }
+
+    const password_hash = bcrypt.hashSync(password, 10);
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    const newCoupleRecord: CoupleAccountInternal = {
+      id,
+      email: cleanEmail,
+      password_hash,
+      full_name: cleanFullName,
+      created_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('couple_accounts').insert({
+        id: newCoupleRecord.id,
+        email: newCoupleRecord.email,
+        password_hash: newCoupleRecord.password_hash,
+        full_name: newCoupleRecord.full_name,
+        created_at: newCoupleRecord.created_at,
+      });
+
+      if (error) {
+        console.error('Supabase couple_account insert error:', error);
+        return res.status(500).json({ message: 'Failed to create account. Please try again.' });
+      }
+    }
+
+    coupleAccountsStore.set(id, newCoupleRecord);
+
+    const sessionData = {
+      id,
+      email: cleanEmail,
+      full_name: cleanFullName,
+      loggedInAt: Date.now(),
+    };
+
+    const sealedCookie = await sealData(sessionData, {
+      password: SESSION_SECRET,
+      ttl: 7 * 24 * 60 * 60, // 7 days
+    });
+
+    res.cookie('couple_session', sealedCookie, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Account created successfully.',
+      couple: {
+        id,
+        email: cleanEmail,
+        full_name: cleanFullName,
+      },
+    });
+  } catch (err: unknown) {
+    console.error('Couple signup error:', err);
+    return res.status(500).json({ message: 'Failed to create account. Please try again.' });
+  }
+});
+
+// POST /api/weddings/login
+apiRouter.post('/weddings/login', weddingsAuthLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    let account: CoupleAccountInternal | null = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('couple_accounts').select('*').eq('email', cleanEmail).single();
+      if (data) account = data;
+    }
+
+    if (!account) {
+      for (const acc of coupleAccountsStore.values()) {
+        if (acc.email.toLowerCase() === cleanEmail) {
+          account = acc;
+          break;
+        }
+      }
+    }
+
+    if (!account) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    const passwordMatches = bcrypt.compareSync(password, account.password_hash);
+    if (!passwordMatches) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    const sessionData = {
+      id: account.id,
+      email: account.email,
+      full_name: account.full_name,
+      loggedInAt: Date.now(),
+    };
+
+    const sealedCookie = await sealData(sessionData, {
+      password: SESSION_SECRET,
+      ttl: 7 * 24 * 60 * 60,
+    });
+
+    res.cookie('couple_session', sealedCookie, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return res.json({
+      success: true,
+      message: 'Login successful.',
+      couple: {
+        id: account.id,
+        email: account.email,
+        full_name: account.full_name,
+      },
+    });
+  } catch (err: unknown) {
+    console.error('Couple login error:', err);
+    return res.status(500).json({ message: 'Login failed. Please try again.' });
+  }
+});
+
+// POST /api/weddings/logout
+apiRouter.post('/weddings/logout', (req, res) => {
+  res.clearCookie('couple_session', { path: '/' });
+  res.json({ success: true, message: 'Logged out successfully.' });
+});
+
+// GET /api/weddings/me
+apiRouter.get('/weddings/me', requireCoupleAuth, (req, res) => {
+  const session = (req as any).coupleSession || {};
+  res.json({
+    authenticated: true,
+    couple: {
+      id: session.id,
+      email: session.email,
+      full_name: session.full_name || null,
+    },
+  });
+});
 
 // POST /api/admin/login
 apiRouter.post('/admin/login', adminLoginLimiter, async (req, res) => {

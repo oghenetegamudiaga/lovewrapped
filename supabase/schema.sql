@@ -111,3 +111,23 @@ ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 
 -- Note: No public RLS policies are created for public.admins.
 -- All admin management is performed server-side via Supabase Service Role key or API endpoints.
+
+-- ==================== Migration: Couple Accounts Table for Weddings by Amorah ====================
+-- Run this block in Supabase SQL Editor to support couple accounts for Weddings by Amorah.
+
+CREATE TABLE IF NOT EXISTS public.couple_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  full_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_couple_accounts_email ON public.couple_accounts(email);
+
+-- Enable Row Level Security (RLS) to lock down public access (Server / Service Role access only)
+ALTER TABLE public.couple_accounts ENABLE ROW LEVEL SECURITY;
+
+-- Note: No public RLS policies are created for public.couple_accounts.
+-- All couple account operations are performed server-side via Supabase Service Role key or API endpoints.
+

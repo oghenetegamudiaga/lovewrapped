@@ -8,7 +8,10 @@ import { PreviewView } from './views/PreviewView';
 import { PayView } from './views/PayView';
 import { WatchView } from './views/WatchView';
 import { AdminView } from './views/AdminView';
-import { Experience, PlanTier } from './types';
+import { WeddingsLandingView } from './views/WeddingsLandingView';
+import { WeddingsSignupView } from './views/WeddingsSignupView';
+import { WeddingsLoginView } from './views/WeddingsLoginView';
+import { Experience, PlanTier, CoupleAccount } from './types';
 import { DEFAULT_PAYMENT_REF } from './constants.js';
 
 export default function App() {
@@ -17,6 +20,19 @@ export default function App() {
   const [currentExperience, setCurrentExperience] = useState<Experience | null>(null);
   const [paymentState, setPaymentState] = useState<{ reference: string; expId: string } | null>(null);
   const [watchSlug, setWatchSlug] = useState<string>('demo');
+  const [currentCouple, setCurrentCouple] = useState<CoupleAccount | null>(null);
+
+  // Check couple session on initial mount
+  useEffect(() => {
+    fetch('/api/weddings/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.authenticated && data.couple) {
+          setCurrentCouple(data.couple);
+        }
+      })
+      .catch((err) => console.log('Couple auth check error:', err));
+  }, []);
 
   // Parse path on initial load & popstate
   useEffect(() => {
@@ -44,6 +60,12 @@ export default function App() {
         setCurrentPath('/pay');
       } else if (path === '/admin') {
         setCurrentPath('/admin');
+      } else if (path === '/weddings') {
+        setCurrentPath('/weddings');
+      } else if (path === '/weddings/signup') {
+        setCurrentPath('/weddings/signup');
+      } else if (path === '/weddings/login') {
+        setCurrentPath('/weddings/login');
       } else {
         setCurrentPath('/');
       }
@@ -71,6 +93,17 @@ export default function App() {
       setWatchSlug(slug);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Couple Logout handler
+  const handleCoupleLogout = async () => {
+    try {
+      await fetch('/api/weddings/logout', { method: 'POST' });
+      setCurrentCouple(null);
+      navigate('/weddings');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   // Plan Selection handler
@@ -142,9 +175,28 @@ export default function App() {
         {currentPath === '/admin' && (
           <AdminView />
         )}
+
+        {currentPath === '/weddings' && (
+          <WeddingsLandingView onNavigate={navigate} />
+        )}
+
+        {currentPath === '/weddings/signup' && (
+          <WeddingsSignupView
+            onNavigate={navigate}
+            onSignupSuccess={(couple) => setCurrentCouple(couple)}
+          />
+        )}
+
+        {currentPath === '/weddings/login' && (
+          <WeddingsLoginView
+            onNavigate={navigate}
+            onLoginSuccess={(couple) => setCurrentCouple(couple)}
+          />
+        )}
       </main>
 
       {!currentPath.startsWith('/w/') && <Footer onNavigate={navigate} />}
     </div>
   );
 }
+
