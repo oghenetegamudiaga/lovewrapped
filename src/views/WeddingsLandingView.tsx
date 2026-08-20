@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Sparkles, Calendar, CheckCircle2, ArrowRight, ShieldCheck, UserCheck, Layers, LogOut, User } from 'lucide-react';
+import { Heart, Sparkles, Calendar, CheckCircle2, ArrowRight, ShieldCheck, UserCheck, Layers, LogOut, User, Play, Smartphone } from 'lucide-react';
 import { getCoupleMeApi, getCoupleMyWeddingsApi, logoutCoupleApi } from '../lib/api';
 import { CoupleAccount } from '../types';
+import { WeddingInvitationViewer } from '../components/WeddingInvitationViewer';
 
 interface WeddingsLandingViewProps {
   onNavigate: (path: string) => void;
@@ -52,19 +53,30 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
     }
   };
 
-  const handleDashboardRedirect = () => {
-    if (weddingsCount === 1 && firstWeddingId) {
-      onNavigate(`/weddings/dashboard/${firstWeddingId}`);
-    } else if (weddingsCount > 1) {
-      onNavigate('/weddings/mine');
+  const handleCreateYoursRedirect = () => {
+    if (couple) {
+      if (weddingsCount === 1 && firstWeddingId) {
+        onNavigate(`/weddings/dashboard/${firstWeddingId}`);
+      } else if (weddingsCount > 1) {
+        onNavigate('/weddings/mine');
+      } else {
+        onNavigate('/weddings/create');
+      }
     } else {
-      onNavigate('/weddings/create');
+      onNavigate('/weddings/signup');
+    }
+  };
+
+  const handleSeeSampleScroll = () => {
+    const el = document.getElementById('phone-mockup-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
-      {/* Logged-In Welcome Banner (If Authenticated) */}
+      {/* Logged-In Welcome Banner */}
       {!isAuthLoading && couple && (
         <div className="bg-maroon text-cream py-3 px-4 shadow-md">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
@@ -74,7 +86,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={handleDashboardRedirect}
+                onClick={handleCreateYoursRedirect}
                 className="px-4 py-1.5 rounded-full bg-coral hover:bg-coral-dark text-white font-semibold text-xs shadow-xs cursor-pointer transition-all"
               >
                 Go to Dashboard ({weddingsCount} {weddingsCount === 1 ? 'Wedding' : 'Weddings'})
@@ -98,7 +110,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
       )}
 
       {/* Hero Section */}
-      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
+      <section className="relative pt-12 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-coral/10 border border-coral/20 text-coral text-xs font-semibold tracking-wide uppercase mb-6 shadow-xs">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Introducing Weddings by Amorah</span>
@@ -109,66 +121,75 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
           <em className="italic font-normal text-coral">as unforgettable as your love story.</em>
         </h1>
 
-        <p className="text-lg sm:text-xl text-mauve max-w-2xl mb-10 font-normal leading-relaxed">
+        <p className="text-lg sm:text-xl text-mauve max-w-2xl mb-8 font-normal leading-relaxed">
           Transform your special day into a captivating, scene-based digital experience. Collect RSVPs, share your schedule, and give your guests a memorable preview of your wedding day.
         </p>
 
-        {/* Dynamic Actions based on auth state */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-8 w-full sm:w-auto">
-          {couple ? (
-            <>
-              <button
-                id="weddings-hero-dashboard-button"
-                onClick={handleDashboardRedirect}
-                className="px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
-              >
-                <span>Go to Dashboard</span>
-                <ArrowRight className="w-5 h-5 text-coral" />
-              </button>
+        {/* Updated Hero CTAs */}
+        <div className="flex flex-col items-center gap-4 mb-12 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center gap-4 w-full sm:w-auto">
+            {/* Primary CTA: Create Yours */}
+            <button
+              id="weddings-hero-create-yours-button"
+              onClick={handleCreateYoursRedirect}
+              className="px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
+            >
+              <span>Create Yours</span>
+              <ArrowRight className="w-5 h-5 text-coral" />
+            </button>
 
-              <button
-                id="weddings-hero-create-button"
-                onClick={() => onNavigate('/weddings/create')}
-                className="px-6 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-semibold text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Create Another Invitation</span>
-              </button>
+            {/* Secondary CTA: See a Sample */}
+            <button
+              id="weddings-hero-see-sample-button"
+              onClick={handleSeeSampleScroll}
+              className="px-7 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-semibold text-base transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+            >
+              <Play className="w-4 h-4 text-coral fill-coral" />
+              <span>See a Sample</span>
+            </button>
+          </div>
 
+          {/* De-emphasized Couple Sign In Text Link */}
+          {!couple && (
+            <p className="text-xs text-mauve font-medium">
+              Already have an account?{' '}
               <button
-                id="weddings-hero-logout-button"
-                onClick={handleLogout}
-                className="px-5 py-4 rounded-full bg-cream hover:bg-red-50 text-red-600 border border-cream-border font-medium text-base transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                id="weddings-hero-signup-button"
-                onClick={() => onNavigate('/weddings/signup')}
-                className="px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
-              >
-                <span>Create Couple Account</span>
-                <ArrowRight className="w-5 h-5 text-coral" />
-              </button>
-
-              <button
-                id="weddings-hero-login-button"
+                type="button"
+                id="weddings-hero-login-link"
                 onClick={() => onNavigate('/weddings/login')}
-                className="px-6 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-medium text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="font-semibold text-maroon hover:text-coral underline underline-offset-4 transition-colors cursor-pointer"
               >
-                <span>Couple Sign In</span>
+                Couple Sign In
               </button>
-            </>
+            </p>
           )}
         </div>
 
-        <p className="text-xs text-mauve/80 font-medium tracking-wide flex items-center gap-2">
+        <p className="text-xs text-mauve/80 font-medium tracking-wide flex items-center gap-2 mb-12">
           <ShieldCheck className="w-4 h-4 text-coral inline" />
           <span>Private couple accounts • Instant setup • Built for Nigerian & Global Weddings</span>
         </p>
+
+        {/* INTERACTIVE PHONE MOCKUP IN HERO */}
+        <div id="phone-mockup-section" className="relative w-full max-w-sm sm:max-w-md mx-auto pt-4">
+          <div className="relative mx-auto rounded-[48px] border-[10px] border-[#1F050C] bg-[#1F050C] shadow-2xl p-2 phone-card-shadow">
+            {/* Phone Notch & Speaker Pill */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-[#1F050C] rounded-b-2xl z-40 flex items-center justify-center">
+              <div className="w-10 h-1 rounded-full bg-white/20" />
+            </div>
+
+            {/* Embedded Live Interactive Viewer Component */}
+            <div className="relative rounded-[36px] overflow-hidden min-h-[640px] max-h-[680px]">
+              <WeddingInvitationViewer isSpike onNavigate={onNavigate} />
+            </div>
+          </div>
+
+          <div className="mt-4 text-center">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-semibold text-mauve uppercase tracking-widest bg-cream-card px-3 py-1 rounded-full border border-cream-border">
+              <Smartphone className="w-3.5 h-3.5 text-coral" /> Interactive Live Preview — Tap wax seal to open
+            </span>
+          </div>
+        </div>
       </section>
 
       {/* Feature Highlights Grid */}
@@ -229,10 +250,10 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
             </p>
             <button
               id="weddings-cta-signup-button"
-              onClick={() => (couple ? handleDashboardRedirect() : onNavigate('/weddings/signup'))}
+              onClick={handleCreateYoursRedirect}
               className="px-8 py-4 rounded-full bg-coral hover:bg-coral-dark text-white font-semibold text-base shadow-lg hover:scale-105 transition-all inline-flex items-center gap-2 cursor-pointer"
             >
-              <span>{couple ? 'Go to My Weddings' : 'Get Started Now'}</span>
+              <span>{couple ? 'Go to My Weddings' : 'Create Yours Now'}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

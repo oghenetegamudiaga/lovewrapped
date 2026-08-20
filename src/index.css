@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Attena';
+  src: url('/fonts/Attena.ttf') format('truetype'),
+       url('/fonts/Attena.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-cream: #fdf2ea;
   --color-cream-card: #f7e6db;
@@ -19,6 +28,7 @@
   :root {
     --font-sans: 'DM Sans', sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;
+    --font-heading: 'Attena', 'Playfair Display', Georgia, serif;
   }
 
   body {
@@ -28,7 +38,13 @@
     overflow-x: hidden;
   }
 
-  h1, h2, h3, .font-serif {
+  /* Site-wide Attena typography applied specifically to h1 and h2 tags with Playfair Display fallback */
+  h1, h2 {
+    font-family: var(--font-heading);
+  }
+
+  /* h3 and .font-serif utility class continue using Playfair Display */
+  h3, .font-serif {
     font-family: var(--font-serif);
   }
 }
