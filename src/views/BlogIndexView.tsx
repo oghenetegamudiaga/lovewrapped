@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Calendar, Clock, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { BlogPost } from '../types';
 import { getPublicBlogPostsApi } from '../lib/api';
 
@@ -45,11 +45,6 @@ export const BlogIndexView: React.FC<BlogIndexViewProps> = ({ onNavigate }) => {
     <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Header Banner */}
       <section className="pt-12 pb-16 md:pt-16 md:pb-20 px-4 sm:px-6 max-w-6xl mx-auto w-full text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-coral/10 border border-coral/20 text-coral text-xs font-semibold tracking-wide uppercase mb-6 shadow-xs">
-          <BookOpen className="w-3.5 h-3.5" />
-          <span>The Amorah Journal</span>
-        </div>
-
         <h1 className="font-serif text-4xl sm:text-5xl font-bold tracking-tight text-maroon leading-tight mb-4">
           Love, Stories & Wedding Guidance
         </h1>

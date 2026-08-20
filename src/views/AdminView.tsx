@@ -666,10 +666,6 @@ export const AdminView: React.FC<AdminViewProps> = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-cream-border">
           <div>
-            <div className="eyebrow-pill mb-2">
-              <span />
-              Admin Portal
-            </div>
             <h1 className="font-serif font-bold text-2xl sm:text-3xl text-maroon">
               Platform Overview & Management
             </h1>

@@ -73,9 +73,6 @@ export const WeddingsMineView: React.FC<WeddingsMineViewProps> = ({ onNavigate, 
         {/* Header Bar */}
         <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-cream-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/10 text-coral text-[10px] font-semibold uppercase tracking-wider mb-2">
-              <Heart className="w-3 h-3 fill-coral" /> My Weddings Portfolio
-            </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
               {couple?.full_name ? `Welcome, ${couple.full_name}` : 'Your Wedding Invitations'}
             </h1>
