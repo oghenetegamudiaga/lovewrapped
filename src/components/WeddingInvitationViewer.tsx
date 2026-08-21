@@ -203,7 +203,18 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [isDownloadingCard, setIsDownloadingCard] = useState<boolean>(false);
   const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
+  const [coverPhotoStatus, setCoverPhotoStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
   const personalizedCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0) {
+      console.log('[WeddingInvitationViewer] Cover photo URL set:', wedding.cover_photo_url);
+      setCoverPhotoStatus('loading');
+    } else {
+      console.log('[WeddingInvitationViewer] No cover_photo_url set; using theme pattern fallback.');
+      setCoverPhotoStatus('error');
+    }
+  }, [wedding?.cover_photo_url]);
 
   const getSanitizedRegistryUrl = (rawUrl?: string | null): string | null => {
     if (!rawUrl || !rawUrl.trim()) return null;
@@ -1162,10 +1173,22 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               animate={!isReducedMotion ? { scale: [1, 1.02, 1] } : { scale: 1 }}
               transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             >
-              {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 ? (
-                <img
+              {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && coverPhotoStatus !== 'error' ? (
+                <motion.img
+                  key={wedding.cover_photo_url}
                   src={wedding.cover_photo_url}
                   alt={`${coupleNames} Full-Bleed Backdrop`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: coverPhotoStatus === 'loaded' ? 1 : 0.5 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  onLoad={() => {
+                    console.log('[WeddingInvitationViewer] Cover photo loaded successfully.');
+                    setCoverPhotoStatus('loaded');
+                  }}
+                  onError={() => {
+                    console.warn('[WeddingInvitationViewer] Cover photo failed to load:', wedding.cover_photo_url);
+                    setCoverPhotoStatus('error');
+                  }}
                   className="w-full h-full object-cover object-center"
                 />
               ) : themeAssets[activeThemeId]?.reveal_background_url ? (
@@ -1175,10 +1198,28 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   className="w-full h-full object-cover object-center"
                 />
               ) : (
-                <div className="w-full h-full" style={{ backgroundColor: activeTheme.bgColor }} />
+                <div
+                  className="w-full h-full relative flex items-center justify-center overflow-hidden"
+                  style={{ backgroundColor: activeTheme.bgColor }}
+                >
+                  {/* Intentional theme texture + radial glow fallback */}
+                  <div
+                    className="absolute inset-0 opacity-25"
+                    style={{
+                      backgroundImage: `radial-gradient(circle at 50% 40%, ${accentColor} 0%, transparent 70%)`,
+                    }}
+                  />
+                  <svg className="w-full h-full opacity-10 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                    <filter id="fallback-pattern-noise">
+                      <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch" />
+                      <feColorMatrix type="saturate" values="0" />
+                    </filter>
+                    <rect width="100%" height="100%" filter="url(#fallback-pattern-noise)" />
+                  </svg>
+                </div>
               )}
-              {/* High contrast gradient overlay for text legibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/35 pointer-events-none z-1" />
+              {/* Calibrated gradient overlay for text legibility without overall dimming */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30 pointer-events-none z-1" />
             </motion.div>
 
             {/* Separately Padded Foreground / Text Layer Stacked On Top (z-10) */}
