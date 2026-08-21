@@ -2542,13 +2542,14 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async 
       ...synthesizedGuests,
     ].sort((a, b) => a.name.localeCompare(b.name));
 
-    // Attach event_ids array to each guest
+    // Attach event_ids array & direct rsvp_status to each guest
     const guestsWithEvents: WeddingGuestWithEvents[] = allGuests.map((g) => {
+      const gRsvps = rsvps.filter(
+        (r) => (r.guest_id && r.guest_id === g.id) || r.guest_name.toLowerCase().trim() === g.name.toLowerCase().trim()
+      );
+
       let event_ids: string[] = [];
       if (g.added_by === 'self') {
-        const gRsvps = rsvps.filter(
-          (r) => (r.guest_id && r.guest_id === g.id) || r.guest_name.toLowerCase().trim() === g.name.toLowerCase().trim()
-        );
         event_ids = gRsvps.map((r) => r.event_id).filter(Boolean) as string[];
       } else {
         if (isSupabaseConfigured && supabase) {
@@ -2557,7 +2558,17 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async 
           event_ids = weddingGuestEventsStore.get(g.id) || [];
         }
       }
-      return { ...g, event_ids };
+
+      let rsvp_status: 'attending' | 'declined' | 'pending' = 'pending';
+      let attending_headcount = 0;
+
+      if (gRsvps.length > 0) {
+        const isAttending = gRsvps.some((r) => r.attending);
+        rsvp_status = isAttending ? 'attending' : 'declined';
+        attending_headcount = isAttending ? Math.max(...gRsvps.map((r) => r.guest_count || 1)) : 0;
+      }
+
+      return { ...g, event_ids, rsvp_status, attending_headcount };
     });
 
     return res.json(guestsWithEvents);

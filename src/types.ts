@@ -218,6 +218,8 @@ export interface WeddingGuest {
   dietary_notes?: string | null;
   added_by: 'couple' | 'self';
   is_synthesized?: boolean;
+  rsvp_status?: 'attending' | 'declined' | 'pending';
+  attending_headcount?: number;
   opened_at?: string | null;
   created_at: string;
   updated_at: string;

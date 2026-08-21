@@ -159,14 +159,15 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
 
   const generalShareUrl = `${window.location.origin}/w/wedding/${wedding.slug}`;
 
-  const getGuestRsvpStatus = (guestId: string) => {
+  const getGuestRsvpStatus = (guestId: string, guestObj?: WeddingGuestWithEvents) => {
+    if (guestObj?.rsvp_status) return guestObj.rsvp_status;
     const gRsvps = rsvps.filter((r) => r.guest_id === guestId);
     if (gRsvps.length === 0) return 'pending';
     return gRsvps.some((r) => r.attending) ? 'attending' : 'declined';
   };
 
   const filteredGuests = guests.filter((g) => {
-    const status = getGuestRsvpStatus(g.id);
+    const status = g.rsvp_status || getGuestRsvpStatus(g.id, g);
     const matchesFilter = rsvpFilter === 'all' || status === rsvpFilter;
     const matchesSearch =
       !searchQuery.trim() ||
@@ -830,26 +831,26 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="p-4 sm:p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
                 <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Total Guests</p>
-                <p className="font-serif text-3xl font-bold text-maroon mt-1">{guests.length}</p>
+                <p className="font-serif text-2xl sm:text-3xl font-bold text-maroon mt-1">{guests.length}</p>
               </div>
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+              <div className="p-4 sm:p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
                 <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Opened Invitations</p>
-                <p className="font-serif text-3xl font-bold text-coral mt-1">
+                <p className="font-serif text-2xl sm:text-3xl font-bold text-coral mt-1">
                   {guests.filter((g) => g.opened_at).length}
                 </p>
               </div>
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+              <div className="p-4 sm:p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
                 <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Confirmed Attending</p>
-                <p className="font-serif text-3xl font-bold text-emerald-700 mt-1">
-                  {guests.filter((g) => getGuestRsvpStatus(g.id) === 'attending').length}
+                <p className="font-serif text-2xl sm:text-3xl font-bold text-emerald-700 mt-1">
+                  {guests.filter((g) => (g.rsvp_status || getGuestRsvpStatus(g.id, g)) === 'attending').length}
                 </p>
               </div>
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+              <div className="p-4 sm:p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
                 <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Total Responses</p>
-                <p className="font-serif text-3xl font-bold text-amber-700 mt-1">{rsvps.length}</p>
+                <p className="font-serif text-2xl sm:text-3xl font-bold text-amber-700 mt-1">{rsvps.length}</p>
               </div>
             </div>
             <div className="p-6 rounded-3xl bg-cream-card border border-cream-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -939,7 +940,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                       </tr>
                     ) : (
                       filteredGuests.map((g) => {
-                        const status = getGuestRsvpStatus(g.id);
+                        const status = g.rsvp_status || getGuestRsvpStatus(g.id, g);
                         const personalizedUrl = `${window.location.origin}/w/wedding/${wedding.slug}/${g.unique_link_token}`;
                         const gRsvps = rsvps.filter(
                           (r) => r.guest_id === g.id || r.guest_name.toLowerCase().trim() === g.name.toLowerCase().trim()
@@ -1259,7 +1260,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                 <p className="flex items-center justify-between">
                   <span className="text-mauve">RSVP Status:</span>
                   <span className="font-bold capitalize text-emerald-700">
-                    {getGuestRsvpStatus(viewResponseGuest.id)}
+                    {viewResponseGuest.rsvp_status || getGuestRsvpStatus(viewResponseGuest.id, viewResponseGuest)}
                   </span>
                 </p>
                 <p className="flex items-center justify-between">
