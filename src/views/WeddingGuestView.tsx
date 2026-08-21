@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingGuest } from '../types';
-import { getPublicWeddingBySlugApi } from '../lib/api';
+import { getPublicWeddingBySlugApi, getPublicGuestWeddingInviteApi } from '../lib/api';
 import { WeddingInvitationViewer } from '../components/WeddingInvitationViewer';
 
 interface WeddingGuestViewProps {
   slug: string;
+  guestSlug?: string | null;
   onNavigate: (path: string) => void;
 }
 
-export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavigate }) => {
+export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, guestSlug, onNavigate }) => {
   const [wedding, setWedding] = useState<Wedding | null>(null);
   const [events, setEvents] = useState<WeddingEvent[]>([]);
   const [guest, setGuest] = useState<WeddingGuest | null>(null);
@@ -21,11 +22,16 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavi
       setIsLoading(true);
       setError(null);
       try {
-        // Extract token from query params ?g=:token
         const searchParams = new URLSearchParams(window.location.search);
-        const token = searchParams.get('g') || undefined;
+        const targetGuest = guestSlug || searchParams.get('g') || searchParams.get('guest') || undefined;
 
-        const res = await getPublicWeddingBySlugApi(slug, token);
+        let res;
+        if (targetGuest) {
+          res = await getPublicGuestWeddingInviteApi(slug, targetGuest);
+        } else {
+          res = await getPublicWeddingBySlugApi(slug);
+        }
+
         setWedding(res.wedding);
         setEvents(res.events || (res.event ? [res.event] : []));
         setGuest(res.guest || null);
@@ -45,7 +51,7 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, onNavi
     if (slug) {
       loadWedding();
     }
-  }, [slug]);
+  }, [slug, guestSlug]);
 
   if (isLoading) {
     return (

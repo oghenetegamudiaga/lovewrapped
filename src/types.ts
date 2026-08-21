@@ -295,6 +295,7 @@ export interface CardTemplateField {
   color: string;
   align: 'center' | 'left' | 'right';
   font_family: 'serif' | 'sans';
+  static_text?: string;
 }
 
 export interface CardTemplateRecord {

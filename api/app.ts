@@ -2284,7 +2284,6 @@ apiRouter.get('/weddings/dashboard/:weddingId', requireCoupleAuth, async (req, r
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
     }
-
     return res.json({
       wedding: targetWedding,
       events,
@@ -2294,6 +2293,74 @@ apiRouter.get('/weddings/dashboard/:weddingId', requireCoupleAuth, async (req, r
   } catch (err: unknown) {
     console.error('Error fetching wedding dashboard:', err);
     return res.status(500).json({ message: 'Failed to fetch wedding dashboard.' });
+  }
+});
+
+// GET /api/weddings/guest-invite/:weddingSlug/:guestSlug — Public personalized guest invite route
+apiRouter.get('/weddings/guest-invite/:weddingSlug/:guestSlug', async (req, res) => {
+  try {
+    const { weddingSlug, guestSlug } = req.params;
+
+    let targetWedding: Wedding | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('weddings').select('*').eq('slug', weddingSlug).single();
+      if (data) targetWedding = data;
+    }
+
+    if (!targetWedding) {
+      targetWedding = Array.from(weddingsStore.values()).find((w) => w.slug === weddingSlug);
+    }
+
+    if (!targetWedding) {
+      return res.status(404).json({ message: 'Wedding invitation not found.' });
+    }
+
+    let targetGuest: WeddingGuest | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('wedding_guests')
+        .select('*')
+        .eq('wedding_id', targetWedding.id)
+        .or(`unique_link_token.eq.${guestSlug},id.eq.${guestSlug}`)
+        .maybeSingle();
+      if (data) targetGuest = data;
+    }
+
+    if (!targetGuest) {
+      targetGuest = Array.from(weddingGuestsStore.values()).find(
+        (g) => g.wedding_id === targetWedding!.id && (g.unique_link_token === guestSlug || g.id === guestSlug)
+      );
+    }
+
+    // Mark viewed_at/opened_at timestamp on first view
+    if (targetGuest && !targetGuest.opened_at) {
+      const now = new Date().toISOString();
+      targetGuest.opened_at = now;
+      if (isSupabaseConfigured && supabase) {
+        await supabase.from('wedding_guests').update({ opened_at: now }).eq('id', targetGuest.id);
+      }
+      if (weddingGuestsStore.has(targetGuest.id)) {
+        weddingGuestsStore.set(targetGuest.id, targetGuest);
+      }
+    }
+
+    let events: WeddingEvent[] = [];
+    if (isSupabaseConfigured && supabase) {
+      const { data: eData } = await supabase.from('wedding_events').select('*').eq('wedding_id', targetWedding.id);
+      if (eData) events = eData;
+    } else {
+      events = weddingEventsStore.get(targetWedding.id) || [];
+    }
+
+    return res.json({
+      wedding: targetWedding,
+      guest: targetGuest || null,
+      events,
+      event: events.length > 0 ? events[0] : null,
+    });
+  } catch (err: unknown) {
+    console.error('Error fetching guest invite:', err);
+    return res.status(500).json({ message: 'Failed to load guest invitation.' });
   }
 });
 
@@ -2890,10 +2957,11 @@ const DEFAULT_SEED_TEMPLATE = {
   width: 1200,
   height: 1500,
   text_fields: [
-    { field_key: 'couple_names', label: 'Couple / Event Names', x: 10, y: 48, width: 80, max_font_size: 36, min_font_size: 18, color: '#3A0D22', align: 'center', font_family: 'serif' },
-    { field_key: 'custom_text', label: 'Host / Invitation Line', x: 10, y: 58, width: 80, max_font_size: 16, min_font_size: 12, color: '#000000', align: 'center', font_family: 'sans' },
-    { field_key: 'date', label: 'Event Date', x: 10, y: 64, width: 80, max_font_size: 18, min_font_size: 13, color: '#000000', align: 'center', font_family: 'sans' },
-    { field_key: 'venue', label: 'Venue / Location', x: 10, y: 71, width: 80, max_font_size: 15, min_font_size: 11, color: '#000000', align: 'center', font_family: 'sans' },
+    { field_key: 'couple_names', label: 'Couple / Event Names', x: 10, y: 44, width: 80, max_font_size: 34, min_font_size: 18, color: '#1B3B2B', align: 'center', font_family: 'serif' },
+    { field_key: 'invites_line', label: 'Static Host / Invitation Line', x: 10, y: 53, width: 80, max_font_size: 13, min_font_size: 10, color: '#1B3B2B', align: 'center', font_family: 'serif', static_text: 'SPECIALLY INVITES THE PRESENCE OF' },
+    { field_key: 'invitee_name', label: 'Dynamic Invitee / Guest Name', x: 10, y: 57, width: 80, max_font_size: 22, min_font_size: 14, color: '#1B3B2B', align: 'center', font_family: 'serif' },
+    { field_key: 'date_split', label: 'Event Date (Split Month / Day / Year)', x: 10, y: 64, width: 80, max_font_size: 18, min_font_size: 12, color: '#1B3B2B', align: 'center', font_family: 'serif' },
+    { field_key: 'venue', label: 'Venue / Location', x: 10, y: 72, width: 80, max_font_size: 14, min_font_size: 10, color: '#1B3B2B', align: 'center', font_family: 'serif' },
   ],
   is_active: true,
   created_at: new Date().toISOString(),

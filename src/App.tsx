@@ -30,6 +30,7 @@ export default function App() {
   const [watchSlug, setWatchSlug] = useState<string>('demo');
   const [blogSlug, setBlogSlug] = useState<string>('');
   const [weddingSlug, setWeddingSlug] = useState<string>('');
+  const [guestSlug, setGuestSlug] = useState<string | null>(null);
   const [dashboardWeddingId, setDashboardWeddingId] = useState<string>('');
   const [currentCouple, setCurrentCouple] = useState<CoupleAccount | null>(null);
 
@@ -58,9 +59,13 @@ export default function App() {
       }
 
       if (path.startsWith('/w/wedding/')) {
-        const wSlug = path.replace('/w/wedding/', '');
+        const sub = path.replace('/w/wedding/', '');
+        const parts = sub.split('/');
+        const wSlug = parts[0] || '';
+        const gSlug = parts[1] || null;
         setWeddingSlug(wSlug);
-        setCurrentPath('/w/wedding/' + wSlug);
+        setGuestSlug(gSlug);
+        setCurrentPath('/w/wedding/' + wSlug + (gSlug ? '/' + gSlug : ''));
       } else if (path.startsWith('/w/')) {
         const slug = path.replace('/w/', '') || 'demo';
         setWatchSlug(slug);
@@ -217,7 +222,7 @@ export default function App() {
         )}
 
         {currentPath.startsWith('/w/wedding/') && (
-          <WeddingGuestView slug={weddingSlug} onNavigate={navigate} />
+          <WeddingGuestView slug={weddingSlug} guestSlug={guestSlug} onNavigate={navigate} />
         )}
 
         {currentPath.startsWith('/w/') && !currentPath.startsWith('/w/wedding/') && (

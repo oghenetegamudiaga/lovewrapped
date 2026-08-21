@@ -448,7 +448,22 @@ export async function logoutCoupleApi(): Promise<{ success: boolean }> {
   });
 }
 
-/* ==================== Phase 2 Guest Management API Helpers ==================== */
+export async function getPublicGuestWeddingInviteApi(
+  weddingSlug: string,
+  guestSlug: string
+): Promise<{
+  wedding: Wedding;
+  guest: WeddingGuest | null;
+  events: WeddingEvent[];
+  event: WeddingEvent | null;
+}> {
+  return apiFetch<{
+    wedding: Wedding;
+    guest: WeddingGuest | null;
+    events: WeddingEvent[];
+    event: WeddingEvent | null;
+  }>(`/weddings/guest-invite/${encodeURIComponent(weddingSlug)}/${encodeURIComponent(guestSlug)}`);
+}
 
 export async function getCoupleWeddingGuestsApi(weddingId: string): Promise<WeddingGuestWithEvents[]> {
   return apiFetch<WeddingGuestWithEvents[]>(`/weddings/dashboard/${weddingId}/guests`);

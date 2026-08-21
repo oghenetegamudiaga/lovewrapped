@@ -256,10 +256,11 @@ VALUES (
   1200,
   1500,
   '[
-    { "field_key": "couple_names", "label": "Couple / Event Names", "x": 10, "y": 48, "width": 80, "max_font_size": 36, "min_font_size": 18, "color": "#3A0D22", "align": "center", "font_family": "serif" },
-    { "field_key": "custom_text", "label": "Host / Invitation Line", "x": 10, "y": 58, "width": 80, "max_font_size": 16, "min_font_size": 12, "color": "#000000", "align": "center", "font_family": "sans" },
-    { "field_key": "date", "label": "Event Date", "x": 10, "y": 64, "width": 80, "max_font_size": 18, "min_font_size": 13, "color": "#000000", "align": "center", "font_family": "sans" },
-    { "field_key": "venue", "label": "Venue / Location", "x": 10, "y": 71, "width": 80, "max_font_size": 15, "min_font_size": 11, "color": "#000000", "align": "center", "font_family": "sans" }
+    { "field_key": "couple_names", "label": "Couple / Event Names", "x": 10, "y": 44, "width": 80, "max_font_size": 34, "min_font_size": 18, "color": "#1B3B2B", "align": "center", "font_family": "serif" },
+    { "field_key": "invites_line", "label": "Static Host / Invitation Line", "x": 10, "y": 53, "width": 80, "max_font_size": 13, "min_font_size": 10, "color": "#1B3B2B", "align": "center", "font_family": "serif", "static_text": "SPECIALLY INVITES THE PRESENCE OF" },
+    { "field_key": "invitee_name", "label": "Dynamic Invitee / Guest Name", "x": 10, "y": 57, "width": 80, "max_font_size": 22, "min_font_size": 14, "color": "#1B3B2B", "align": "center", "font_family": "serif" },
+    { "field_key": "date_split", "label": "Event Date (Split Month / Day / Year)", "x": 10, "y": 64, "width": 80, "max_font_size": 18, "min_font_size": 12, "color": "#1B3B2B", "align": "center", "font_family": "serif" },
+    { "field_key": "venue", "label": "Venue / Location", "x": 10, "y": 72, "width": 80, "max_font_size": 14, "min_font_size": 10, "color": "#1B3B2B", "align": "center", "font_family": "serif" }
   ]'::jsonb,
   true
 )

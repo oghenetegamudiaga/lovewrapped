@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Heart, Calendar, MapPin } from 'lucide-react';
 import { resolveThemeStyles } from '../config/weddingThemes';
 import { getPublicThemeAssetsApi } from '../lib/api';
-import { TextZone, CardTemplateRecord } from '../types';
+import { TextZone, CardTemplateRecord, CardTemplateField } from '../types';
 
 export const TEMPLATE_CARD_COUPLE_NAME_COLOR = '#3A0D22';
 export const TEMPLATE_CARD_DETAIL_TEXT_COLOR = '#000000';
@@ -14,6 +14,7 @@ export interface StaticInviteCardProps {
   venueName?: string;
   venueAddress?: string;
   customText?: string;
+  inviteeName?: string;
   themeId?: string;
   colorVariant?: string;
   fontVariant?: string;
@@ -32,6 +33,7 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
   venueName,
   venueAddress,
   customText,
+  inviteeName,
   themeId = 'classic-burgundy',
   colorVariant = 'royal-gold',
   fontVariant = 'classic-serif',
@@ -97,18 +99,38 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
 
   const resolvedTemplateUrl = template?.image_url || activeTemplateUrl;
 
-  const resolveFieldValue = (key: string): string => {
-    switch (key) {
+  const splitDateParts = useMemo(() => {
+    if (!weddingDate) return { month: 'FEB', day: '14', year: '2028' };
+    try {
+      const d = new Date(weddingDate);
+      if (isNaN(d.getTime())) {
+        return { month: 'FEB', day: '14', year: '2028' };
+      }
+      const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+      const day = d.getDate().toString();
+      const year = d.getFullYear().toString();
+      return { month, day, year };
+    } catch {
+      return { month: 'FEB', day: '14', year: '2028' };
+    }
+  }, [weddingDate]);
+
+  const resolveFieldValue = (field: CardTemplateField): string => {
+    switch (field.field_key) {
       case 'couple_names':
-        return `${brideFirstName || 'Bride'} & ${groomFirstName || 'Groom'}`;
+        return brideFirstName && groomFirstName ? `${brideFirstName} & ${groomFirstName}` : customText || 'JOYCE & MARTINS';
+      case 'invites_line':
+        return field.static_text || 'SPECIALLY INVITES THE PRESENCE OF';
+      case 'invitee_name':
+        return inviteeName || customText || 'HONORED GUEST';
       case 'custom_text':
         return customText || 'Save The Date';
       case 'date':
         return formattedDate;
       case 'venue':
-        return venueName ? `${venueName}${venueAddress ? ` • ${venueAddress}` : ''}` : '';
+        return venueName ? `${venueName}${venueAddress ? ` • ${venueAddress}` : ''}` : 'LAGOS, NIGERIA';
       default:
-        return '';
+        return field.static_text || '';
     }
   };
 
@@ -136,7 +158,32 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
 
           {/* Config-driven absolute text fields */}
           {template.text_fields.map((field) => {
-            const val = resolveFieldValue(field.field_key);
+            if (field.field_key === 'date_split') {
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex items-center justify-center overflow-hidden"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <div
+                    className={`flex items-center justify-center gap-2.5 w-full ${field.font_family === 'serif' ? serifClass : sansClass}`}
+                    style={{ color: field.color || '#1B3B2B', fontSize: `${field.max_font_size || 18}px` }}
+                  >
+                    <span className="uppercase text-[0.85em] tracking-widest font-semibold">{splitDateParts.month}</span>
+                    <span className="opacity-40 font-light text-[0.9em]">|</span>
+                    <span className="text-[1.4em] font-bold tracking-tight">{splitDateParts.day}</span>
+                    <span className="opacity-40 font-light text-[0.9em]">|</span>
+                    <span className="uppercase text-[0.85em] tracking-widest font-semibold">{splitDateParts.year}</span>
+                  </div>
+                </div>
+              );
+            }
+
+            const val = resolveFieldValue(field);
             if (!val) return null;
 
             const maxSz = field.max_font_size || 24;
