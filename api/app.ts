@@ -2529,6 +2529,7 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async 
         plus_one_name: plusOne,
         dietary_notes: dietary,
         added_by: 'self',
+        is_synthesized: true,
         opened_at: earliestCreated,
         created_at: earliestCreated,
         updated_at: earliestCreated,
@@ -2536,7 +2537,10 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async 
       synthesizedGuests.push(synthGuest);
     });
 
-    const allGuests = [...guests, ...synthesizedGuests].sort((a, b) => a.name.localeCompare(b.name));
+    const allGuests = [
+      ...guests.map((g) => ({ ...g, is_synthesized: false })),
+      ...synthesizedGuests,
+    ].sort((a, b) => a.name.localeCompare(b.name));
 
     // Attach event_ids array to each guest
     const guestsWithEvents: WeddingGuestWithEvents[] = allGuests.map((g) => {
@@ -2636,6 +2640,10 @@ apiRouter.patch('/weddings/dashboard/:weddingId/guests/:guestId', requireCoupleA
       return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
     }
 
+    if (guestId.startsWith('synth_')) {
+      return res.status(400).json({ message: 'Cannot edit or delete a self-submitted RSVP response.' });
+    }
+
     const now = new Date().toISOString();
     const updates: Partial<WeddingGuest> = { updated_at: now };
 
@@ -2697,6 +2705,10 @@ apiRouter.delete('/weddings/dashboard/:weddingId/guests/:guestId', requireCouple
     const isOwner = await checkWeddingOwnership(weddingId, couple.id);
     if (!isOwner) {
       return res.status(403).json({ message: 'Access denied: You do not own this wedding.' });
+    }
+
+    if (guestId.startsWith('synth_')) {
+      return res.status(400).json({ message: 'Cannot edit or delete a self-submitted RSVP response.' });
     }
 
     if (isSupabaseConfigured && supabase) {

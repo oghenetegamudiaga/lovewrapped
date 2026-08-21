@@ -217,6 +217,7 @@ export interface WeddingGuest {
   plus_one_name?: string | null;
   dietary_notes?: string | null;
   added_by: 'couple' | 'self';
+  is_synthesized?: boolean;
   opened_at?: string | null;
   created_at: string;
   updated_at: string;

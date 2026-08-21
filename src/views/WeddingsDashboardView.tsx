@@ -44,6 +44,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   // Search & Filters for Guest List
   const [searchQuery, setSearchQuery] = useState('');
   const [rsvpFilter, setRsvpFilter] = useState<'all' | 'attending' | 'declined' | 'pending'>('all');
+  const [viewResponseGuest, setViewResponseGuest] = useState<WeddingGuestWithEvents | null>(null);
 
   // Phase 4 Settings & Variant State
   const [editThemeId, setEditThemeId] = useState('classic-burgundy');
@@ -326,7 +327,8 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
       }
       setIsGuestModalOpen(false);
     } catch (err: unknown) {
-      alert('Failed to save guest record.');
+      const msg = err instanceof Error ? err.message : 'Failed to save guest record.';
+      alert(msg);
     } finally {
       setIsSavingGuest(false);
     }
@@ -337,8 +339,9 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
     try {
       await deleteCoupleWeddingGuestApi(weddingId, guestId);
       setGuests((prev) => prev.filter((g) => g.id !== guestId));
-    } catch (err) {
-      alert('Failed to delete guest.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to delete guest.';
+      alert(msg);
     }
   };
 
@@ -1017,20 +1020,33 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                               )}
                             </td>
                             <td className="py-4 px-6 text-right space-x-2">
-                              <button
-                                onClick={() => handleOpenEditGuestModal(g)}
-                                className="p-1.5 rounded-lg bg-cream border border-cream-border text-maroon hover:border-coral"
-                                title="Edit Guest"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteGuest(g.id, g.name)}
-                                className="p-1.5 rounded-lg bg-cream border border-cream-border text-red-600 hover:bg-red-50"
-                                title="Delete Guest"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              {g.is_synthesized || g.id.startsWith('synth_') || g.added_by === 'self' ? (
+                                <button
+                                  onClick={() => setViewResponseGuest(g)}
+                                  className="px-3 py-1.5 rounded-xl bg-cream border border-cream-border text-maroon hover:border-coral text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                  title="View Response Details"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-coral" />
+                                  <span>View Response</span>
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleOpenEditGuestModal(g)}
+                                    className="p-1.5 rounded-lg bg-cream border border-cream-border text-maroon hover:border-coral cursor-pointer"
+                                    title="Edit Guest"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteGuest(g.id, g.name)}
+                                    className="p-1.5 rounded-lg bg-cream border border-cream-border text-red-600 hover:bg-red-50 cursor-pointer"
+                                    title="Delete Guest"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
                             </td>
                           </tr>
                         );
@@ -1216,6 +1232,81 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                   {isImporting ? 'Importing...' : 'Start Import'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Read-Only Self-RSVP Response Modal */}
+      {viewResponseGuest && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-cream-card border border-cream-border rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-cream-border pb-4">
+              <div>
+                <span className="text-[10px] font-bold text-coral uppercase tracking-wider">Self-RSVP Response</span>
+                <h3 className="font-serif text-xl font-bold text-maroon">{viewResponseGuest.name}</h3>
+              </div>
+              <button
+                onClick={() => setViewResponseGuest(null)}
+                className="p-1 rounded-full bg-cream border border-cream-border text-mauve hover:text-maroon cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-maroon">
+              <div className="p-3 rounded-2xl bg-cream/70 border border-cream-border space-y-2">
+                <p className="flex items-center justify-between">
+                  <span className="text-mauve">RSVP Status:</span>
+                  <span className="font-bold capitalize text-emerald-700">
+                    {getGuestRsvpStatus(viewResponseGuest.id)}
+                  </span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="text-mauve">Submission Date:</span>
+                  <span>{viewResponseGuest.opened_at ? new Date(viewResponseGuest.opened_at).toLocaleString() : 'N/A'}</span>
+                </p>
+                <p className="flex items-center justify-between">
+                  <span className="text-mauve">Source:</span>
+                  <span className="font-mono text-[11px] text-blue-700">Public Invitation Link</span>
+                </p>
+              </div>
+
+              {viewResponseGuest.plus_one_name && (
+                <div className="p-3 rounded-2xl bg-cream/70 border border-cream-border">
+                  <span className="text-mauve block text-[11px] mb-0.5 font-semibold">Plus-One Attending:</span>
+                  <span className="font-bold text-maroon">{viewResponseGuest.plus_one_name}</span>
+                </div>
+              )}
+
+              {viewResponseGuest.dietary_notes && (
+                <div className="p-3 rounded-2xl bg-cream/70 border border-cream-border">
+                  <span className="text-mauve block text-[11px] mb-0.5 font-semibold">Dietary Requirements:</span>
+                  <span>{viewResponseGuest.dietary_notes}</span>
+                </div>
+              )}
+
+              {(() => {
+                const gRsvps = rsvps.filter(
+                  (r) => (r.guest_id && r.guest_id === viewResponseGuest.id) || r.guest_name.toLowerCase().trim() === viewResponseGuest.name.toLowerCase().trim()
+                );
+                const msg = gRsvps.find((r) => r.message)?.message;
+                return msg ? (
+                  <div className="p-3 rounded-2xl bg-cream/70 border border-cream-border">
+                    <span className="text-mauve block text-[11px] mb-0.5 font-semibold">Message for Couple:</span>
+                    <p className="italic text-mauve">"{msg}"</p>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setViewResponseGuest(null)}
+                className="px-5 py-2 rounded-full bg-maroon text-cream font-semibold text-xs shadow-md cursor-pointer"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
