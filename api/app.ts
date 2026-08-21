@@ -2774,6 +2774,68 @@ apiRouter.get('/theme-assets', async (req, res) => {
   }
 });
 
+/**
+ * Helper to upload theme asset image binary to Supabase storage 'theme-assets' bucket.
+ * Decodes base64 data URL, validates 5MB size limit on binary, uploads to Storage, and returns public URL.
+ */
+async function processThemeAssetImageUpload(
+  themeId: string,
+  field: 'cover' | 'reveal' | 'template',
+  payloadUrl: string
+): Promise<string> {
+  const trimmed = payloadUrl.trim();
+  if (!trimmed.startsWith('data:')) {
+    // Already an HTTP/HTTPS public URL
+    return trimmed;
+  }
+
+  // Parse MIME type & base64 content
+  const matches = trimmed.match(/^data:([a-zA-Z0-9\/\-+.]+);base64,(.+)$/);
+  let mimeType = 'image/jpeg';
+  let base64Data = trimmed;
+
+  if (matches && matches.length === 3) {
+    mimeType = matches[1];
+    base64Data = matches[2];
+  } else {
+    base64Data = trimmed.split(',')[1] || trimmed;
+  }
+
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  // Strict 5MB binary size check before attempting storage upload
+  if (buffer.length > 5 * 1024 * 1024) {
+    const sizeMb = (buffer.length / (1024 * 1024)).toFixed(2);
+    throw new Error(`Theme asset ${field} image size (${sizeMb}MB) exceeds 5MB limit.`);
+  }
+
+  if (isSupabaseConfigured && supabase) {
+    const ext = (mimeType.split('/')[1] || 'jpeg').replace(/[^a-zA-Z0-9]/g, '');
+    const cleanFileName = `${themeId}_${field}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('theme-assets')
+      .upload(cleanFileName, buffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error(`Supabase theme-assets storage upload error for ${field}:`, uploadError);
+      throw new Error(`Failed to upload ${field} image to Supabase storage: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('theme-assets')
+      .getPublicUrl(cleanFileName);
+
+    return publicUrlData.publicUrl;
+  }
+
+  // Fallback when Supabase storage is not configured (transient memory)
+  return trimmed;
+}
+
 // POST /api/admin/theme-assets/:themeId — Admin endpoint to upload/replace theme background scene images & static card templates
 apiRouter.post('/admin/theme-assets/:themeId', requireRole(['super_admin', 'admin']), async (req, res) => {
   try {
@@ -2784,15 +2846,48 @@ apiRouter.post('/admin/theme-assets/:themeId', requireRole(['super_admin', 'admi
       return res.status(400).json({ message: `Invalid theme_id. Must be one of: ${Array.from(VALID_THEME_IDS).join(', ')}` });
     }
 
-    // Size & format validation on image URL payloads (cap base64 data URLs at 15MB payload)
-    if (cover_background_url && typeof cover_background_url === 'string' && cover_background_url.length > 15 * 1024 * 1024) {
-      return res.status(400).json({ message: 'Cover background image payload exceeds size limit.' });
+    const existing = themeAssetsStore.get(themeId) || { theme_id: themeId };
+    let newCoverUrl: string | null = existing.cover_background_url || null;
+    let newRevealUrl: string | null = existing.reveal_background_url || null;
+    let newTemplateUrl: string | null = existing.card_template_url || null;
+
+    // Process cover_background_url upload to Supabase Storage
+    if (cover_background_url !== undefined) {
+      if (typeof cover_background_url === 'string' && cover_background_url.trim()) {
+        try {
+          newCoverUrl = await processThemeAssetImageUpload(themeId, 'cover', cover_background_url);
+        } catch (err: any) {
+          return res.status(400).json({ message: err.message || 'Cover background image processing failed.' });
+        }
+      } else {
+        newCoverUrl = null;
+      }
     }
-    if (reveal_background_url && typeof reveal_background_url === 'string' && reveal_background_url.length > 15 * 1024 * 1024) {
-      return res.status(400).json({ message: 'Reveal background image payload exceeds size limit.' });
+
+    // Process reveal_background_url upload to Supabase Storage
+    if (reveal_background_url !== undefined) {
+      if (typeof reveal_background_url === 'string' && reveal_background_url.trim()) {
+        try {
+          newRevealUrl = await processThemeAssetImageUpload(themeId, 'reveal', reveal_background_url);
+        } catch (err: any) {
+          return res.status(400).json({ message: err.message || 'Reveal background image processing failed.' });
+        }
+      } else {
+        newRevealUrl = null;
+      }
     }
-    if (card_template_url && typeof card_template_url === 'string' && card_template_url.length > 15 * 1024 * 1024) {
-      return res.status(400).json({ message: 'Card template image payload exceeds size limit.' });
+
+    // Process card_template_url upload to Supabase Storage
+    if (card_template_url !== undefined) {
+      if (typeof card_template_url === 'string' && card_template_url.trim()) {
+        try {
+          newTemplateUrl = await processThemeAssetImageUpload(themeId, 'template', card_template_url);
+        } catch (err: any) {
+          return res.status(400).json({ message: err.message || 'Card template image processing failed.' });
+        }
+      } else {
+        newTemplateUrl = null;
+      }
     }
 
     // Server-side clamping and validation for text_zone (0% to 100%)
@@ -2810,12 +2905,11 @@ apiRouter.post('/admin/theme-assets/:themeId', requireRole(['super_admin', 'admi
     }
 
     const now = new Date().toISOString();
-    const existing = themeAssetsStore.get(themeId) || { theme_id: themeId };
     const updatedRecord = {
       theme_id: themeId,
-      cover_background_url: cover_background_url !== undefined ? (typeof cover_background_url === 'string' && cover_background_url.trim() ? cover_background_url.trim() : null) : (existing.cover_background_url || null),
-      reveal_background_url: reveal_background_url !== undefined ? (typeof reveal_background_url === 'string' && reveal_background_url.trim() ? reveal_background_url.trim() : null) : (existing.reveal_background_url || null),
-      card_template_url: card_template_url !== undefined ? (typeof card_template_url === 'string' && card_template_url.trim() ? card_template_url.trim() : null) : (existing.card_template_url || null),
+      cover_background_url: newCoverUrl,
+      reveal_background_url: newRevealUrl,
+      card_template_url: newTemplateUrl,
       text_zone: validatedTextZone !== undefined ? validatedTextZone : (existing.text_zone || { top: 50, left: 10, width: 80, height: 40 }),
       updated_at: now,
     };
