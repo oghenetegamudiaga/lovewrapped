@@ -226,6 +226,45 @@ CREATE POLICY "Public read access for wedding events"
     )
   );
 
+-- Invitation Templates Table & Policies
+CREATE TABLE IF NOT EXISTS public.templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  orientation TEXT NOT NULL DEFAULT 'portrait',
+  width INTEGER NOT NULL DEFAULT 1200,
+  height INTEGER NOT NULL DEFAULT 1500,
+  text_fields JSONB NOT NULL DEFAULT '[]'::jsonb,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read access for active templates"
+  ON public.templates FOR SELECT
+  USING (true);
+
+-- Migration Seed: Default Classic Wedding Invitation Template
+INSERT INTO public.templates (id, name, image_url, orientation, width, height, text_fields, is_active)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  'Classic Green & Gold Arch Invitation',
+  'https://via.placeholder.com/1200x1500.png?text=Classic+Wedding+Template',
+  'portrait',
+  1200,
+  1500,
+  '[
+    { "field_key": "couple_names", "label": "Couple / Event Names", "x": 10, "y": 48, "width": 80, "max_font_size": 36, "min_font_size": 18, "color": "#3A0D22", "align": "center", "font_family": "serif" },
+    { "field_key": "custom_text", "label": "Host / Invitation Line", "x": 10, "y": 58, "width": 80, "max_font_size": 16, "min_font_size": 12, "color": "#000000", "align": "center", "font_family": "sans" },
+    { "field_key": "date", "label": "Event Date", "x": 10, "y": 64, "width": 80, "max_font_size": 18, "min_font_size": 13, "color": "#000000", "align": "center", "font_family": "sans" },
+    { "field_key": "venue", "label": "Venue / Location", "x": 10, "y": 71, "width": 80, "max_font_size": 15, "min_font_size": 11, "color": "#000000", "align": "center", "font_family": "sans" }
+  ]'::jsonb,
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
 -- 3. Wedding RSVPs Table
 CREATE TABLE IF NOT EXISTS public.wedding_rsvps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

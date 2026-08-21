@@ -1,4 +1,4 @@
-import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents, CoupleAccount, ThemeAssetRecord, ThemeAssetsMap } from '../types.js';
+import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents, CoupleAccount, ThemeAssetRecord, ThemeAssetsMap, CardTemplateRecord } from '../types.js';
 
 const API_BASE = '/api';
 
@@ -589,5 +589,48 @@ export async function uploadWeddingGalleryPhotoApi(dataUrl: string): Promise<{ u
   return apiFetch<{ url: string; publicUrl: string }>('/weddings/upload-gallery-photo', {
     method: 'POST',
     body: JSON.stringify({ galleryPhoto: dataUrl }),
+  });
+}
+
+/**
+ * Get active published card templates (Public).
+ */
+export async function getActiveTemplatesApi(): Promise<CardTemplateRecord[]> {
+  return apiFetch<CardTemplateRecord[]>('/templates/active');
+}
+
+/**
+ * Get all card templates (Admin).
+ */
+export async function getAdminTemplatesApi(): Promise<CardTemplateRecord[]> {
+  return apiFetch<CardTemplateRecord[]>('/admin/templates');
+}
+
+/**
+ * Create a new card template (Admin).
+ */
+export async function createAdminTemplateApi(payload: Partial<CardTemplateRecord>): Promise<{ success: boolean; template: CardTemplateRecord }> {
+  return apiFetch<{ success: boolean; template: CardTemplateRecord }>('/admin/templates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Update card template (Admin).
+ */
+export async function updateAdminTemplateApi(id: string, updates: Partial<CardTemplateRecord>): Promise<{ success: boolean; template: CardTemplateRecord }> {
+  return apiFetch<{ success: boolean; template: CardTemplateRecord }>(`/admin/templates/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+/**
+ * Delete card template (Admin).
+ */
+export async function deleteAdminTemplateApi(id: string): Promise<{ success: boolean; message: string }> {
+  return apiFetch<{ success: boolean; message: string }>(`/admin/templates/${id}`, {
+    method: 'DELETE',
   });
 }

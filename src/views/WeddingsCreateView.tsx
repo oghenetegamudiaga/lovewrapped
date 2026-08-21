@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type, Download, Image, FileText, Music, Volume2, VolumeX } from 'lucide-react';
 import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
-import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount, ThemeAssetsMap } from '../types';
-import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi, getPublicThemeAssetsApi, uploadWeddingCoverPhotoApi, uploadWeddingGalleryPhotoApi } from '../lib/api';
+import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount, ThemeAssetsMap, CardTemplateRecord } from '../types';
+import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi, getPublicThemeAssetsApi, uploadWeddingCoverPhotoApi, uploadWeddingGalleryPhotoApi, getActiveTemplatesApi } from '../lib/api';
 import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants';
 import { StaticInviteCard } from '../components/StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
@@ -33,9 +33,15 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [registryInfo, setRegistryInfo] = useState<string>('');
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
   const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
+  const [activeTemplates, setActiveTemplates] = useState<CardTemplateRecord[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<CardTemplateRecord | null>(null);
 
   useEffect(() => {
     getPublicThemeAssetsApi().then(setThemeAssets).catch(() => {});
+    getActiveTemplatesApi().then((tpls) => {
+      setActiveTemplates(tpls);
+      if (tpls.length > 0) setSelectedTemplate(tpls[0]);
+    }).catch(() => {});
   }, []);
 
   // Multi-event schedule state for Premium
@@ -637,6 +643,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       groomFirstName={freeGroomFirstName}
                       weddingDate={freeWeddingDate}
                       themeId={freeThemeId}
+                      template={selectedTemplate}
                       watermark={true}
                     />
                   </div>

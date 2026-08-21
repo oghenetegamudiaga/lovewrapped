@@ -284,5 +284,28 @@ export interface ThemeAssetRecord {
 
 export type ThemeAssetsMap = Record<string, ThemeAssetRecord>;
 
+export interface CardTemplateField {
+  field_key: string;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  max_font_size: number;
+  min_font_size: number;
+  color: string;
+  align: 'center' | 'left' | 'right';
+  font_family: 'serif' | 'sans';
+}
 
-
+export interface CardTemplateRecord {
+  id: string;
+  name: string;
+  image_url: string;
+  orientation: 'portrait' | 'landscape' | 'square';
+  width: number;
+  height: number;
+  text_fields: CardTemplateField[];
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

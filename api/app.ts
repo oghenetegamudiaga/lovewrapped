@@ -2876,6 +2876,167 @@ apiRouter.delete('/admin/weddings/:id', requireRole(['super_admin', 'admin']), a
   }
 });
 
+/* ==================== Invitation Templates API Routes ==================== */
+
+const templatesStore = new Map<string, any>();
+
+const DEFAULT_SEED_TEMPLATE = {
+  id: '00000000-0000-0000-0000-000000000001',
+  name: 'Classic Green & Gold Arch Invitation',
+  image_url: 'https://via.placeholder.com/1200x1500.png?text=Classic+Wedding+Template',
+  orientation: 'portrait',
+  width: 1200,
+  height: 1500,
+  text_fields: [
+    { field_key: 'couple_names', label: 'Couple / Event Names', x: 10, y: 48, width: 80, max_font_size: 36, min_font_size: 18, color: '#3A0D22', align: 'center', font_family: 'serif' },
+    { field_key: 'custom_text', label: 'Host / Invitation Line', x: 10, y: 58, width: 80, max_font_size: 16, min_font_size: 12, color: '#000000', align: 'center', font_family: 'sans' },
+    { field_key: 'date', label: 'Event Date', x: 10, y: 64, width: 80, max_font_size: 18, min_font_size: 13, color: '#000000', align: 'center', font_family: 'sans' },
+    { field_key: 'venue', label: 'Venue / Location', x: 10, y: 71, width: 80, max_font_size: 15, min_font_size: 11, color: '#000000', align: 'center', font_family: 'sans' },
+  ],
+  is_active: true,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+templatesStore.set(DEFAULT_SEED_TEMPLATE.id, DEFAULT_SEED_TEMPLATE);
+
+// GET /api/templates/active — Public endpoint returning active invitation card templates
+apiRouter.get('/templates/active', async (req, res) => {
+  try {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (data && data.length > 0 && !error) {
+        return res.json(data);
+      }
+    }
+
+    const activeLocal = Array.from(templatesStore.values()).filter((t) => t.is_active);
+    return res.json(activeLocal.length > 0 ? activeLocal : [DEFAULT_SEED_TEMPLATE]);
+  } catch (err: unknown) {
+    console.error('Error fetching active templates:', err);
+    return res.json([DEFAULT_SEED_TEMPLATE]);
+  }
+});
+
+// GET /api/admin/templates — Admin endpoint to list all templates
+apiRouter.get('/admin/templates', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data && !error) {
+        return res.json(data);
+      }
+    }
+
+    return res.json(Array.from(templatesStore.values()));
+  } catch (err: unknown) {
+    console.error('Error fetching admin templates:', err);
+    return res.status(500).json({ message: 'Failed to fetch templates list.' });
+  }
+});
+
+// POST /api/admin/templates — Admin endpoint to create a new invitation template
+apiRouter.post('/admin/templates', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const { name, image_url, orientation, width, height, text_fields, is_active } = req.body;
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ message: 'Template name is required.' });
+    }
+
+    if (!image_url || typeof image_url !== 'string') {
+      return res.status(400).json({ message: 'Template image URL is required.' });
+    }
+
+    const templateId = `tpl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newTemplate = {
+      id: templateId,
+      name: name.trim(),
+      image_url: image_url.trim(),
+      orientation: orientation === 'landscape' || orientation === 'square' ? orientation : 'portrait',
+      width: typeof width === 'number' && width > 0 ? width : 1200,
+      height: typeof height === 'number' && height > 0 ? height : 1500,
+      text_fields: Array.isArray(text_fields) ? text_fields : [],
+      is_active: is_active !== false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('templates').insert(newTemplate).select().single();
+      if (data && !error) {
+        templatesStore.set(data.id, data);
+        return res.json({ success: true, template: data });
+      }
+    }
+
+    templatesStore.set(templateId, newTemplate);
+    return res.json({ success: true, template: newTemplate });
+  } catch (err: unknown) {
+    console.error('Error creating template:', err);
+    return res.status(500).json({ message: 'Failed to create template.' });
+  }
+});
+
+// PATCH /api/admin/templates/:id — Admin endpoint to update template configuration
+apiRouter.patch('/admin/templates/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, image_url, orientation, width, height, text_fields, is_active } = req.body;
+
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    if (typeof name === 'string' && name.trim()) updates.name = name.trim();
+    if (typeof image_url === 'string' && image_url.trim()) updates.image_url = image_url.trim();
+    if (orientation) updates.orientation = orientation;
+    if (typeof width === 'number' && width > 0) updates.width = width;
+    if (typeof height === 'number' && height > 0) updates.height = height;
+    if (Array.isArray(text_fields)) updates.text_fields = text_fields;
+    if (typeof is_active === 'boolean') updates.is_active = is_active;
+
+    let updatedTemplate: any = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.from('templates').update(updates).eq('id', id).select().single();
+      if (data && !error) updatedTemplate = data;
+    }
+
+    const local = templatesStore.get(id);
+    if (local) {
+      Object.assign(local, updates);
+      if (!updatedTemplate) updatedTemplate = local;
+    }
+
+    return res.json({ success: true, template: updatedTemplate || { id, ...updates } });
+  } catch (err: unknown) {
+    console.error('Error updating template:', err);
+    return res.status(500).json({ message: 'Failed to update template.' });
+  }
+});
+
+// DELETE /api/admin/templates/:id — Admin endpoint to delete template
+apiRouter.delete('/admin/templates/:id', requireRole(['super_admin', 'admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('templates').delete().eq('id', id);
+    }
+
+    templatesStore.delete(id);
+    return res.json({ success: true, message: 'Template deleted.' });
+  } catch (err: unknown) {
+    console.error('Error deleting template:', err);
+    return res.status(500).json({ message: 'Failed to delete template.' });
+  }
+});
+
 /* ==================== Theme Scene Backdrops API Routes ==================== */
 
 // GET /api/theme-assets — Public endpoint to fetch theme background assets map

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Heart, Calendar, MapPin } from 'lucide-react';
 import { resolveThemeStyles } from '../config/weddingThemes';
 import { getPublicThemeAssetsApi } from '../lib/api';
-import { TextZone } from '../types';
+import { TextZone, CardTemplateRecord } from '../types';
 
 export const TEMPLATE_CARD_COUPLE_NAME_COLOR = '#3A0D22';
 export const TEMPLATE_CARD_DETAIL_TEXT_COLOR = '#000000';
@@ -19,6 +19,7 @@ export interface StaticInviteCardProps {
   fontVariant?: string;
   watermark?: boolean;
   cardTemplateUrl?: string | null;
+  template?: CardTemplateRecord | null;
   textZone?: TextZone | null;
   cardRef?: React.RefObject<HTMLDivElement | null>;
   className?: string;
@@ -36,6 +37,7 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
   fontVariant = 'classic-serif',
   watermark = false,
   cardTemplateUrl,
+  template,
   textZone,
   cardRef,
   className = '',
@@ -93,6 +95,23 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
 
   const zone = activeTextZone || { top: 50, left: 10, width: 80, height: 40 };
 
+  const resolvedTemplateUrl = template?.image_url || activeTemplateUrl;
+
+  const resolveFieldValue = (key: string): string => {
+    switch (key) {
+      case 'couple_names':
+        return `${brideFirstName || 'Bride'} & ${groomFirstName || 'Groom'}`;
+      case 'custom_text':
+        return customText || 'Save The Date';
+      case 'date':
+        return formattedDate;
+      case 'venue':
+        return venueName ? `${venueName}${venueAddress ? ` • ${venueAddress}` : ''}` : '';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div
       ref={cardRef}
@@ -101,10 +120,53 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
       className={`relative w-full max-w-[540px] mx-auto rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden border-4 border-double border-opacity-40 transition-all select-none flex flex-col justify-between items-center text-center aspect-[4/5] min-h-[640px] ${className}`}
     >
       {/* Custom Card Template Backdrop (If present) */}
-      {activeTemplateUrl ? (
+      {template && template.text_fields && template.text_fields.length > 0 ? (
         <>
           <img
-            src={activeTemplateUrl}
+            src={template.image_url}
+            alt={template.name || 'Invitation Card Template'}
+            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          />
+
+          {/* Config-driven absolute text fields */}
+          {template.text_fields.map((field) => {
+            const val = resolveFieldValue(field.field_key);
+            if (!val) return null;
+
+            const maxSz = field.max_font_size || 24;
+            const minSz = field.min_font_size || 12;
+            const len = val.length;
+            const computedSize = len <= 15 ? maxSz : len >= 40 ? minSz : Math.round(maxSz - ((len - 15) / 25) * (maxSz - minSz));
+
+            return (
+              <div
+                key={field.field_key}
+                className="absolute z-10 pointer-events-none flex items-center overflow-hidden"
+                style={{
+                  left: `${field.x}%`,
+                  top: `${field.y}%`,
+                  width: `${field.width}%`,
+                  justifyContent: field.align === 'left' ? 'flex-start' : field.align === 'right' ? 'flex-end' : 'center',
+                  textAlign: field.align || 'center',
+                }}
+              >
+                <span
+                  className={`w-full leading-tight truncate ${field.font_family === 'serif' ? serifClass : sansClass}`}
+                  style={{
+                    color: field.color || (field.field_key === 'couple_names' ? TEMPLATE_CARD_COUPLE_NAME_COLOR : TEMPLATE_CARD_DETAIL_TEXT_COLOR),
+                    fontSize: `${computedSize}px`,
+                  }}
+                >
+                  {val}
+                </span>
+              </div>
+            );
+          })}
+        </>
+      ) : resolvedTemplateUrl ? (
+        <>
+          <img
+            src={resolvedTemplateUrl}
             alt="Custom Invitation Card Template"
             className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
           />

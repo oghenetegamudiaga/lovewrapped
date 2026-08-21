@@ -44,7 +44,7 @@ import {
   CartesianGrid,
   Legend,
 } from 'recharts';
-import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType, AdminRole, AdminRecord, BlogPost, ThemeAssetsMap, ThemeAssetRecord } from '../types';
+import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType, AdminRole, AdminRecord, BlogPost, ThemeAssetsMap, ThemeAssetRecord, CardTemplateRecord, CardTemplateField } from '../types';
 import {
   getAdminMeApi,
   adminLoginApi,
@@ -73,8 +73,14 @@ import {
   deleteAdminWeddingApi,
   getPublicThemeAssetsApi,
   updateAdminThemeAssetsApi,
+  getAdminTemplatesApi,
+  createAdminTemplateApi,
+  updateAdminThemeAssetsApi as unusedThemeAssets,
+  updateAdminTemplateApi,
+  deleteAdminTemplateApi,
   AdminTimeseriesPoint,
 } from '../lib/api';
+import { StaticInviteCard } from '../components/StaticInviteCard';
 import { fetchSiteContentApi, invalidateSiteContentCache } from '../lib/useSiteContent';
 import { WEDDING_THEMES } from '../config/weddingThemes';
 
@@ -189,6 +195,60 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [notesText, setNotesText] = useState('');
   const [savedKey, setSavedKey] = useState<string | null>(null);
 
+  // Invitation Templates System State
+  const [cardTemplates, setCardTemplates] = useState<CardTemplateRecord[]>([]);
+  const [editingTemplate, setEditingTemplate] = useState<Partial<CardTemplateRecord> | null>(null);
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
+  const handleSaveTemplate = async () => {
+    if (!editingTemplate || !editingTemplate.name || !editingTemplate.image_url) {
+      alert('Template name and image URL are required.');
+      return;
+    }
+
+    setIsSavingTemplate(true);
+    try {
+      if (editingTemplate.id) {
+        const res = await updateAdminTemplateApi(editingTemplate.id, editingTemplate);
+        if (res.success && res.template) {
+          setCardTemplates((prev) => prev.map((t) => (t.id === res.template.id ? res.template : t)));
+        }
+      } else {
+        const res = await createAdminTemplateApi(editingTemplate);
+        if (res.success && res.template) {
+          setCardTemplates((prev) => [res.template, ...prev]);
+        }
+      }
+      setEditingTemplate(null);
+    } catch (err: unknown) {
+      alert('Failed to save invitation template.');
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this invitation template?')) return;
+    try {
+      await deleteAdminTemplateApi(id);
+      setCardTemplates((prev) => prev.filter((t) => t.id !== id));
+      if (editingTemplate?.id === id) setEditingTemplate(null);
+    } catch (err: unknown) {
+      alert('Failed to delete template.');
+    }
+  };
+
+  const handleToggleTemplateActive = async (tpl: CardTemplateRecord) => {
+    try {
+      const res = await updateAdminTemplateApi(tpl.id, { is_active: !tpl.is_active });
+      if (res.success && res.template) {
+        setCardTemplates((prev) => prev.map((t) => (t.id === tpl.id ? res.template : t)));
+      }
+    } catch (err: unknown) {
+      alert('Failed to toggle template active status.');
+    }
+  };
+
   const loadData = useCallback(async (role: AdminRole = adminRole) => {
     setIsLoading(true);
     try {
@@ -228,6 +288,9 @@ export const AdminView: React.FC<AdminViewProps> = () => {
 
         const tAssets = await getPublicThemeAssetsApi().catch(() => ({}));
         setThemeAssetsMap(tAssets);
+
+        const tplList = await getAdminTemplatesApi().catch(() => []);
+        setCardTemplates(tplList);
       }
     } catch (err: unknown) {
       console.error('Failed to load admin data:', err);
@@ -856,6 +919,15 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                     }`}
                   >
                     <span>Weddings ({adminWeddings.length})</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('templates')}
+                    className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
+                      activeTab === 'templates' ? 'bg-maroon text-cream font-semibold shadow-sm' : 'text-mauve hover:text-maroon'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Card Templates ({cardTemplates.length})</span>
                   </button>
                 </>
               )}
@@ -2679,6 +2751,417 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                 </div>
               </div>
             </>
+          )}
+
+          {/* Tab 8: Invitation Templates Management & Calibration */}
+          {activeTab === 'templates' && (
+            <div className="space-y-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-serif font-bold text-xl text-maroon">Invitation Template System</h2>
+                  <p className="text-xs text-mauve">
+                    Create, position text fields, preview visually in real-time, and publish custom card templates.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() =>
+                    setEditingTemplate({
+                      name: 'New Invitation Template',
+                      image_url: 'https://via.placeholder.com/1200x1500.png?text=New+Template',
+                      orientation: 'portrait',
+                      width: 1200,
+                      height: 1500,
+                      is_active: true,
+                      text_fields: [
+                        { field_key: 'couple_names', label: 'Couple / Event Names', x: 10, y: 48, width: 80, max_font_size: 36, min_font_size: 18, color: '#3A0D22', align: 'center', font_family: 'serif' },
+                        { field_key: 'custom_text', label: 'Host / Invitation Line', x: 10, y: 58, width: 80, max_font_size: 16, min_font_size: 12, color: '#000000', align: 'center', font_family: 'sans' },
+                        { field_key: 'date', label: 'Event Date', x: 10, y: 64, width: 80, max_font_size: 18, min_font_size: 13, color: '#000000', align: 'center', font_family: 'sans' },
+                        { field_key: 'venue', label: 'Venue / Location', x: 10, y: 71, width: 80, max_font_size: 15, min_font_size: 11, color: '#000000', align: 'center', font_family: 'sans' },
+                      ],
+                    })
+                  }
+                  className="px-5 py-2.5 rounded-2xl bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-coral" />
+                  <span>+ Create New Template</span>
+                </button>
+              </div>
+
+              {/* Edit / Calibration Form + Live Preview Pane */}
+              {editingTemplate && (
+                <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-6">
+                  <div className="flex items-center justify-between border-b border-cream-border pb-4">
+                    <h3 className="font-serif font-bold text-lg text-maroon">
+                      {editingTemplate.id ? 'Edit Template Configuration' : 'Create New Invitation Template'}
+                    </h3>
+                    <button
+                      onClick={() => setEditingTemplate(null)}
+                      className="p-1.5 rounded-full hover:bg-cream-border text-mauve cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Left: Configuration Form Controls (7 Cols) */}
+                    <div className="lg:col-span-7 space-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-maroon mb-1">Template Name</label>
+                          <input
+                            type="text"
+                            value={editingTemplate.name || ''}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
+                            className="w-full p-3 rounded-xl bg-cream border border-cream-border text-xs text-maroon focus:outline-none focus:border-coral"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-maroon mb-1">Orientation</label>
+                          <select
+                            value={editingTemplate.orientation || 'portrait'}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, orientation: e.target.value as any })}
+                            className="w-full p-3 rounded-xl bg-cream border border-cream-border text-xs text-maroon focus:outline-none focus:border-coral cursor-pointer"
+                          >
+                            <option value="portrait">Portrait</option>
+                            <option value="landscape">Landscape</option>
+                            <option value="square">Square</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-maroon mb-1">Template Background Image URL</label>
+                        <input
+                          type="text"
+                          placeholder="https://..."
+                          value={editingTemplate.image_url || ''}
+                          onChange={(e) => setEditingTemplate({ ...editingTemplate, image_url: e.target.value })}
+                          className="w-full p-3 rounded-xl bg-cream border border-cream-border text-xs text-maroon focus:outline-none focus:border-coral font-mono text-[11px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-maroon mb-1">Width (px)</label>
+                          <input
+                            type="number"
+                            value={editingTemplate.width || 1200}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, width: parseInt(e.target.value) || 1200 })}
+                            className="w-full p-3 rounded-xl bg-cream border border-cream-border text-xs text-maroon focus:outline-none focus:border-coral"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-maroon mb-1">Height (px)</label>
+                          <input
+                            type="number"
+                            value={editingTemplate.height || 1500}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, height: parseInt(e.target.value) || 1500 })}
+                            className="w-full p-3 rounded-xl bg-cream border border-cream-border text-xs text-maroon focus:outline-none focus:border-coral"
+                          />
+                        </div>
+                        <div className="flex items-end pb-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={editingTemplate.is_active !== false}
+                              onChange={(e) => setEditingTemplate({ ...editingTemplate, is_active: e.target.checked })}
+                              className="w-4 h-4 text-maroon rounded focus:ring-coral cursor-pointer"
+                            />
+                            <span className="text-xs font-semibold text-maroon">Published / Active</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Text Fields List */}
+                      <div className="space-y-4 pt-4 border-t border-cream-border">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-serif font-bold text-sm text-maroon">Dynamic Text Field Position Calibration</h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentFields = editingTemplate.text_fields || [];
+                              setEditingTemplate({
+                                ...editingTemplate,
+                                text_fields: [
+                                  ...currentFields,
+                                  {
+                                    field_key: `field_${Date.now()}`,
+                                    label: 'New Field',
+                                    x: 10,
+                                    y: 50,
+                                    width: 80,
+                                    min_font_size: 12,
+                                    max_font_size: 24,
+                                    color: '#000000',
+                                    align: 'center',
+                                    font_family: 'sans',
+                                  },
+                                ],
+                              });
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-cream-card hover:bg-cream-border text-maroon text-xs font-semibold flex items-center gap-1 border border-cream-border cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-coral" />
+                            <span>+ Add Field</span>
+                          </button>
+                        </div>
+
+                        {(editingTemplate.text_fields || []).map((field, idx) => (
+                          <div key={idx} className="p-4 rounded-2xl bg-cream/60 border border-cream-border space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-maroon">Field #{idx + 1}: {field.label || field.field_key}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextFields = (editingTemplate.text_fields || []).filter((_, i) => i !== idx);
+                                  setEditingTemplate({ ...editingTemplate, text_fields: nextFields });
+                                }}
+                                className="text-rose-600 hover:text-rose-800 text-xs font-semibold cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              <div>
+                                <label className="block text-[10px] text-mauve">Field Key</label>
+                                <input
+                                  type="text"
+                                  value={field.field_key}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], field_key: e.target.value };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-2 bg-cream-card rounded-lg text-xs font-mono border border-cream-border"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-mauve">Label</label>
+                                <input
+                                  type="text"
+                                  value={field.label}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], label: e.target.value };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-2 bg-cream-card rounded-lg text-xs border border-cream-border"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-mauve">X Position (%)</label>
+                                <input
+                                  type="number"
+                                  value={field.x}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], x: parseFloat(e.target.value) || 0 };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-2 bg-cream-card rounded-lg text-xs border border-cream-border"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-mauve">Y Position (%)</label>
+                                <input
+                                  type="number"
+                                  value={field.y}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], y: parseFloat(e.target.value) || 0 };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-2 bg-cream-card rounded-lg text-xs border border-cream-border"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                              <div>
+                                <label className="block text-[10px] text-mauve">Width (%)</label>
+                                <input
+                                  type="number"
+                                  value={field.width}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], width: parseFloat(e.target.value) || 80 };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-2 bg-cream-card rounded-lg text-xs border border-cream-border"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-mauve">Max Font (px)</label>
+                                <input
+                                  type="number"
+                                  value={field.max_font_size}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], max_font_size: parseInt(e.target.value) || 24 };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-2 bg-cream-card rounded-lg text-xs border border-cream-border"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-mauve">Min Font (px)</label>
+                                <input
+                                  type="number"
+                                  value={field.min_font_size}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], min_font_size: parseInt(e.target.value) || 12 };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-2 bg-cream-card rounded-lg text-xs border border-cream-border"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-mauve">Color Hex</label>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="color"
+                                    value={field.color || '#000000'}
+                                    onChange={(e) => {
+                                      const next = [...(editingTemplate.text_fields || [])];
+                                      next[idx] = { ...next[idx], color: e.target.value };
+                                      setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                    }}
+                                    className="w-6 h-6 rounded cursor-pointer border border-cream-border p-0"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={field.color}
+                                    onChange={(e) => {
+                                      const next = [...(editingTemplate.text_fields || [])];
+                                      next[idx] = { ...next[idx], color: e.target.value };
+                                      setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                    }}
+                                    className="w-full p-1.5 bg-cream-card rounded-lg text-xs font-mono border border-cream-border"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-mauve">Font Family</label>
+                                <select
+                                  value={field.font_family}
+                                  onChange={(e) => {
+                                    const next = [...(editingTemplate.text_fields || [])];
+                                    next[idx] = { ...next[idx], font_family: e.target.value as any };
+                                    setEditingTemplate({ ...editingTemplate, text_fields: next });
+                                  }}
+                                  className="w-full p-1.5 bg-cream-card rounded-lg text-xs border border-cream-border cursor-pointer"
+                                >
+                                  <option value="serif">Serif</option>
+                                  <option value="sans">Sans</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-4 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setEditingTemplate(null)}
+                          className="px-5 py-2 rounded-xl bg-cream-card border border-cream-border text-mauve hover:text-maroon text-xs font-semibold cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveTemplate}
+                          disabled={isSavingTemplate}
+                          className="px-6 py-2 rounded-xl bg-maroon hover:bg-maroon-light text-cream text-xs font-semibold shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4 text-coral" />
+                          <span>{isSavingTemplate ? 'Saving Template...' : 'Save Template Config'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Right: Live Visual Calibration Preview Pane (5 Cols) */}
+                    <div className="lg:col-span-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-serif font-bold text-sm text-maroon flex items-center gap-1.5">
+                          <Eye className="w-4 h-4 text-coral" />
+                          <span>Live Calibration Preview</span>
+                        </h4>
+                        <span className="text-[10px] font-mono text-mauve bg-cream-card px-2 py-0.5 rounded-full border border-cream-border">
+                          {editingTemplate.width || 1200} × {editingTemplate.height || 1500}px
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-cream-card/70 border border-cream-border rounded-2xl flex items-center justify-center">
+                        <StaticInviteCard
+                          brideFirstName="Alex"
+                          groomFirstName="Jordan"
+                          customText="Together with their families"
+                          weddingDate="2026-06-20"
+                          venueName="Grace Gardens"
+                          venueAddress="Lagos, Nigeria"
+                          template={editingTemplate as CardTemplateRecord}
+                          className="w-full shadow-lg"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Templates List */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cardTemplates.map((tpl) => (
+                  <div key={tpl.id} className="glass-card p-5 rounded-3xl border border-cream-border space-y-4 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${tpl.is_active ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                          {tpl.is_active ? 'Active' : 'Draft / Off'}
+                        </span>
+                        <span className="text-[10px] text-mauve uppercase tracking-widest font-mono">{tpl.orientation}</span>
+                      </div>
+
+                      <h3 className="font-serif font-bold text-base text-maroon line-clamp-1">{tpl.name}</h3>
+
+                      <div className="aspect-[4/5] w-full rounded-2xl overflow-hidden border border-cream-border bg-cream-card relative">
+                        <img src={tpl.image_url} alt={tpl.name} className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-cream-border flex items-center justify-between">
+                      <button
+                        onClick={() => handleToggleTemplateActive(tpl)}
+                        className="text-xs font-semibold text-mauve hover:text-maroon flex items-center gap-1 cursor-pointer"
+                      >
+                        {tpl.is_active ? <ToggleRight className="w-5 h-5 text-emerald-600" /> : <ToggleLeft className="w-5 h-5 text-slate-400" />}
+                        <span>{tpl.is_active ? 'Published' : 'Hidden'}</span>
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingTemplate(tpl)}
+                          className="p-1.5 rounded-lg bg-cream-card text-maroon hover:bg-cream-border border border-cream-border cursor-pointer"
+                          title="Edit Template Config"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-coral" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTemplate(tpl.id)}
+                          className="p-1.5 rounded-lg bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200 cursor-pointer"
+                          title="Delete Template"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
