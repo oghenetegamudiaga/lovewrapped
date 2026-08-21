@@ -726,12 +726,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   return (
     <div
-      className={`relative ${isSpike ? 'h-full w-full p-0' : 'min-h-screen p-4 sm:p-6'} text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center select-none`}
+      className={`relative ${stage !== 'unveiled' || isSpike ? 'h-full min-h-screen w-full p-0' : 'min-h-screen p-4 sm:p-6'} text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center select-none`}
       style={{ backgroundColor: activeTheme.bgColor }}
     >
 
       <div
-        className={`relative max-w-md w-full ${isSpike ? 'h-full min-h-0 rounded-none border-0 shadow-none' : 'min-h-[640px] sm:min-h-[740px] rounded-3xl border shadow-2xl'} overflow-hidden flex flex-col`}
+        className={`relative ${stage !== 'unveiled' || isSpike ? 'h-full min-h-screen w-full rounded-none border-0 shadow-none' : 'max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl border shadow-2xl'} overflow-hidden flex flex-col`}
         style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}50` }}
       >
         {/* Animated Cover & 3D Opening Doors (Scenes 1 & 2) */}
@@ -743,38 +743,25 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               exit={{ opacity: 0 }}
               transition={{ duration: 0.6 }}
               className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 text-center overflow-hidden [perspective:1200px]"
+              style={{ backgroundColor: activeTheme.bgColor }}
             >
-              {/* Layer 1: Primary Full-Bleed Couple Photo Background (With Drone Parallax Zoom & Cinematic Filter) */}
-              <motion.div
-                className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
-                animate={
-                  !isReducedMotion && (stage === 'drone_zooming' || stage === 'view_prompt')
-                    ? { scale: 1.15, y: -15 }
-                    : { scale: 1.0, y: 0 }
-                }
-                transition={{ duration: 1.6, ease: [0.25, 1, 0.5, 1] }}
-              >
-                <img
-                  src={coverPhoto}
-                  alt="Couple Portrait Full-Bleed Background"
-                  className="w-full h-full object-cover filter contrast-[1.06] saturate-[1.12] brightness-[0.98]"
-                />
+              {/* Material Texture Overlay: Subtle Paper/Fabric Noise */}
+              <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none z-1 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                <filter id="paper-noise">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+                  <feColorMatrix type="saturate" values="0" />
+                </filter>
+                <rect width="100%" height="100%" filter="url(#paper-noise)" />
+              </svg>
 
-                {/* Top-and-Bottom Contrast Vignette Overlay for Text Legibility */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/30 to-black/85 pointer-events-none z-1" />
-
-                {/* Subtle Cinematic Film Grain Overlay */}
-                <div className="absolute inset-0 opacity-[0.06] pointer-events-none z-2 bg-black/10 mix-blend-overlay" />
-              </motion.div>
-
-              {/* Layer 2: Optional Repurposed Foreground Overlay Decoration (Florals, Arches, Ornate Frame Edges) */}
-              {themeAssets[activeThemeId]?.cover_background_url && (
-                <img
-                  src={themeAssets[activeThemeId]!.cover_background_url!}
-                  alt="Theme Foreground Overlay"
-                  className="absolute bottom-0 inset-x-0 w-full max-h-[35%] object-contain object-bottom pointer-events-none z-10 opacity-95"
-                />
-              )}
+              {/* Ornate Vertical Seam / Ribbon Divider */}
+              <div
+                className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1 sm:w-1.5 z-10 pointer-events-none shadow-[0_0_12px_rgba(0,0,0,0.5)]"
+                style={{
+                  background: `linear-gradient(to bottom, transparent, ${accentColor}, transparent)`,
+                  opacity: 0.8,
+                }}
+              />
 
               {/* 3D Swinging Door Panels (Scene 2 Transition) */}
               {!isReducedMotion && (
@@ -804,91 +791,60 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 </>
               )}
 
-              {/* Cover Header & Typography (Visible when cover is closed) */}
+              {/* Minimal & Premium Opening State: Tactile 3D Wax Seal + CTA Only */}
               {stage === 'cover' && (
-                <div className="relative z-30 pt-8 space-y-4 max-w-xs mx-auto">
-                  <motion.p
-                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-[11px] tracking-[0.3em] uppercase font-semibold"
-                    style={{ color: accentColor }}
-                  >
-                    {guest ? `Special Invitation For ${guest.name}` : 'Together With Their Families'}
-                  </motion.p>
-
-                  <motion.div
-                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1, delay: 0.4 }}
-                    className="py-2"
-                  >
-                    <h1
-                      className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass} drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]`}
-                      style={{
-                        color: secondaryColor,
-                        textShadow: `0 0 20px ${accentColor}90, 0 4px 12px rgba(0,0,0,0.85)`,
-                      }}
-                    >
-                      {coupleNames}
-                    </h1>
-                  </motion.div>
-
-                  <motion.p
-                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.7 }}
-                    className="text-xs opacity-80 italic font-light"
-                  >
-                    request the honor of your presence at their wedding celebration
-                  </motion.p>
-
-                  <motion.div
-                    initial={isReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.9 }}
-                    className="inline-flex py-1.5 px-3.5 rounded-full border text-[10px] items-center gap-1.5"
-                    style={{ backgroundColor: `${activeTheme.bgColor}E6`, borderColor: `${accentColor}40`, color: accentColor }}
-                  >
-                    <Calendar className="w-3 h-3" />
-                    <span>
-                      {(activeEvents[0] ? formatEventDateTime(activeEvents[0].date, activeEvents[0].time).formattedDate : '').toUpperCase()}
-                    </span>
-                  </motion.div>
-                </div>
-              )}
-
-              {/* Interactive Wax Seal Trigger (Cover Stage) */}
-              {stage === 'cover' && (
-                <div className="relative z-30 pb-6 flex flex-col items-center gap-3">
+                <div className="relative z-30 my-auto flex flex-col items-center justify-center gap-6">
+                  {/* Tactile 3D Embossed Wax Seal Button */}
                   <div className="relative flex items-center justify-center">
                     {!isReducedMotion && (
                       <motion.div
-                        animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.8, 0.4] }}
-                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                        className="absolute inset-0 -m-3 rounded-full border"
-                        style={{ backgroundColor: `${accentColor}20`, borderColor: `${accentColor}50` }}
+                        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
+                        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                        className="absolute inset-0 -m-4 rounded-full"
+                        style={{
+                          background: `radial-gradient(circle, ${accentColor}40 0%, transparent 70%)`,
+                        }}
                       />
                     )}
 
                     <motion.button
                       type="button"
                       onClick={handleUnseal}
-                      className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${activeTheme.sealColor} border-2 shadow-2xl flex items-center justify-center cursor-pointer active:scale-95`}
-                      style={{ borderColor: accentColor }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full cursor-pointer flex items-center justify-center shadow-[0_12px_32px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.35),inset_0_-4px_8px_rgba(0,0,0,0.5)] border-2 transition-transform"
+                      style={{
+                        backgroundColor: activeTheme.cardBgColor,
+                        borderColor: accentColor,
+                      }}
                     >
-                      <div className="w-16 h-16 rounded-full border flex flex-col items-center justify-center shadow-inner" style={{ borderColor: `${accentColor}40`, backgroundColor: `${activeTheme.bgColor}99` }}>
-                        <span className={`font-bold text-lg tracking-widest ${serifClass}`} style={{ color: accentColor }}>{initials}</span>
-                        <span className="text-[8px] uppercase tracking-widest opacity-80 mt-0.5" style={{ color: accentColor }}>Open</span>
+                      {/* Outer Stamp Rim */}
+                      <div
+                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-dashed flex flex-col items-center justify-center shadow-[inset_0_2px_6px_rgba(0,0,0,0.4)]"
+                        style={{
+                          borderColor: `${accentColor}70`,
+                          backgroundColor: `${activeTheme.bgColor}D9`,
+                        }}
+                      >
+                        <span
+                          className={`font-serif font-bold text-2xl sm:text-3xl tracking-widest ${serifClass}`}
+                          style={{
+                            color: accentColor,
+                            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                          }}
+                        >
+                          {initials}
+                        </span>
                       </div>
                     </motion.button>
                   </div>
 
+                  {/* Single CTA Copy Line */}
                   <motion.p
-                    animate={{ opacity: [0.6, 1, 0.6] }}
-                    transition={{ duration: 1.8, repeat: Infinity }}
-                    className="text-[10px] tracking-[0.25em] uppercase font-semibold"
-                    style={{ color: accentColor }}
+                    animate={{ opacity: [0.65, 1, 0.65] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="text-xs sm:text-sm tracking-[0.3em] uppercase font-semibold text-center px-4"
+                    style={{ color: accentColor, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}
                   >
                     Click to Open Invitation
                   </motion.p>
