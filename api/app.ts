@@ -2364,6 +2364,81 @@ apiRouter.get('/weddings/guest-invite/:weddingSlug/:guestSlug', async (req, res)
   }
 });
 
+// POST /api/weddings/:slug/rsvp — Invitee RSVP submission endpoint
+apiRouter.post('/weddings/:slug/rsvp', weddingRsvpLimiter, async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { guest_name, attending, guest_count, plus_one_name, dietary_notes, message, guest_id, event_id } = req.body;
+
+    if (!guest_name || typeof guest_name !== 'string' || !guest_name.trim()) {
+      return res.status(400).json({ message: 'Guest name is required.' });
+    }
+
+    let targetWedding: Wedding | undefined;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('weddings').select('*').eq('slug', slug).single();
+      if (data) targetWedding = data;
+    }
+
+    if (!targetWedding) {
+      targetWedding = Array.from(weddingsStore.values()).find((w) => w.slug === slug);
+    }
+
+    if (!targetWedding) {
+      return res.status(404).json({ message: 'Wedding invitation not found.' });
+    }
+
+    const rsvpId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    const rsvpRecord: WeddingRSVP = {
+      id: rsvpId,
+      wedding_id: targetWedding.id,
+      guest_id: guest_id || null,
+      event_id: event_id || null,
+      guest_name: guest_name.trim(),
+      attending: !!attending,
+      guest_count: attending ? (guest_count || 1) : 0,
+      plus_one_name: plus_one_name && typeof plus_one_name === 'string' ? plus_one_name.trim() : null,
+      dietary_notes: dietary_notes && typeof dietary_notes === 'string' ? dietary_notes.trim() : null,
+      message: message && typeof message === 'string' ? message.trim() : null,
+      created_at: now,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('wedding_rsvps').insert(rsvpRecord);
+      if (guest_id) {
+        const guestUpdates: any = { updated_at: now };
+        if (rsvpRecord.plus_one_name) guestUpdates.plus_one_name = rsvpRecord.plus_one_name;
+        if (rsvpRecord.dietary_notes) guestUpdates.dietary_notes = rsvpRecord.dietary_notes;
+        await supabase.from('wedding_guests').update(guestUpdates).eq('id', guest_id);
+      }
+    }
+
+    const existingRsvps = weddingRsvpsStore.get(targetWedding.id) || [];
+    existingRsvps.push(rsvpRecord);
+    weddingRsvpsStore.set(targetWedding.id, existingRsvps);
+
+    if (guest_id && weddingGuestsStore.has(guest_id)) {
+      const g = weddingGuestsStore.get(guest_id);
+      if (g) {
+        if (rsvpRecord.plus_one_name) g.plus_one_name = rsvpRecord.plus_one_name;
+        if (rsvpRecord.dietary_notes) g.dietary_notes = rsvpRecord.dietary_notes;
+        g.updated_at = now;
+        weddingGuestsStore.set(guest_id, g);
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      rsvp: rsvpRecord,
+    });
+  } catch (err: unknown) {
+    console.error('Error recording wedding RSVP:', err);
+    return res.status(500).json({ message: 'Failed to submit RSVP.' });
+  }
+});
+
 /* ==================== Phase 2 Guest Management API Routes ==================== */
 
 // Helper to verify couple ownership of a wedding

@@ -32,7 +32,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   onNavigate,
   currentCouple,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'guests'>('overview');
+  const [activeTab, setActiveTab] = useState<'guests' | 'overview'>('guests');
   const [wedding, setWedding] = useState<Wedding | null>(null);
   const [events, setEvents] = useState<WeddingEvent[]>([]);
   const [rsvps, setRsvps] = useState<WeddingRSVP[]>([]);
@@ -413,18 +413,8 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Dashboard Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-cream-border pb-2">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'overview'
-                ? 'bg-maroon text-cream shadow-sm'
-                : 'bg-cream text-mauve hover:text-maroon'
-            }`}
-          >
-            Overview & Settings ({events.length} Events)
-          </button>
+        {/* Header Tabs */}
+        <div className="flex items-center gap-3 border-b border-cream-border pb-4">
           <button
             onClick={() => setActiveTab('guests')}
             className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -435,6 +425,16 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
           >
             <Users className="w-3.5 h-3.5" />
             <span>Guest List & RSVPs ({guests.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === 'overview'
+                ? 'bg-maroon text-cream shadow-sm'
+                : 'bg-cream text-mauve hover:text-maroon'
+            }`}
+          >
+            Overview & Settings ({events.length} Events)
           </button>
         </div>
 
@@ -938,12 +938,27 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                       filteredGuests.map((g) => {
                         const status = getGuestRsvpStatus(g.id);
                         const personalizedUrl = `${window.location.origin}/w/wedding/${wedding.slug}/${g.unique_link_token}`;
+                        const gRsvps = rsvps.filter(
+                          (r) => r.guest_id === g.id || r.guest_name.toLowerCase().trim() === g.name.toLowerCase().trim()
+                        );
+                        const gDietary = g.dietary_notes || gRsvps.find((r) => r.dietary_notes)?.dietary_notes;
+                        const gMessage = gRsvps.find((r) => r.message)?.message;
 
                         return (
                           <tr key={g.id} className="hover:bg-cream/40 transition-colors">
                             <td className="py-4 px-6">
                               <p className="font-semibold text-maroon">{g.name}</p>
                               {g.email && <p className="text-[11px] text-mauve font-mono">{g.email}</p>}
+                              {gDietary && (
+                                <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mt-1 inline-block">
+                                  Dietary: {gDietary}
+                                </p>
+                              )}
+                              {gMessage && (
+                                <p className="text-[10px] text-mauve italic mt-1 max-w-xs">
+                                  "{gMessage}"
+                                </p>
+                              )}
                             </td>
                             <td className="py-4 px-6">
                               {g.plus_one_allowed ? (
