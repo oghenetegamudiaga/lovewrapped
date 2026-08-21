@@ -11,9 +11,8 @@ import {
   deleteCoupleWeddingGuestApi,
   importCoupleWeddingGuestsCsvApi,
   exportCoupleWeddingGuestsCsvUrl,
-  uploadWeddingCoverPhotoApi,
-  uploadWeddingGalleryPhotoApi,
 } from '../lib/api';
+import { uploadImageDirectToStorage } from '../lib/storageUpload';
 
 interface WeddingsDashboardViewProps {
   weddingId: string;
@@ -232,56 +231,23 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
     }
   };
 
-  const handleDashboardCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDashboardCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Image file size must be smaller than 10MB.');
-      return;
-    }
-
     setIsUploadingDashboardCover(true);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const scale = Math.min(1, MAX_WIDTH / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-          uploadWeddingCoverPhotoApi(compressedUrl)
-            .then((res) => {
-              if (res.publicUrl || res.url) {
-                setEditCoverPhotoUrl(res.publicUrl || res.url);
-              }
-            })
-            .catch((err) => {
-              alert(err.message || 'Failed to upload cover photo.');
-            })
-            .finally(() => {
-              setIsUploadingDashboardCover(false);
-            });
-        } else {
-          setIsUploadingDashboardCover(false);
-        }
-      };
-      img.onerror = () => setIsUploadingDashboardCover(false);
-      img.src = event.target?.result as string;
-    };
-    reader.onerror = () => setIsUploadingDashboardCover(false);
-    reader.readAsDataURL(file);
+    try {
+      const publicUrl = await uploadImageDirectToStorage(file, { bucket: 'wedding-cover-photos' });
+      setEditCoverPhotoUrl(publicUrl);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to upload cover photo.';
+      alert(msg);
+    } finally {
+      setIsUploadingDashboardCover(false);
+    }
   };
 
-  const handleDashboardGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDashboardGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -291,64 +257,26 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
       return;
     }
 
-    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    const filesToUpload = (Array.from(files) as File[]).slice(0, remainingSlots);
     setIsUploadingDashboardGallery(true);
 
-    let completedCount = 0;
-    filesToUpload.forEach((file: File) => {
-      if (file.size > 10 * 1024 * 1024) {
-        completedCount++;
-        if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
-        return;
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of filesToUpload) {
+        try {
+          const url = await uploadImageDirectToStorage(file, { bucket: 'wedding-cover-photos' });
+          uploadedUrls.push(url);
+        } catch (err) {
+          console.warn('Failed to upload a gallery photo:', err);
+        }
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new window.Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1200;
-          const scale = Math.min(1, MAX_WIDTH / img.width);
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
 
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-            uploadWeddingGalleryPhotoApi(compressedUrl)
-              .then((res) => {
-                const storageUrl = res.publicUrl || res.url;
-                if (storageUrl) {
-                  setEditGalleryPhotos((prev) => [...prev, storageUrl].slice(0, 10));
-                }
-              })
-              .catch((err) => {
-                console.error('Gallery photo upload error:', err);
-              })
-              .finally(() => {
-                completedCount++;
-                if (completedCount >= filesToUpload.length) {
-                  setIsUploadingDashboardGallery(false);
-                }
-              });
-          } else {
-            completedCount++;
-            if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
-          }
-        };
-        img.onerror = () => {
-          completedCount++;
-          if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => {
-        completedCount++;
-        if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
-      };
-      reader.readAsDataURL(file);
-    });
+      if (uploadedUrls.length > 0) {
+        setEditGalleryPhotos((prev) => [...prev, ...uploadedUrls].slice(0, 10));
+      }
+    } finally {
+      setIsUploadingDashboardGallery(false);
+    }
   };
 
   const handleOpenAddGuestModal = () => {

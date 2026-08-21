@@ -311,17 +311,19 @@ apiRouter.get('/health', (req, res) => {
 // Lightweight Signed URL Endpoint for Direct Client-to-Supabase Storage Uploads
 apiRouter.post('/upload-url', async (req, res) => {
   try {
-    const { fileName, contentType } = req.body;
+    const { fileName, contentType, bucket } = req.body;
+    const allowedBuckets = ['experience-images', 'wedding-cover-photos', 'theme-assets'];
+    const targetBucket = allowedBuckets.includes(bucket) ? bucket : 'experience-images';
     const cleanFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${(fileName || 'image.jpg').replace(/[^a-zA-Z0-9._-]/g, '')}`;
 
     if (isSupabaseConfigured && supabase) {
-      // Attempt signed upload URL creation
+      // Attempt signed upload URL creation for target bucket
       const { data, error } = await supabase.storage
-        .from('experience-images')
+        .from(targetBucket)
         .createSignedUploadUrl(cleanFileName);
 
       const { data: publicUrlData } = supabase.storage
-        .from('experience-images')
+        .from(targetBucket)
         .getPublicUrl(cleanFileName);
 
       if (!error && data) {

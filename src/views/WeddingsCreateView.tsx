@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type, Download, Image, FileText, Music, Volume2, VolumeX } from 'lucide-react';
 import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
 import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount, ThemeAssetsMap, CardTemplateRecord } from '../types';
-import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi, getPublicThemeAssetsApi, uploadWeddingCoverPhotoApi, uploadWeddingGalleryPhotoApi, getActiveTemplatesApi } from '../lib/api';
+import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi, getPublicThemeAssetsApi, getActiveTemplatesApi } from '../lib/api';
+import { uploadImageDirectToStorage } from '../lib/storageUpload';
 import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants';
 import { StaticInviteCard } from '../components/StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
@@ -74,58 +75,24 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [isUploadingGalleryPhoto, setIsUploadingGalleryPhoto] = useState(false);
 
   // Compress & upload image payload to Supabase Storage for Premium Cover Photo
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Image file size must be smaller than 10MB.');
-      return;
-    }
-
     setIsUploadingCoverPhoto(true);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200;
-        const scale = Math.min(1, MAX_WIDTH / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-          // Upload compressed image binary to Supabase Storage immediately
-          uploadWeddingCoverPhotoApi(compressedUrl)
-            .then((res) => {
-              if (res.publicUrl || res.url) {
-                setCoverPhotoUrl(res.publicUrl || res.url);
-              }
-            })
-            .catch((err) => {
-              alert(err.message || 'Failed to upload cover photo to storage.');
-            })
-            .finally(() => {
-              setIsUploadingCoverPhoto(false);
-            });
-        } else {
-          setIsUploadingCoverPhoto(false);
-        }
-      };
-      img.onerror = () => setIsUploadingCoverPhoto(false);
-      img.src = event.target?.result as string;
-    };
-    reader.onerror = () => setIsUploadingCoverPhoto(false);
-    reader.readAsDataURL(file);
+    try {
+      const publicUrl = await uploadImageDirectToStorage(file, { bucket: 'wedding-cover-photos' });
+      setCoverPhotoUrl(publicUrl);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to upload cover photo.';
+      alert(msg);
+    } finally {
+      setIsUploadingCoverPhoto(false);
+    }
   };
 
   // Gallery Multi-Photo Upload Handler (up to 10 photos)
-  const handleGalleryPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -135,64 +102,26 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
       return;
     }
 
-    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    const filesToUpload = (Array.from(files) as File[]).slice(0, remainingSlots);
     setIsUploadingGalleryPhoto(true);
 
-    let completedCount = 0;
-    filesToUpload.forEach((file: File) => {
-      if (file.size > 10 * 1024 * 1024) {
-        completedCount++;
-        if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
-        return;
+    try {
+      const uploadedUrls: string[] = [];
+      for (const file of filesToUpload) {
+        try {
+          const url = await uploadImageDirectToStorage(file, { bucket: 'wedding-cover-photos' });
+          uploadedUrls.push(url);
+        } catch (err) {
+          console.warn('Failed to upload a gallery photo:', err);
+        }
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1200;
-          const scale = Math.min(1, MAX_WIDTH / img.width);
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
 
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-
-            uploadWeddingGalleryPhotoApi(compressedUrl)
-              .then((res) => {
-                const storageUrl = res.publicUrl || res.url;
-                if (storageUrl) {
-                  setGalleryPhotos((prev) => [...prev, storageUrl].slice(0, 10));
-                }
-              })
-              .catch((err) => {
-                console.error('Gallery photo upload error:', err);
-              })
-              .finally(() => {
-                completedCount++;
-                if (completedCount >= filesToUpload.length) {
-                  setIsUploadingGalleryPhoto(false);
-                }
-              });
-          } else {
-            completedCount++;
-            if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
-          }
-        };
-        img.onerror = () => {
-          completedCount++;
-          if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => {
-        completedCount++;
-        if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
-      };
-      reader.readAsDataURL(file);
-    });
+      if (uploadedUrls.length > 0) {
+        setGalleryPhotos((prev) => [...prev, ...uploadedUrls].slice(0, 10));
+      }
+    } finally {
+      setIsUploadingGalleryPhoto(false);
+    }
   };
 
   const handleAddEvent = (presetTitle?: string) => {

@@ -45,7 +45,8 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
 export async function getSignedUploadUrlApi(
   fileName: string,
-  contentType: string
+  contentType: string,
+  bucket: 'wedding-cover-photos' | 'theme-assets' | 'experience-images' = 'experience-images'
 ): Promise<{
   signedUrl?: string;
   token?: string;
@@ -57,7 +58,7 @@ export async function getSignedUploadUrlApi(
 }> {
   return apiFetch('/upload-url', {
     method: 'POST',
-    body: JSON.stringify({ fileName, contentType }),
+    body: JSON.stringify({ fileName, contentType, bucket }),
   });
 }
 
