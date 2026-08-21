@@ -441,47 +441,6 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
         {/* TAB 1: Overview, Schedule & Phase 4 Settings */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* Share General Link Banner */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-cream-card border border-cream-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-              <div>
-                <p className="font-semibold text-maroon">General Public Link:</p>
-                <p className="font-mono text-mauve text-[11px] truncate max-w-md">{generalShareUrl}</p>
-              </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(generalShareUrl);
-                  alert('General invitation link copied!');
-                }}
-                className="px-4 py-2 rounded-full bg-cream border border-cream-border text-maroon font-semibold text-xs hover:border-coral transition-colors flex items-center gap-1.5 shrink-0"
-              >
-                <Copy className="w-3.5 h-3.5 text-coral" />
-                <span>Copy General Link</span>
-              </button>
-            </div>
-
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
-                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Total Guests</p>
-                <p className="font-serif text-3xl font-bold text-maroon mt-1">{guests.length}</p>
-              </div>
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
-                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Opened Invitations</p>
-                <p className="font-serif text-3xl font-bold text-coral mt-1">
-                  {guests.filter((g) => g.opened_at).length}
-                </p>
-              </div>
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
-                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Confirmed Attending</p>
-                <p className="font-serif text-3xl font-bold text-emerald-700 mt-1">
-                  {guests.filter((g) => getGuestRsvpStatus(g.id) === 'attending').length}
-                </p>
-              </div>
-              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
-                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Total Responses</p>
-                <p className="font-serif text-3xl font-bold text-amber-700 mt-1">{rsvps.length}</p>
-              </div>
-            </div>
 
             {/* PHASE 4: VISUAL THEMES, VARIANTS & SECTION REORDERING SETTINGS */}
             <div className="p-6 sm:p-8 rounded-3xl bg-cream-card border border-cream-border space-y-6">
@@ -849,6 +808,47 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
         {/* TAB 2: Guest List & Proactive Management */}
         {activeTab === 'guests' && (
           <div className="space-y-6">
+            {/* Share General Link Banner */}
+            <div className="p-4 sm:p-5 rounded-3xl bg-cream-card border border-cream-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+              <div>
+                <p className="font-semibold text-maroon">General Public Link:</p>
+                <p className="font-mono text-mauve text-[11px] truncate max-w-md">{generalShareUrl}</p>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(generalShareUrl);
+                  alert('General invitation link copied!');
+                }}
+                className="px-4 py-2 rounded-full bg-cream border border-cream-border text-maroon font-semibold text-xs hover:border-coral transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                <Copy className="w-3.5 h-3.5 text-coral" />
+                <span>Copy General Link</span>
+              </button>
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Total Guests</p>
+                <p className="font-serif text-3xl font-bold text-maroon mt-1">{guests.length}</p>
+              </div>
+              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Opened Invitations</p>
+                <p className="font-serif text-3xl font-bold text-coral mt-1">
+                  {guests.filter((g) => g.opened_at).length}
+                </p>
+              </div>
+              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Confirmed Attending</p>
+                <p className="font-serif text-3xl font-bold text-emerald-700 mt-1">
+                  {guests.filter((g) => getGuestRsvpStatus(g.id) === 'attending').length}
+                </p>
+              </div>
+              <div className="p-5 rounded-3xl bg-cream-card border border-cream-border text-center">
+                <p className="text-[10px] font-semibold text-mauve uppercase tracking-wider">Total Responses</p>
+                <p className="font-serif text-3xl font-bold text-amber-700 mt-1">{rsvps.length}</p>
+              </div>
+            </div>
             <div className="p-6 rounded-3xl bg-cream-card border border-cream-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="font-serif text-xl font-bold text-maroon">Proactive Guest List</h2>
