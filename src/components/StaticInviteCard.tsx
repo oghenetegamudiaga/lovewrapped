@@ -4,6 +4,9 @@ import { resolveThemeStyles } from '../config/weddingThemes';
 import { getPublicThemeAssetsApi } from '../lib/api';
 import { TextZone } from '../types';
 
+export const TEMPLATE_CARD_COUPLE_NAME_COLOR = '#3A0D22';
+export const TEMPLATE_CARD_DETAIL_TEXT_COLOR = '#000000';
+
 export interface StaticInviteCardProps {
   brideFirstName: string;
   groomFirstName: string;
@@ -108,7 +111,7 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
 
           {/* Absolute Text Zone Container positioned via configured percentage box */}
           <div
-            className="absolute z-10 p-2 sm:p-4 flex flex-col justify-center items-center text-center overflow-hidden pointer-events-none"
+            className="absolute z-10 p-2 flex flex-col justify-center items-center text-center overflow-hidden pointer-events-none"
             style={{
               top: `${zone.top}%`,
               left: `${zone.left}%`,
@@ -116,45 +119,42 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
               height: `${zone.height}%`,
             }}
           >
-            <div className="w-full my-auto px-4 py-3 rounded-xl bg-gradient-to-b from-black/0 via-black/35 to-black/0 space-y-2 text-white overflow-hidden pointer-events-auto">
+            <div className="w-full my-auto px-2 space-y-2.5 overflow-hidden pointer-events-auto">
               <h1
-                className={`text-2xl sm:text-3xl font-bold tracking-wide leading-tight ${serifClass} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`}
-                style={{
-                  color: '#FFFFFF',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.85)',
-                }}
+                className={`text-2xl sm:text-3xl md:text-4xl font-bold tracking-wide leading-tight ${serifClass}`}
+                style={{ color: TEMPLATE_CARD_COUPLE_NAME_COLOR }}
               >
                 {brideFirstName || 'Bride'} & {groomFirstName || 'Groom'}
               </h1>
 
               {customText ? (
                 <p
-                  className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-amber-200 drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.95)]"
-                  style={{ textShadow: '0 1.5px 6px rgba(0,0,0,0.9)' }}
+                  className="text-xs sm:text-sm font-semibold uppercase tracking-widest"
+                  style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
                 >
                   {customText}
                 </p>
               ) : (
                 <p
-                  className="text-[11px] sm:text-xs font-semibold uppercase tracking-widest text-amber-200 opacity-90 drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.95)]"
-                  style={{ textShadow: '0 1.5px 6px rgba(0,0,0,0.9)' }}
+                  className="text-[11px] sm:text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
                 >
                   Save The Date
                 </p>
               )}
 
               <div
-                className="text-xs sm:text-sm font-bold tracking-wider pt-1 flex items-center justify-center gap-1.5 text-amber-300 drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.95)]"
-                style={{ textShadow: '0 1.5px 6px rgba(0,0,0,0.9)' }}
+                className="text-xs sm:text-sm font-bold tracking-wider pt-0.5 flex items-center justify-center gap-1.5"
+                style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
               >
-                <Calendar className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }} />
                 <span>{formattedDate}</span>
               </div>
 
               {venueName && (
                 <p
-                  className="text-[11px] sm:text-xs font-medium text-white/95 truncate max-w-xs mx-auto drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.95)]"
-                  style={{ textShadow: '0 1.5px 6px rgba(0,0,0,0.9)' }}
+                  className="text-[11px] sm:text-xs font-semibold truncate max-w-xs mx-auto"
+                  style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
                 >
                   {venueName} {venueAddress ? `• ${venueAddress}` : ''}
                 </p>
@@ -277,8 +277,8 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
       {/* Footer / Watermark Slot */}
       <div className={`relative z-10 w-full pt-2 flex flex-col items-center justify-center gap-1.5 ${activeTemplateUrl ? '' : 'border-t border-white/10'}`}>
         <p
-          className="text-[10px] tracking-[0.2em] uppercase opacity-75 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
-          style={activeTemplateUrl ? { color: '#FFFFFF', textShadow: '0 1px 4px rgba(0,0,0,0.9)' } : undefined}
+          className="text-[10px] tracking-[0.2em] uppercase font-semibold opacity-85"
+          style={activeTemplateUrl ? { color: TEMPLATE_CARD_DETAIL_TEXT_COLOR } : undefined}
         >
           Formal Invitation To Follow
         </p>
