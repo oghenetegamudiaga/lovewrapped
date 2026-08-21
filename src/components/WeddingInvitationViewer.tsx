@@ -137,7 +137,10 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   onNavigate,
   isSpike = false,
 }) => {
-  const [stage, setStage] = useState<'cover' | 'doors_opening' | 'drone_zooming' | 'view_prompt' | 'unveiled'>('cover');
+  const [stage, setStage] = useState<'loading' | 'cover' | 'doors_opening' | 'drone_zooming' | 'view_prompt' | 'unveiled'>(
+    isSpike ? 'cover' : 'loading'
+  );
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
 
   // Dynamic Theme & Variant Styles Computation
@@ -201,8 +204,46 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const personalizedCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getPublicThemeAssetsApi().then(setThemeAssets).catch(() => {});
-  }, []);
+    if (isSpike) return;
+
+    let isMounted = true;
+    const startTime = Date.now();
+    const minDuration = 1800; // 1.8s minimum smooth loading sequence
+
+    const assetsPromise = getPublicThemeAssetsApi()
+      .then((assets) => {
+        if (isMounted) setThemeAssets(assets);
+      })
+      .catch(() => {});
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progressPercent = Math.min(100, Math.floor((elapsed / minDuration) * 100));
+
+      if (isMounted) {
+        setLoadingProgress(progressPercent);
+      }
+
+      if (elapsed >= minDuration) {
+        clearInterval(interval);
+        assetsPromise.finally(() => {
+          if (isMounted) {
+            setLoadingProgress(100);
+            setTimeout(() => {
+              if (isMounted) {
+                setStage('cover');
+              }
+            }, 200);
+          }
+        });
+      }
+    }, 40);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isSpike]);
 
   const handleDownloadPersonalizedCard = async (format: 'jpeg' | 'png') => {
     if (!personalizedCardRef.current) return;
@@ -734,9 +775,67 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         className={`relative ${stage !== 'unveiled' || isSpike ? 'h-full min-h-screen w-full rounded-none border-0 shadow-none' : 'max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl border shadow-2xl'} overflow-hidden flex flex-col`}
         style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}50` }}
       >
-        {/* Animated Cover & 3D Opening Doors (Scenes 1 & 2) */}
+        {/* Animated Cover, Loading Sequence & 3D Opening Doors */}
         <AnimatePresence mode="wait">
-          {stage !== 'unveiled' && (
+          {stage === 'loading' && (
+            <motion.div
+              key="loading-layer"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden"
+              style={{ backgroundColor: activeTheme.bgColor }}
+            >
+              {/* Subtle Material Grain Texture Overlay */}
+              <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                <filter id="loader-noise">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+                  <feColorMatrix type="saturate" values="0" />
+                </filter>
+                <rect width="100%" height="100%" filter="url(#loader-noise)" />
+              </svg>
+
+              <div className="relative z-10 flex flex-col items-center gap-6 max-w-xs mx-auto">
+                {/* Centered Monogram Ring Emblem */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center shadow-xl"
+                  style={{
+                    borderColor: `${accentColor}80`,
+                    backgroundColor: `${activeTheme.cardBgColor}80`,
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border border-dashed flex items-center justify-center"
+                    style={{ borderColor: `${accentColor}50` }}
+                  >
+                    <span
+                      className={`font-serif font-bold text-lg sm:text-xl tracking-widest ${serifClass}`}
+                      style={{ color: accentColor }}
+                    >
+                      {initials}
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* Thin Horizontal Linear Progress Bar */}
+                <div className="w-40 sm:w-48 h-0.5 rounded-full bg-white/10 overflow-hidden relative">
+                  <div
+                    className="h-full transition-all duration-75 ease-linear rounded-full"
+                    style={{
+                      width: `${loadingProgress}%`,
+                      backgroundColor: accentColor,
+                      boxShadow: `0 0 8px ${accentColor}AA`,
+                    }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {stage !== 'loading' && stage !== 'unveiled' && (
             <motion.div
               key="cover-layer"
               initial={{ opacity: 1 }}
