@@ -2342,9 +2342,9 @@ export const AdminView: React.FC<AdminViewProps> = () => {
               {/* Theme Scene Backdrops Section */}
               <div className="bg-cream-card rounded-3xl border border-cream-border p-6 space-y-6">
                 <div>
-                  <h3 className="font-serif text-lg font-bold text-maroon">Theme Scene Backdrops</h3>
+                  <h3 className="font-serif text-lg font-bold text-maroon">Theme Scene Assets</h3>
                   <p className="text-xs text-mauve">
-                    Upload rich photographic or illustrated backdrop images for each wedding theme. Cover Backdrops render in Scene 1 (Opening Cover), and Reveal Backdrops render in Scene 3 (Save-the-Date Reveal).
+                    Upload theme assets: Foreground Overlays (Scene 1 transparent PNGs), Reveal Backdrops (Scene 3), and Static Card Templates.
                   </p>
                 </div>
 
@@ -2372,18 +2372,18 @@ export const AdminView: React.FC<AdminViewProps> = () => {
 
                         {/* Backdrop Slots */}
                         <div className="space-y-4">
-                          {/* Slot 1: Cover Background */}
+                          {/* Slot 1: Foreground Overlay (Scene 1) */}
                           <div className="space-y-2">
                             <label className="text-[11px] font-semibold text-maroon uppercase tracking-wider block">
-                              Cover Background (Scene 1)
+                              Foreground Overlay (Scene 1)
                             </label>
                             <div className="relative h-28 rounded-xl overflow-hidden border border-cream-border bg-cream-card flex items-center justify-center">
                               {currentAsset?.cover_background_url ? (
                                 <>
                                   <img
                                     src={currentAsset.cover_background_url}
-                                    alt={`${theme.name} Cover Backdrop`}
-                                    className="w-full h-full object-cover"
+                                    alt={`${theme.name} Foreground Overlay`}
+                                    className="w-full h-full object-contain"
                                   />
                                   <div className="absolute inset-0 bg-black/20" />
                                   <button
@@ -2391,7 +2391,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                                     onClick={() => handleThemeAssetRemove(theme.id, 'cover')}
                                     disabled={isUploadingCover}
                                     className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-red-600 text-white transition-colors cursor-pointer"
-                                    title="Remove Cover Backdrop"
+                                    title="Remove Foreground Overlay"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -2401,8 +2401,8 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                                   className="w-full h-full flex flex-col items-center justify-center p-3 text-center"
                                   style={{ backgroundColor: theme.cardBgColor, color: theme.textColor }}
                                 >
-                                  <p className="text-[10px] font-semibold opacity-75">Default Theme Gradient</p>
-                                  <p className="text-[9px] opacity-50 mt-0.5">No custom image uploaded</p>
+                                  <p className="text-[10px] font-semibold opacity-75">No Foreground Overlay</p>
+                                  <p className="text-[9px] opacity-50 mt-0.5">Optional transparent PNG</p>
                                 </div>
                               )}
 
@@ -2415,7 +2415,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                             </div>
 
                             <label className="block w-full">
-                              <span className="sr-only">Choose Cover Backdrop File</span>
+                              <span className="sr-only">Choose Foreground Overlay File</span>
                               <input
                                 type="file"
                                 accept="image/*"
@@ -2433,7 +2433,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                                 className="w-full py-1.5 px-3 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
                               >
                                 <Upload className="w-3.5 h-3.5 text-coral" />
-                                <span>{currentAsset?.cover_background_url ? 'Replace Cover Image' : 'Upload Cover Image'}</span>
+                                <span>{currentAsset?.cover_background_url ? 'Replace Foreground Overlay' : 'Upload Foreground Overlay'}</span>
                               </label>
                             </label>
                           </div>

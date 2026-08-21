@@ -744,9 +744,9 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               transition={{ duration: 0.6 }}
               className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 text-center overflow-hidden [perspective:1200px]"
             >
-              {/* Layer 1: Background Scene Image (Drone Parallax Base) */}
+              {/* Layer 1: Primary Full-Bleed Couple Photo Background (With Drone Parallax Zoom & Cinematic Filter) */}
               <motion.div
-                className="absolute inset-0 z-0 pointer-events-none"
+                className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
                 animate={
                   !isReducedMotion && (stage === 'drone_zooming' || stage === 'view_prompt')
                     ? { scale: 1.15, y: -15 }
@@ -754,66 +754,27 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 }
                 transition={{ duration: 1.6, ease: [0.25, 1, 0.5, 1] }}
               >
-                {themeAssets[activeThemeId]?.cover_background_url ? (
-                  <img
-                    src={themeAssets[activeThemeId]!.cover_background_url!}
-                    alt="Theme Cover Backdrop Scene"
-                    className="w-full h-full object-cover opacity-85"
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full"
-                    style={{
-                      backgroundImage: `radial-gradient(circle at center, ${activeTheme.cardBgColor}, ${activeTheme.bgColor})`,
-                    }}
-                  />
-                )}
-                <div
-                  className="absolute inset-0 bg-gradient-to-t"
-                  style={{
-                    backgroundImage: `linear-gradient(to top, ${activeTheme.bgColor}E6, ${activeTheme.cardBgColor}80, ${activeTheme.bgColor}B3)`,
-                  }}
+                <img
+                  src={coverPhoto}
+                  alt="Couple Portrait Full-Bleed Background"
+                  className="w-full h-full object-cover filter contrast-[1.06] saturate-[1.12] brightness-[0.98]"
                 />
+
+                {/* Top-and-Bottom Contrast Vignette Overlay for Text Legibility */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/30 to-black/85 pointer-events-none z-1" />
+
+                {/* Subtle Cinematic Film Grain Overlay */}
+                <div className="absolute inset-0 opacity-[0.06] pointer-events-none z-2 bg-black/10 mix-blend-overlay" />
               </motion.div>
 
-              {/* Layer 2: Composited Couple Photo Frame (2-Layer Parallax Foreground) */}
-              {(() => {
-                const framePos = activeTheme.coverPhotoFramePosition || {
-                  x: '50%',
-                  y: '42%',
-                  width: '40%',
-                  height: '38%',
-                  borderRadius: '1.25rem',
-                };
-
-                return (
-                  <motion.div
-                    className="absolute z-10 overflow-hidden shadow-2xl border-2 pointer-events-none"
-                    style={{
-                      left: framePos.x,
-                      top: framePos.y,
-                      transform: 'translate(-50%, -50%)',
-                      width: framePos.width,
-                      height: framePos.height,
-                      borderRadius: framePos.borderRadius || '1rem',
-                      borderColor: `${accentColor}80`,
-                    }}
-                    animate={
-                      !isReducedMotion && (stage === 'drone_zooming' || stage === 'view_prompt')
-                        ? { scale: 1.38, y: -32 }
-                        : { scale: 1.0, y: 0 }
-                    }
-                    transition={{ duration: 1.6, ease: [0.25, 1, 0.5, 1] }}
-                  >
-                    <img
-                      src={coverPhoto}
-                      alt="Couple Portrait"
-                      className="w-full h-full object-cover filter brightness-[1.03]"
-                    />
-                    <div className="absolute inset-0 ring-1 ring-inset ring-white/20 pointer-events-none" />
-                  </motion.div>
-                );
-              })()}
+              {/* Layer 2: Optional Repurposed Foreground Overlay Decoration (Florals, Arches, Ornate Frame Edges) */}
+              {themeAssets[activeThemeId]?.cover_background_url && (
+                <img
+                  src={themeAssets[activeThemeId]!.cover_background_url!}
+                  alt="Theme Foreground Overlay"
+                  className="absolute bottom-0 inset-x-0 w-full max-h-[35%] object-contain object-bottom pointer-events-none z-10 opacity-95"
+                />
+              )}
 
               {/* 3D Swinging Door Panels (Scene 2 Transition) */}
               {!isReducedMotion && (
@@ -862,7 +823,13 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                     transition={{ duration: 1, delay: 0.4 }}
                     className="py-2"
                   >
-                    <h1 className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass}`} style={{ color: secondaryColor }}>
+                    <h1
+                      className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass} drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]`}
+                      style={{
+                        color: secondaryColor,
+                        textShadow: `0 0 20px ${accentColor}90, 0 4px 12px rgba(0,0,0,0.85)`,
+                      }}
+                    >
                       {coupleNames}
                     </h1>
                   </motion.div>
