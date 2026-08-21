@@ -2464,6 +2464,7 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async 
 
     let guests: WeddingGuest[] = [];
     let guestEvents: WeddingGuestEvent[] = [];
+    let rsvps: WeddingRSVP[] = [];
 
     if (isSupabaseConfigured && supabase) {
       const { data: gData } = await supabase
@@ -2477,19 +2478,80 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests', requireCoupleAuth, async 
         .from('wedding_guest_events')
         .select('*');
       if (geData) guestEvents = geData;
+
+      const { data: rData } = await supabase
+        .from('wedding_rsvps')
+        .select('*')
+        .eq('wedding_id', weddingId);
+      if (rData) rsvps = rData;
     } else {
       guests = Array.from(weddingGuestsStore.values())
         .filter((g) => g.wedding_id === weddingId)
         .sort((a, b) => a.name.localeCompare(b.name));
+      rsvps = weddingRsvpsStore.get(weddingId) || [];
     }
 
+    const preAddedGuestIds = new Set(guests.map((g) => g.id));
+    const preAddedGuestNames = new Set(guests.map((g) => g.name.toLowerCase().trim()));
+
+    // Find RSVPs that do not belong to a pre-added guest
+    const standaloneRsvps = rsvps.filter(
+      (r) => (!r.guest_id || !preAddedGuestIds.has(r.guest_id)) && !preAddedGuestNames.has(r.guest_name.toLowerCase().trim())
+    );
+
+    // Group standalone RSVPs by guest_id or normalized guest_name
+    const standaloneMap = new Map<string, WeddingRSVP[]>();
+    for (const r of standaloneRsvps) {
+      const key = r.guest_id ? `id_${r.guest_id}` : `name_${r.guest_name.toLowerCase().trim()}`;
+      if (!standaloneMap.has(key)) {
+        standaloneMap.set(key, []);
+      }
+      standaloneMap.get(key)!.push(r);
+    }
+
+    const synthesizedGuests: WeddingGuest[] = [];
+    standaloneMap.forEach((gRsvps) => {
+      const firstRsvp = gRsvps[0];
+      const plusOne = gRsvps.find((r) => r.plus_one_name)?.plus_one_name || null;
+      const dietary = gRsvps.find((r) => r.dietary_notes)?.dietary_notes || null;
+      const earliestCreated = gRsvps.reduce(
+        (min, r) => (r.created_at < min ? r.created_at : min),
+        firstRsvp.created_at
+      );
+
+      const synthGuest: WeddingGuest = {
+        id: firstRsvp.guest_id || `synth_${firstRsvp.id}`,
+        wedding_id: weddingId,
+        name: firstRsvp.guest_name,
+        email: null,
+        unique_link_token: '',
+        plus_one_allowed: !!plusOne,
+        plus_one_name: plusOne,
+        dietary_notes: dietary,
+        added_by: 'self',
+        opened_at: earliestCreated,
+        created_at: earliestCreated,
+        updated_at: earliestCreated,
+      };
+      synthesizedGuests.push(synthGuest);
+    });
+
+    const allGuests = [...guests, ...synthesizedGuests].sort((a, b) => a.name.localeCompare(b.name));
+
     // Attach event_ids array to each guest
-    const guestsWithEvents: WeddingGuestWithEvents[] = guests.map((g) => {
+    const guestsWithEvents: WeddingGuestWithEvents[] = allGuests.map((g) => {
       let event_ids: string[] = [];
-      if (isSupabaseConfigured && supabase) {
-        event_ids = guestEvents.filter((ge) => ge.guest_id === g.id).map((ge) => ge.event_id);
+      if (g.added_by === 'self') {
+        const gRsvps = rsvps.filter(
+          (r) => (r.guest_id && r.guest_id === g.id) || r.guest_name.toLowerCase().trim() === g.name.toLowerCase().trim()
+        );
+        event_ids = gRsvps.map((r) => r.event_id).filter(Boolean) as string[];
       } else {
-        event_ids = weddingGuestEventsStore.get(g.id) || [];
+        if (isSupabaseConfigured && supabase) {
+          event_ids = guestEvents.filter((ge) => ge.guest_id === g.id).map((ge) => ge.event_id);
+        } else {
+          event_ids = weddingGuestEventsStore.get(g.id) || [];
+        }
       }
       return { ...g, event_ids };
     });
@@ -2771,12 +2833,59 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests/export', requireCoupleAuth,
       rsvps = weddingRsvpsStore.get(weddingId) || [];
     }
 
+    const preAddedGuestIds = new Set(guests.map((g) => g.id));
+    const preAddedGuestNames = new Set(guests.map((g) => g.name.toLowerCase().trim()));
+
+    const standaloneRsvps = rsvps.filter(
+      (r) => (!r.guest_id || !preAddedGuestIds.has(r.guest_id)) && !preAddedGuestNames.has(r.guest_name.toLowerCase().trim())
+    );
+
+    const standaloneMap = new Map<string, WeddingRSVP[]>();
+    for (const r of standaloneRsvps) {
+      const key = r.guest_id ? `id_${r.guest_id}` : `name_${r.guest_name.toLowerCase().trim()}`;
+      if (!standaloneMap.has(key)) {
+        standaloneMap.set(key, []);
+      }
+      standaloneMap.get(key)!.push(r);
+    }
+
+    const synthesizedGuests: WeddingGuest[] = [];
+    standaloneMap.forEach((gRsvps) => {
+      const firstRsvp = gRsvps[0];
+      const plusOne = gRsvps.find((r) => r.plus_one_name)?.plus_one_name || null;
+      const dietary = gRsvps.find((r) => r.dietary_notes)?.dietary_notes || null;
+      const earliestCreated = gRsvps.reduce(
+        (min, r) => (r.created_at < min ? r.created_at : min),
+        firstRsvp.created_at
+      );
+
+      const synthGuest: WeddingGuest = {
+        id: firstRsvp.guest_id || `synth_${firstRsvp.id}`,
+        wedding_id: weddingId,
+        name: firstRsvp.guest_name,
+        email: null,
+        unique_link_token: '',
+        plus_one_allowed: !!plusOne,
+        plus_one_name: plusOne,
+        dietary_notes: dietary,
+        added_by: 'self',
+        opened_at: earliestCreated,
+        created_at: earliestCreated,
+        updated_at: earliestCreated,
+      };
+      synthesizedGuests.push(synthGuest);
+    });
+
+    const allExportGuests = [...guests, ...synthesizedGuests].sort((a, b) => a.name.localeCompare(b.name));
+
     const csvRows = [
-      ['Guest Name', 'Email', 'Plus One Allowed', 'Plus One Name', 'Dietary Notes', 'Opened At', 'RSVP Status', 'Guest Count', 'Personal Message', 'Unique Link Token'],
+      ['Guest Name', 'Email', 'Plus One Allowed', 'Plus One Name', 'Dietary Notes', 'Opened At', 'RSVP Status', 'Guest Count', 'Personal Message', 'Added By', 'Unique Link Token'],
     ];
 
-    for (const g of guests) {
-      const gRsvps = rsvps.filter((r) => r.guest_id === g.id);
+    for (const g of allExportGuests) {
+      const gRsvps = rsvps.filter(
+        (r) => (r.guest_id && r.guest_id === g.id) || r.guest_name.toLowerCase().trim() === g.name.toLowerCase().trim()
+      );
       const isAttending = gRsvps.some((r) => r.attending);
       const hasResponded = gRsvps.length > 0;
       const status = hasResponded ? (isAttending ? 'Attending' : 'Declined') : 'Pending';
@@ -2793,7 +2902,8 @@ apiRouter.get('/weddings/dashboard/:weddingId/guests/export', requireCoupleAuth,
         status,
         String(guestCount),
         `"${messages.replace(/"/g, '""')}"`,
-        g.unique_link_token,
+        g.added_by || 'couple',
+        g.unique_link_token || '',
       ]);
     }
 

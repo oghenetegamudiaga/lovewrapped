@@ -947,7 +947,14 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         return (
                           <tr key={g.id} className="hover:bg-cream/40 transition-colors">
                             <td className="py-4 px-6">
-                              <p className="font-semibold text-maroon">{g.name}</p>
+                              <div className="flex items-center gap-1.5">
+                                <p className="font-semibold text-maroon">{g.name}</p>
+                                {g.added_by === 'self' && (
+                                  <span className="text-[9px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                    Self-RSVP
+                                  </span>
+                                )}
+                              </div>
                               {g.email && <p className="text-[11px] text-mauve font-mono">{g.email}</p>}
                               {gDietary && (
                                 <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mt-1 inline-block">
@@ -994,16 +1001,20 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                               </span>
                             </td>
                             <td className="py-4 px-6">
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(personalizedUrl);
-                                  alert(`Personalized link for ${g.name} copied!`);
-                                }}
-                                className="px-3 py-1.5 rounded-xl bg-cream border border-cream-border text-maroon hover:border-coral font-mono text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer"
-                              >
-                                <LinkIcon className="w-3 h-3 text-coral" />
-                                <span>Copy Guest Link</span>
-                              </button>
+                              {g.unique_link_token ? (
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(personalizedUrl);
+                                    alert(`Personalized link for ${g.name} copied!`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-cream border border-cream-border text-maroon hover:border-coral font-mono text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <LinkIcon className="w-3 h-3 text-coral" />
+                                  <span>Copy Guest Link</span>
+                                </button>
+                              ) : (
+                                <span className="text-mauve text-[11px] font-mono">Public Link Response</span>
+                              )}
                             </td>
                             <td className="py-4 px-6 text-right space-x-2">
                               <button
