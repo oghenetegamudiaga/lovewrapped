@@ -137,12 +137,11 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   onNavigate,
   isSpike = false,
 }) => {
-  const [stage, setStage] = useState<'loading' | 'cover' | 'unsealing' | 'hero_hold' | 'detail_reveal' | 'detail_hold' | 'action_entrance' | 'ready'>(
+  const [stage, setStage] = useState<'loading' | 'cover' | 'unsealing' | 'ready'>(
     isSpike ? 'ready' : 'loading'
   );
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const [isUnsealing, setIsUnsealing] = useState<boolean>(false);
-  const heroHoldTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
 
   // Dynamic Theme & Variant Styles Computation
@@ -360,41 +359,6 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   const isReducedMotion = prefersReducedMotion;
 
-  const handleTransitionToDetail = useCallback(() => {
-    if (heroHoldTimerRef.current) {
-      clearTimeout(heroHoldTimerRef.current);
-      heroHoldTimerRef.current = null;
-    }
-
-    if (isReducedMotion) {
-      setStage('ready');
-    } else {
-      setStage('detail_reveal');
-      setTimeout(() => {
-        setStage('action_entrance');
-        setTimeout(() => {
-          setStage('ready');
-        }, 500);
-      }, 800);
-    }
-  }, [isReducedMotion]);
-
-  useEffect(() => {
-    if (stage !== 'hero_hold') return;
-
-    // 4-second auto-advance timer for hero hold
-    heroHoldTimerRef.current = setTimeout(() => {
-      handleTransitionToDetail();
-    }, 4000);
-
-    return () => {
-      if (heroHoldTimerRef.current) {
-        clearTimeout(heroHoldTimerRef.current);
-        heroHoldTimerRef.current = null;
-      }
-    };
-  }, [stage, handleTransitionToDetail]);
-
   const handleUnseal = () => {
     if (isUnsealing || stage !== 'cover') return;
     setIsUnsealing(true);
@@ -407,7 +371,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
       setTimeout(() => {
         setStage('ready');
         setIsUnsealing(false);
-      }, 1800);
+      }, 1200);
     }
   };
 
@@ -1173,19 +1137,14 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           )}
         </AnimatePresence>
 
-        {/* Scenes 3 & 4 (Phase 3 Hero Hold, Phase 4 Detail Card & Phase 5 Action Bar) */}
-        {(stage === 'hero_hold' || stage === 'detail_reveal' || stage === 'detail_hold' || stage === 'action_entrance' || stage === 'ready') && (
+        {/* Scene 3 & 4 (Terminal Resting State: Full-Bleed Photo Screen & WedX Action Bar) */}
+        {stage === 'ready' && (
           <motion.div
             key="unveiled-content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            onClick={() => {
-              if (stage === 'hero_hold') {
-                handleTransitionToDetail();
-              }
-            }}
-            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none cursor-pointer"
+            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none"
             style={{ backgroundColor: activeTheme.bgColor }}
           >
             {/* Phase 5: Subtle Screen Wake-Up Pulse Overlay */}
@@ -1224,78 +1183,20 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
             {/* Separately Padded Foreground / Text Layer Stacked On Top (z-10) */}
             <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Phase 3 Hero Composition (Visible during hero_hold) */}
-              {stage === 'hero_hold' && (
-                <>
-                  {/* Layer 1: Mid Layer - Couple Photo Full-Bleed Cover Treatment with Ambient Parallax (9s loop) */}
-                  {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && (
-                    <div className="pt-2 px-1">
-                      <motion.div
-                        animate={
-                          !isReducedMotion
-                            ? { scale: [1, 1.025, 1], y: [0, -3, 0] }
-                            : { scale: 1, y: 0 }
-                        }
-                        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-                        className="relative w-full h-[260px] sm:h-[340px] rounded-3xl overflow-hidden shadow-2xl pointer-events-none mx-auto border border-white/15"
-                      >
-                        <img
-                          src={wedding.cover_photo_url}
-                          alt={`${coupleNames} Portrait`}
-                          className="w-full h-full object-cover object-center"
-                        />
-                        {/* Top & Bottom Subtle Gradient Overlays for contrast without overall dimming */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/50 pointer-events-none" />
-                      </motion.div>
-                    </div>
-                  )}
-
-                  {/* Hero Header & Tap-to-Proceed Prompt */}
-                  <div className="text-center space-y-4 pt-2 border-b border-white/10 pb-8">
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider"
-                      style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
-                    >
-                      Official Invitation
-                    </span>
-
-                    {guest && (
-                      <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
-                        Warm Welcome, {guest.name}
-                      </p>
-                    )}
-
-                    <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
-                      {coupleNames}
-                    </h2>
-                    <p className="text-xs italic opacity-80">
-                      Are getting married!
-                    </p>
-
-                    <p className="text-[10px] uppercase tracking-widest opacity-60 animate-pulse pt-2" style={{ color: accentColor }}>
-                      Tap anywhere to view RSVP & Details
-                    </p>
-                  </div>
-                </>
-              )}
-
-              {/* Phase 4 Focused Detail & RSVP Card Hold (Visible during detail_reveal, detail_hold, action_entrance, ready) */}
-              {(stage === 'detail_reveal' || stage === 'detail_hold' || stage === 'action_entrance' || stage === 'ready') && (
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
-                  className="space-y-6"
-                >
-                  {/* Subtle Couple Context Header */}
-                  <div className="text-center space-y-1 pb-4 border-b border-white/10">
-                    <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accentColor }}>
-                      Celebration of {coupleNames}
-                    </p>
-                    <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
-                      Event Details & RSVP
-                    </h3>
-                  </div>
+              {/* Couple Context Header */}
+              <div className="text-center space-y-1 pb-4 border-b border-white/10">
+                <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accentColor }}>
+                  Celebration of {coupleNames}
+                </p>
+                <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                  {coupleNames}
+                </h2>
+                {guest && (
+                  <p className="text-xs font-semibold uppercase tracking-widest pt-1" style={{ color: accentColor }}>
+                    Warm Welcome, {guest.name}
+                  </p>
+                )}
+              </div>
 
               {/* LIVE COUNTDOWN TIMER BANNER */}
               <div
@@ -1345,42 +1246,63 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               <div className="space-y-6">
                 {sectionOrder.map((key) => renderSectionByKey(key))}
               </div>
-            </motion.div>
-          )}
 
-          {/* Phase 5: WedX-Style Bottom Action Bar (RSVP, Registry, Media) */}
-          {(stage === 'action_entrance' || stage === 'ready') && (
-            <motion.div
-              initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="sticky bottom-0 z-40 w-full p-4 border-t backdrop-blur-md flex items-center justify-between gap-2.5 shadow-2xl shrink-0"
-              style={{
-                backgroundColor: `${activeTheme.cardBgColor}F5`,
-                borderColor: `${accentColor}40`,
-              }}
-            >
-              {/* 1. RSVP Button */}
-              <button
-                type="button"
-                onClick={() => setIsRsvpModalOpen(true)}
-                className="flex-1 py-2.5 px-4 rounded-full font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+              {/* WedX-Style Bottom Action Bar (RSVP, Registry, Media) */}
+              <motion.div
+                initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="sticky bottom-0 z-40 w-full p-4 border-t backdrop-blur-md flex items-center justify-between gap-2.5 shadow-2xl shrink-0 rounded-2xl"
+                style={{
+                  backgroundColor: `${activeTheme.cardBgColor}F5`,
+                  borderColor: `${accentColor}40`,
+                }}
               >
-                <Heart className="w-3.5 h-3.5 fill-current" />
-                <span>RSVP</span>
-              </button>
+                {/* 1. RSVP Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsRsvpModalOpen(true)}
+                  className="flex-1 py-2.5 px-4 rounded-full font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                  style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                >
+                  <Heart className="w-3.5 h-3.5 fill-current" />
+                  <span>RSVP</span>
+                </button>
 
-              {/* 2. Registry Button (Only shown if registry_url or registry_info is non-empty) */}
-              {hasRegistryInfo && (
+                {/* 2. Registry Button (Only shown if registry_url or registry_info is non-empty) */}
+                {hasRegistryInfo && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sanitizedUrl = getSanitizedRegistryUrl(wedding?.registry_url || wedding?.registry_info);
+                      if (sanitizedUrl) {
+                        window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
+                      } else {
+                        const el = document.getElementById('registry-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
+                    style={{
+                      backgroundColor: `${activeTheme.bgColor}99`,
+                      borderColor: `${accentColor}50`,
+                      color: secondaryColor,
+                    }}
+                    title="Gift Registry"
+                  >
+                    <Gift className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                    <span>Registry</span>
+                  </button>
+                )}
+
+                {/* 3. Media (Gallery) Button */}
                 <button
                   type="button"
                   onClick={() => {
-                    const sanitizedUrl = getSanitizedRegistryUrl(wedding?.registry_url || wedding?.registry_info);
-                    if (sanitizedUrl) {
-                      window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
+                    if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
+                      setLightboxPhoto(wedding.gallery_photos[0]);
                     } else {
-                      const el = document.getElementById('registry-section');
+                      const el = document.getElementById('gallery-section');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }
                   }}
@@ -1390,37 +1312,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                     borderColor: `${accentColor}50`,
                     color: secondaryColor,
                   }}
-                  title="Gift Registry"
+                  title="Photo Gallery"
                 >
-                  <Gift className="w-3.5 h-3.5" style={{ color: accentColor }} />
-                  <span>Registry</span>
+                  <Image className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                  <span>Media</span>
                 </button>
-              )}
-
-              {/* 3. Media (Gallery) Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
-                    setLightboxPhoto(wedding.gallery_photos[0]);
-                  } else {
-                    const el = document.getElementById('gallery-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className="px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
-                style={{
-                  backgroundColor: `${activeTheme.bgColor}99`,
-                  borderColor: `${accentColor}50`,
-                  color: secondaryColor,
-                }}
-                title="Photo Gallery"
-              >
-                <Image className="w-3.5 h-3.5" style={{ color: accentColor }} />
-                <span>Media</span>
-              </button>
-            </motion.div>
-          )}
+              </motion.div>
 
           {/* Footer Replay */}
           <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs">
