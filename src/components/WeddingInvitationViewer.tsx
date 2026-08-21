@@ -137,10 +137,11 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   onNavigate,
   isSpike = false,
 }) => {
-  const [stage, setStage] = useState<'loading' | 'cover' | 'doors_opening' | 'drone_zooming' | 'view_prompt' | 'unveiled'>(
+  const [stage, setStage] = useState<'loading' | 'cover' | 'unsealing' | 'doors_opening' | 'drone_zooming' | 'view_prompt' | 'unveiled'>(
     isSpike ? 'cover' : 'loading'
   );
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
+  const [isUnsealing, setIsUnsealing] = useState<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
 
   // Dynamic Theme & Variant Styles Computation
@@ -343,16 +344,18 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const isReducedMotion = prefersReducedMotion;
 
   const handleUnseal = () => {
+    if (isUnsealing || stage !== 'cover') return;
+    setIsUnsealing(true);
+
     if (isReducedMotion) {
-      setStage('view_prompt');
+      setStage('unveiled');
+      setIsUnsealing(false);
     } else {
-      setStage('doors_opening');
+      setStage('unsealing');
       setTimeout(() => {
-        setStage('drone_zooming');
-      }, 1000);
-      setTimeout(() => {
-        setStage('view_prompt');
-      }, 2600);
+        setStage('unveiled');
+        setIsUnsealing(false);
+      }, 1900);
     }
   };
 
@@ -908,10 +911,11 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
                     <motion.button
                       type="button"
+                      disabled={isUnsealing || stage !== 'cover'}
                       onClick={handleUnseal}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full cursor-pointer flex items-center justify-center shadow-[0_12px_32px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.35),inset_0_-4px_8px_rgba(0,0,0,0.5)] border-2 transition-transform"
+                      className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full cursor-pointer flex items-center justify-center shadow-[0_12px_32px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.35),inset_0_-4px_8px_rgba(0,0,0,0.5)] border-2 transition-transform disabled:pointer-events-none"
                       style={{
                         backgroundColor: activeTheme.cardBgColor,
                         borderColor: accentColor,
@@ -978,6 +982,141 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   </button>
                 </motion.div>
               )}
+            </motion.div>
+          )}
+
+          {/* Phase 2: Tap-to-Open Layered Reveal Sequence */}
+          {stage === 'unsealing' && (
+            <motion.div
+              key="unsealing-layer"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="absolute inset-0 z-40 flex flex-col items-center justify-between p-6 text-center overflow-hidden [perspective:1200px]"
+              style={{ backgroundColor: activeTheme.bgColor }}
+            >
+              {/* Layer 1: Background Camera Push (2-3% scale up over full duration) */}
+              <motion.div
+                className="absolute inset-0 z-0 pointer-events-none"
+                initial={{ scale: 1 }}
+                animate={{ scale: 1.03 }}
+                transition={{ duration: 2.0, ease: 'easeOut' }}
+              >
+                {/* Material Texture Overlay */}
+                <svg className="w-full h-full opacity-15 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                  <filter id="unseal-noise">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+                    <feColorMatrix type="saturate" values="0" />
+                  </filter>
+                  <rect width="100%" height="100%" filter="url(#unseal-noise)" />
+                </svg>
+              </motion.div>
+
+              {/* Layer 2: Seam & Wax Seal Dissolve (Fades out & scales down over 0.5s) */}
+              <motion.div
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none"
+                initial={{ opacity: 1, scale: 1 }}
+                animate={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              >
+                {/* Vertical Ribbon Seam */}
+                <div
+                  className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1 sm:w-1.5 shadow-[0_0_12px_rgba(0,0,0,0.5)]"
+                  style={{
+                    background: `linear-gradient(to bottom, transparent, ${accentColor}, transparent)`,
+                    opacity: 0.8,
+                  }}
+                />
+                {/* 3D Wax Seal Emblem */}
+                <div
+                  className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 flex items-center justify-center shadow-2xl"
+                  style={{
+                    backgroundColor: activeTheme.cardBgColor,
+                    borderColor: accentColor,
+                  }}
+                >
+                  <div
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-dashed flex items-center justify-center"
+                    style={{
+                      borderColor: `${accentColor}70`,
+                      backgroundColor: `${activeTheme.bgColor}D9`,
+                    }}
+                  >
+                    <span className={`font-serif font-bold text-2xl sm:text-3xl tracking-widest ${serifClass}`} style={{ color: accentColor }}>
+                      {initials}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Layers 3 & 4: Staggered Content Reveal Timeline */}
+              <div className="relative z-30 my-auto space-y-4 max-w-xs mx-auto text-center">
+                {/* Layer 4a: Eyebrow Text (Delay 0.65s) */}
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.65, ease: 'easeOut' }}
+                  className="text-[11px] tracking-[0.3em] uppercase font-semibold"
+                  style={{ color: accentColor }}
+                >
+                  {guest ? `Special Invitation For ${guest.name}` : 'Together With Their Families'}
+                </motion.p>
+
+                {/* Layer 3: Title / Couple Names Glow-In (Delay 0.35s, Blur-to-Sharp & Soft Glow) */}
+                <motion.div
+                  initial={{ opacity: 0, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  transition={{ duration: 0.6, delay: 0.35, ease: 'easeOut' }}
+                  className="py-1"
+                >
+                  <h1
+                    className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass}`}
+                    style={{
+                      color: secondaryColor,
+                      textShadow: `0 0 24px ${accentColor}AA, 0 2px 8px rgba(0,0,0,0.7)`,
+                    }}
+                  >
+                    {coupleNames}
+                  </h1>
+                </motion.div>
+
+                {/* Layer 4b: Subtitle Text (Delay 0.75s) */}
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.75, ease: 'easeOut' }}
+                  className="text-xs opacity-80 italic font-light"
+                >
+                  request the honor of your presence at their wedding celebration
+                </motion.p>
+
+                {/* Layer 4c: Date Badge (Delay 0.85s) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.85, ease: 'easeOut' }}
+                  className="inline-flex py-1.5 px-3.5 rounded-full border text-[10px] items-center gap-1.5"
+                  style={{ backgroundColor: `${activeTheme.bgColor}E6`, borderColor: `${accentColor}40`, color: accentColor }}
+                >
+                  <Calendar className="w-3 h-3" />
+                  <span>
+                    {(activeEvents[0] ? formatEventDateTime(activeEvents[0].date, activeEvents[0].time).formattedDate : '').toUpperCase()}
+                  </span>
+                </motion.div>
+
+                {/* Layer 4d: Venue Details (Delay 0.95s) */}
+                {activeEvents[0]?.venue_name && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.95, ease: 'easeOut' }}
+                    className="text-[11px] opacity-75 uppercase tracking-wider font-medium"
+                    style={{ color: secondaryColor }}
+                  >
+                    {activeEvents[0].venue_name}
+                  </motion.p>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
