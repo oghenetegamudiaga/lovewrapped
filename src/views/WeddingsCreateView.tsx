@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, ArrowRight, ArrowLeft, Upload, CheckCircle2, ShieldCheck, Heart, Calendar, MapPin, DollarSign, Layers, Plus, Trash2, Palette, Type, Download, Image, FileText, Music, Volume2, VolumeX } from 'lucide-react';
 import { WEDDING_THEMES, ACCENT_COLOR_VARIANTS, FONT_PAIRING_VARIANTS } from '../config/weddingThemes';
 import { CreateWeddingPayload, WeddingEventPayload, CoupleAccount, ThemeAssetsMap } from '../types';
-import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi, getPublicThemeAssetsApi } from '../lib/api';
+import { createWeddingPaymentApi, verifyWeddingPaymentApi, createFreeWeddingApi, getPublicThemeAssetsApi, uploadWeddingCoverPhotoApi, uploadWeddingGalleryPhotoApi } from '../lib/api';
 import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants';
 import { StaticInviteCard } from '../components/StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
@@ -64,7 +64,10 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [createdShareUrl, setCreatedShareUrl] = useState<string | null>(null);
   const [createdWeddingId, setCreatedWeddingId] = useState<string | null>(null);
 
-  // Compress & upload image payload for Premium
+  const [isUploadingCoverPhoto, setIsUploadingCoverPhoto] = useState(false);
+  const [isUploadingGalleryPhoto, setIsUploadingGalleryPhoto] = useState(false);
+
+  // Compress & upload image payload to Supabase Storage for Premium Cover Photo
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -73,6 +76,8 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
       alert('Image file size must be smaller than 10MB.');
       return;
     }
+
+    setIsUploadingCoverPhoto(true);
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -88,11 +93,28 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
         if (ctx) {
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-          setCoverPhotoUrl(compressedUrl);
+
+          // Upload compressed image binary to Supabase Storage immediately
+          uploadWeddingCoverPhotoApi(compressedUrl)
+            .then((res) => {
+              if (res.publicUrl || res.url) {
+                setCoverPhotoUrl(res.publicUrl || res.url);
+              }
+            })
+            .catch((err) => {
+              alert(err.message || 'Failed to upload cover photo to storage.');
+            })
+            .finally(() => {
+              setIsUploadingCoverPhoto(false);
+            });
+        } else {
+          setIsUploadingCoverPhoto(false);
         }
       };
+      img.onerror = () => setIsUploadingCoverPhoto(false);
       img.src = event.target?.result as string;
     };
+    reader.onerror = () => setIsUploadingCoverPhoto(false);
     reader.readAsDataURL(file);
   };
 
@@ -108,9 +130,15 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
     }
 
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    setIsUploadingGalleryPhoto(true);
 
+    let completedCount = 0;
     filesToUpload.forEach((file: File) => {
-      if (file.size > 10 * 1024 * 1024) return;
+      if (file.size > 10 * 1024 * 1024) {
+        completedCount++;
+        if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
@@ -125,10 +153,37 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
           if (ctx) {
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
-            setGalleryPhotos((prev) => [...prev, compressedUrl].slice(0, 10));
+
+            uploadWeddingGalleryPhotoApi(compressedUrl)
+              .then((res) => {
+                const storageUrl = res.publicUrl || res.url;
+                if (storageUrl) {
+                  setGalleryPhotos((prev) => [...prev, storageUrl].slice(0, 10));
+                }
+              })
+              .catch((err) => {
+                console.error('Gallery photo upload error:', err);
+              })
+              .finally(() => {
+                completedCount++;
+                if (completedCount >= filesToUpload.length) {
+                  setIsUploadingGalleryPhoto(false);
+                }
+              });
+          } else {
+            completedCount++;
+            if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
           }
         };
+        img.onerror = () => {
+          completedCount++;
+          if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
+        };
         img.src = event.target?.result as string;
+      };
+      reader.onerror = () => {
+        completedCount++;
+        if (completedCount >= filesToUpload.length) setIsUploadingGalleryPhoto(false);
       };
       reader.readAsDataURL(file);
     });
@@ -870,17 +925,32 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                           <button
                             type="button"
                             onClick={() => setCoverPhotoUrl('')}
-                            className="absolute top-1 right-1 bg-maroon/80 text-cream text-[10px] p-1 rounded-full"
+                            className="absolute top-1 right-1 bg-maroon/80 text-cream text-[10px] p-1 rounded-full cursor-pointer"
                           >
                             ✕
                           </button>
+                          {isUploadingCoverPhoto && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-[10px] font-semibold gap-1">
+                              <Sparkles className="w-3.5 h-3.5 animate-spin text-amber-300" />
+                              <span>Uploading...</span>
+                            </div>
+                          )}
                         </div>
                       ) : (
-                        <label className="w-full p-6 border-2 border-dashed border-cream-border rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-cream/60 transition-colors">
-                          <Upload className="w-6 h-6 text-mauve mb-2" />
-                          <span className="text-xs font-semibold text-maroon">Upload Cover Photo</span>
-                          <span className="text-[10px] text-mauve mt-1">PNG, JPG up to 10MB</span>
-                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                        <label className="w-full p-6 border-2 border-dashed border-cream-border rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-cream/60 transition-colors relative overflow-hidden">
+                          {isUploadingCoverPhoto ? (
+                            <div className="flex flex-col items-center justify-center py-2 text-maroon">
+                              <Sparkles className="w-6 h-6 animate-spin text-coral mb-2" />
+                              <span className="text-xs font-semibold">Uploading Cover Photo to Storage...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="w-6 h-6 text-mauve mb-2" />
+                              <span className="text-xs font-semibold text-maroon">Upload Cover Photo</span>
+                              <span className="text-[10px] text-mauve mt-1">PNG, JPG up to 10MB</span>
+                              <input type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploadingCoverPhoto} className="hidden" />
+                            </>
+                          )}
                         </label>
                       )}
                     </div>
@@ -908,16 +978,26 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
 
                     {galleryPhotos.length < 10 && (
                       <label className="w-full p-4 border-2 border-dashed border-cream-border hover:border-coral rounded-2xl flex flex-col items-center justify-center cursor-pointer bg-cream/30 hover:bg-cream/70 transition-all">
-                        <Upload className="w-5 h-5 text-mauve mb-1" />
-                        <span className="text-xs font-semibold text-maroon">Add Pre-Wedding Photos</span>
-                        <span className="text-[10px] text-mauve mt-0.5">Select up to 10 photos for your gallery grid</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleGalleryPhotoUpload}
-                          className="hidden"
-                        />
+                        {isUploadingGalleryPhoto ? (
+                          <div className="flex items-center justify-center gap-2 text-xs font-semibold text-maroon py-1">
+                            <Sparkles className="w-4 h-4 animate-spin text-coral" />
+                            <span>Uploading Gallery Photos to Storage...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5 text-mauve mb-1" />
+                            <span className="text-xs font-semibold text-maroon">Add Pre-Wedding Photos</span>
+                            <span className="text-[10px] text-mauve mt-0.5">Select up to 10 photos for your gallery grid</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              disabled={isUploadingGalleryPhoto}
+                              onChange={handleGalleryPhotoUpload}
+                              className="hidden"
+                            />
+                          </>
+                        )}
                       </label>
                     )}
 

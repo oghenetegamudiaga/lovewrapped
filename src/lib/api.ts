@@ -572,4 +572,22 @@ export async function updateAdminThemeAssetsApi(
   });
 }
 
+/**
+ * Upload couple cover photo binary to Supabase Storage.
+ */
+export async function uploadWeddingCoverPhotoApi(dataUrl: string): Promise<{ url: string; publicUrl: string }> {
+  return apiFetch<{ url: string; publicUrl: string }>('/weddings/upload-cover-photo', {
+    method: 'POST',
+    body: JSON.stringify({ coverPhoto: dataUrl }),
+  });
+}
 
+/**
+ * Upload wedding gallery photo binary to Supabase Storage.
+ */
+export async function uploadWeddingGalleryPhotoApi(dataUrl: string): Promise<{ url: string; publicUrl: string }> {
+  return apiFetch<{ url: string; publicUrl: string }>('/weddings/upload-gallery-photo', {
+    method: 'POST',
+    body: JSON.stringify({ galleryPhoto: dataUrl }),
+  });
+}

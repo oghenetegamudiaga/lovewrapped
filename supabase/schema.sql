@@ -363,6 +363,15 @@ CREATE POLICY "Public read access for theme-assets bucket"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'theme-assets');
 
+-- Storage Bucket Setup for Wedding Cover & Gallery Photos (Public Read, Server/Service Role Write Only)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('wedding-cover-photos', 'wedding-cover-photos', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public read access for wedding-cover-photos bucket"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'wedding-cover-photos');
+
 
 
 

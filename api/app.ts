@@ -1867,6 +1867,109 @@ apiRouter.post('/weddings/create-free', requireCoupleAuth, async (req, res) => {
   }
 });
 
+/**
+ * Helper to upload couple cover photo / gallery photo binary to Supabase storage 'wedding-cover-photos' bucket.
+ * Decodes base64 data URL, validates 10MB binary size limit and image MIME type, uploads to Storage, and returns public URL.
+ */
+async function processWeddingPhotoUpload(
+  prefix: 'cover' | 'gallery',
+  payloadUrl: string
+): Promise<string> {
+  const trimmed = payloadUrl.trim();
+  if (!trimmed.startsWith('data:')) {
+    // Already an HTTP/HTTPS public URL
+    return trimmed;
+  }
+
+  // Parse MIME type & base64 content
+  const matches = trimmed.match(/^data:([a-zA-Z0-9\/\-+.]+);base64,(.+)$/);
+  let mimeType = 'image/jpeg';
+  let base64Data = trimmed;
+
+  if (matches && matches.length === 3) {
+    mimeType = matches[1];
+    base64Data = matches[2];
+  } else {
+    base64Data = trimmed.split(',')[1] || trimmed;
+  }
+
+  // Server-side MIME type validation
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowedMimeTypes.includes(mimeType.toLowerCase())) {
+    throw new Error('Invalid image file type. Only JPEG, PNG, WEBP, and GIF images are allowed.');
+  }
+
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  // Strict 10MB binary size check before attempting storage upload
+  if (buffer.length > 10 * 1024 * 1024) {
+    const sizeMb = (buffer.length / (1024 * 1024)).toFixed(2);
+    throw new Error(`Image size (${sizeMb}MB) exceeds the 10MB maximum limit.`);
+  }
+
+  if (isSupabaseConfigured && supabase) {
+    const ext = (mimeType.split('/')[1] || 'jpeg').replace(/[^a-zA-Z0-9]/g, '');
+    const cleanFileName = `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('wedding-cover-photos')
+      .upload(cleanFileName, buffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error(`Supabase wedding-cover-photos storage upload error for ${prefix}:`, uploadError);
+      throw new Error(`Failed to upload ${prefix} image to Supabase storage: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('wedding-cover-photos')
+      .getPublicUrl(cleanFileName);
+
+    return publicUrlData.publicUrl;
+  }
+
+  // Fallback when Supabase storage is not configured (transient memory)
+  return trimmed;
+}
+
+// POST /api/weddings/upload-cover-photo — Upload couple cover photo to Supabase storage
+apiRouter.post('/weddings/upload-cover-photo', requireCoupleAuth, async (req, res) => {
+  try {
+    const { coverPhoto, image } = req.body;
+    const rawData = coverPhoto || image;
+
+    if (!rawData || typeof rawData !== 'string' || !rawData.trim()) {
+      return res.status(400).json({ message: 'Cover photo image data is required.' });
+    }
+
+    const publicUrl = await processWeddingPhotoUpload('cover', rawData);
+    return res.json({ url: publicUrl, publicUrl });
+  } catch (err: any) {
+    console.error('Error uploading wedding cover photo:', err);
+    return res.status(400).json({ message: err.message || 'Failed to upload cover photo.' });
+  }
+});
+
+// POST /api/weddings/upload-gallery-photo — Upload gallery photo to Supabase storage
+apiRouter.post('/weddings/upload-gallery-photo', requireCoupleAuth, async (req, res) => {
+  try {
+    const { galleryPhoto, image } = req.body;
+    const rawData = galleryPhoto || image;
+
+    if (!rawData || typeof rawData !== 'string' || !rawData.trim()) {
+      return res.status(400).json({ message: 'Gallery photo image data is required.' });
+    }
+
+    const publicUrl = await processWeddingPhotoUpload('gallery', rawData);
+    return res.json({ url: publicUrl, publicUrl });
+  } catch (err: any) {
+    console.error('Error uploading wedding gallery photo:', err);
+    return res.status(400).json({ message: err.message || 'Failed to upload gallery photo.' });
+  }
+});
+
 // POST /api/weddings/create-payment — Create wedding record (is_paid: false) & initialize Paystack transaction
 apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitializeLimiter, async (req, res) => {
   try {
