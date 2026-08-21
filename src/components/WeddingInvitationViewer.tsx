@@ -200,10 +200,26 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
   const [rsvpSuccess, setRsvpSuccess] = useState(false);
   const [rsvpError, setRsvpError] = useState<string | null>(null);
+  const [isRsvpModalOpen, setIsRsvpModalOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const [isDownloadingCard, setIsDownloadingCard] = useState<boolean>(false);
   const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
   const personalizedCardRef = useRef<HTMLDivElement>(null);
+
+  const getSanitizedRegistryUrl = (rawUrl?: string | null): string | null => {
+    if (!rawUrl || !rawUrl.trim()) return null;
+    const trimmed = rawUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.includes(':') && !trimmed.startsWith('http')) return null;
+    return `https://${trimmed}`;
+  };
+
+  const hasRegistryInfo = !!(
+    (wedding?.registry_url && wedding.registry_url.trim().length > 0) ||
+    (wedding?.registry_info && wedding.registry_info.trim().length > 0)
+  );
 
   useEffect(() => {
     if (isSpike) return;
@@ -1215,9 +1231,9 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               {/* Phase 3 Hero Composition (Visible during hero_hold) */}
               {stage === 'hero_hold' && (
                 <>
-                  {/* Layer 1: Mid Layer - Couple Photo with Ambient Parallax (9s continuous loop out-of-sync) */}
+                  {/* Layer 1: Mid Layer - Couple Photo Full-Bleed Cover Treatment with Ambient Parallax (9s loop) */}
                   {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && (
-                    <div className="pt-2">
+                    <div className="pt-2 px-1">
                       <motion.div
                         animate={
                           !isReducedMotion
@@ -1225,15 +1241,15 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                             : { scale: 1, y: 0 }
                         }
                         transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-                        className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border pointer-events-none mx-auto"
-                        style={{ borderColor: `${accentColor}40` }}
+                        className="relative w-full h-[260px] sm:h-[340px] rounded-3xl overflow-hidden shadow-2xl pointer-events-none mx-auto border border-white/15"
                       >
                         <img
                           src={wedding.cover_photo_url}
                           alt={`${coupleNames} Portrait`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover object-center"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        {/* Top & Bottom Subtle Gradient Overlays for contrast without overall dimming */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/50 pointer-events-none" />
                       </motion.div>
                     </div>
                   )}
@@ -1336,73 +1352,76 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             </motion.div>
           )}
 
-          {/* Phase 5: Bottom Action Bar Entrance */}
+          {/* Phase 5: WedX-Style Bottom Action Bar (RSVP, Registry, Media) */}
           {(stage === 'action_entrance' || stage === 'ready') && (
             <motion.div
               initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="sticky bottom-0 z-40 w-full p-4 border-t backdrop-blur-md flex items-center justify-between gap-3 shadow-2xl shrink-0"
+              className="sticky bottom-0 z-40 w-full p-4 border-t backdrop-blur-md flex items-center justify-between gap-2.5 shadow-2xl shrink-0"
               style={{
                 backgroundColor: `${activeTheme.cardBgColor}F5`,
                 borderColor: `${accentColor}40`,
               }}
             >
-              {/* Action 1: Quick Scroll to RSVP Form */}
+              {/* 1. RSVP Button */}
               <button
                 type="button"
-                onClick={() => {
-                  const el = document.getElementById('rsvp-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => setIsRsvpModalOpen(true)}
                 className="flex-1 py-2.5 px-4 rounded-full font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                 style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
               >
                 <Heart className="w-3.5 h-3.5 fill-current" />
-                <span>RSVP Now</span>
+                <span>RSVP</span>
               </button>
 
-              {/* Action 2: Add to Calendar */}
-              {activeEvents[0] && (
-                <a
-                  href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-                    `${coupleNames} - ${activeEvents[0].title}`
-                  )}&location=${encodeURIComponent(
-                    `${activeEvents[0].venue_name}, ${activeEvents[0].venue_address || ''}`
-                  )}&details=${encodeURIComponent(`Wedding Celebration for ${fullCoupleNames}`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3.5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
+              {/* 2. Registry Button (Only shown if registry_url or registry_info is non-empty) */}
+              {hasRegistryInfo && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sanitizedUrl = getSanitizedRegistryUrl(wedding?.registry_url || wedding?.registry_info);
+                    if (sanitizedUrl) {
+                      window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
+                    } else {
+                      const el = document.getElementById('registry-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
                   style={{
                     backgroundColor: `${activeTheme.bgColor}99`,
                     borderColor: `${accentColor}50`,
                     color: secondaryColor,
                   }}
-                  title="Add to Google Calendar"
+                  title="Gift Registry"
                 >
-                  <Calendar className="w-3.5 h-3.5" style={{ color: accentColor }} />
-                  <span className="hidden sm:inline">Calendar</span>
-                </a>
+                  <Gift className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                  <span>Registry</span>
+                </button>
               )}
 
-              {/* Action 3: Copy Share Link */}
+              {/* 3. Media (Gallery) Button */}
               <button
                 type="button"
                 onClick={() => {
-                  const shareUrl = window.location.href;
-                  navigator.clipboard.writeText(shareUrl);
-                  alert('Invitation link copied to clipboard!');
+                  if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
+                    setLightboxPhoto(wedding.gallery_photos[0]);
+                  } else {
+                    const el = document.getElementById('gallery-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }
                 }}
-                className="px-3.5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
+                className="px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
                 style={{
                   backgroundColor: `${activeTheme.bgColor}99`,
                   borderColor: `${accentColor}50`,
                   color: secondaryColor,
                 }}
-                title="Copy Invitation Link"
+                title="Photo Gallery"
               >
-                <ExternalLink className="w-3.5 h-3.5" style={{ color: accentColor }} />
-                <span className="hidden sm:inline">Share</span>
+                <Image className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                <span>Media</span>
               </button>
             </motion.div>
           )}
@@ -1434,8 +1453,204 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         bgColor={activeTheme.bgColor}
       />
 
-      {/* Photo Gallery Lightbox Modal Overlay */}
+      {/* Interactive RSVP Form Modal Overlay */}
       <AnimatePresence>
+        {isRsvpModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative max-w-md w-full rounded-3xl p-6 shadow-2xl border space-y-5 my-auto"
+              style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}40` }}
+            >
+              <button
+                type="button"
+                onClick={() => setIsRsvpModalOpen(false)}
+                className="absolute top-4 right-4 p-2 text-white/60 hover:text-white rounded-full bg-white/10 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center space-y-1 pr-6">
+                <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: accentColor }}>
+                  Official Response
+                </span>
+                <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                  RSVP for {coupleNames}
+                </h3>
+                {guest && (
+                  <p className="text-xs opacity-70">Personalized link for {guest.name}</p>
+                )}
+              </div>
+
+              {rsvpSuccess ? (
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <Check className="w-6 h-6" />
+                  </div>
+                  <h4 className={`text-lg font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                    RSVP Submitted Successfully!
+                  </h4>
+                  <p className="text-xs opacity-80 max-w-xs mx-auto">
+                    Thank you! The couple has been notified of your response. We look forward to celebrating together.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRsvpModalOpen(false);
+                      setRsvpSuccess(false);
+                    }}
+                    className="px-6 py-2.5 rounded-full font-bold text-xs shadow-md transition-all cursor-pointer"
+                    style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                  >
+                    Close Window
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleRsvpSubmit} className="space-y-4 text-xs">
+                  {rsvpError && (
+                    <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{rsvpError}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] uppercase font-semibold mb-1 opacity-80" style={{ color: secondaryColor }}>
+                      Your Full Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder="e.g. Temiloluwa Akindele"
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40"
+                    />
+                  </div>
+
+                  {/* Attendance Selector per event */}
+                  <div className="space-y-3 pt-1">
+                    <label className="block text-[11px] uppercase font-semibold opacity-80" style={{ color: secondaryColor }}>
+                      Event Attendance
+                    </label>
+                    {activeEvents.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="p-3 rounded-xl border bg-white/5 border-white/15 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-white">{ev.title}</span>
+                          <span className="text-[10px] opacity-60">{ev.date}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: true }))}
+                            className={`py-2 rounded-lg font-semibold text-xs border transition-all ${
+                              eventAttendance[ev.id] !== false
+                                ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300'
+                                : 'bg-white/5 border-white/10 opacity-60'
+                            }`}
+                          >
+                            Joyfully Accepts
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: false }))}
+                            className={`py-2 rounded-lg font-semibold text-xs border transition-all ${
+                              eventAttendance[ev.id] === false
+                                ? 'bg-rose-500/25 border-rose-400 text-rose-300'
+                                : 'bg-white/5 border-white/10 opacity-60'
+                            }`}
+                          >
+                            Regretfully Declines
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Plus One Toggle */}
+                  <div className="space-y-2 pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={hasPlusOne}
+                        onChange={(e) => setHasPlusOne(e.target.checked)}
+                        className="rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-0"
+                      />
+                      <span className="text-[11px] font-semibold opacity-90" style={{ color: secondaryColor }}>
+                        Attending with a Plus-One Guest
+                      </span>
+                    </label>
+                    {hasPlusOne && (
+                      <input
+                        type="text"
+                        value={plusOneName}
+                        onChange={(e) => setPlusOneName(e.target.value)}
+                        placeholder="Plus-one guest name"
+                        className="w-full px-3.5 py-2 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40"
+                      />
+                    )}
+                  </div>
+
+                  {/* Dietary Requirements */}
+                  <div>
+                    <label className="block text-[11px] uppercase font-semibold mb-1 opacity-80" style={{ color: secondaryColor }}>
+                      Dietary Requirements / Allergies (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={dietaryNotes}
+                      onChange={(e) => setDietaryNotes(e.target.value)}
+                      placeholder="e.g. Vegetarian, Halal, Nut Allergy"
+                      className="w-full px-3.5 py-2 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40"
+                    />
+                  </div>
+
+                  {/* Note to Couple */}
+                  <div>
+                    <label className="block text-[11px] uppercase font-semibold mb-1 opacity-80" style={{ color: secondaryColor }}>
+                      Warm Wishes to Couple (Optional)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Leave a sweet note for the couple..."
+                      className="w-full px-3.5 py-2 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40 resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={rsvpSubmitting}
+                    className="w-full py-3 rounded-full font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50 mt-2"
+                    style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                  >
+                    {rsvpSubmitting ? (
+                      <span>Submitting Response...</span>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Confirm & Submit RSVP</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Photo Gallery Lightbox Modal Overlay */}
         {lightboxPhoto && (
           <motion.div
             initial={{ opacity: 0 }}

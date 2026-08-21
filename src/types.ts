@@ -176,6 +176,7 @@ export interface Wedding {
   gallery_photos?: string[] | null;
   music_track?: string | null;
   registry_info?: string | null;
+  registry_url?: string | null;
   is_paid: boolean;
   payment_reference?: string | null;
   created_at: string;
