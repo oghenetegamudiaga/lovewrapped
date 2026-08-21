@@ -81,6 +81,10 @@ export async function downloadCard(
       style: {
         transform: 'none',
         margin: '0',
+        padding: '0',
+        border: 'none',
+        borderRadius: '0px',
+        boxShadow: 'none',
       },
     };
 

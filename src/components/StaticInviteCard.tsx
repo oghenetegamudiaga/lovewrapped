@@ -112,12 +112,18 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
     }
   };
 
+  const isCustomTemplateActive = Boolean(template || resolvedTemplateUrl);
+
   return (
     <div
       ref={cardRef}
       id="static-invite-card"
       style={{ backgroundColor: cardBgColor, color: baseTheme.textColor }}
-      className={`relative w-full max-w-[540px] mx-auto rounded-3xl p-8 sm:p-10 shadow-2xl overflow-hidden border-4 border-double border-opacity-40 transition-all select-none flex flex-col justify-between items-center text-center aspect-[4/5] min-h-[640px] ${className}`}
+      className={`relative w-full max-w-[540px] mx-auto overflow-hidden transition-all select-none flex flex-col justify-between items-center text-center aspect-[4/5] min-h-[640px] ${
+        isCustomTemplateActive
+          ? 'p-0 border-0 rounded-none shadow-none'
+          : 'rounded-3xl p-8 sm:p-10 shadow-2xl border-4 border-double border-opacity-40'
+      } ${className}`}
     >
       {/* Custom Card Template Backdrop (If present) */}
       {template && template.text_fields && template.text_fields.length > 0 ? (
