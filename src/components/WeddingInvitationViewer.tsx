@@ -400,14 +400,14 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     setIsUnsealing(true);
 
     if (isReducedMotion) {
-      setStage('detail_hold');
+      setStage('ready');
       setIsUnsealing(false);
     } else {
       setStage('unsealing');
       setTimeout(() => {
-        setStage('hero_hold');
+        setStage('ready');
         setIsUnsealing(false);
-      }, 1900);
+      }, 1800);
     }
   };
 
@@ -1197,33 +1197,29 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 className="absolute inset-0 z-50 bg-white pointer-events-none"
               />
             )}
-            {/* Layer 0: Background Layer (Ambient motion in hero_hold, scale push in detail_reveal, static in detail_hold) */}
+            {/* Layer 0: Full-Bleed Viewport Background Layer with Continuous Ambient Motion (9s loop) */}
             <motion.div
               className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
-              animate={
-                stage === 'detail_reveal'
-                  ? { scale: 1.08 }
-                  : stage === 'hero_hold' && !isReducedMotion
-                  ? { scale: [1, 1.02, 1] }
-                  : { scale: 1 }
-              }
-              transition={
-                stage === 'detail_reveal'
-                  ? { duration: 0.8, ease: 'easeOut' }
-                  : { duration: 11, repeat: Infinity, ease: 'easeInOut' }
-              }
+              animate={!isReducedMotion ? { scale: [1, 1.02, 1] } : { scale: 1 }}
+              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             >
-              {themeAssets[activeThemeId]?.reveal_background_url ? (
+              {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 ? (
+                <img
+                  src={wedding.cover_photo_url}
+                  alt={`${coupleNames} Full-Bleed Backdrop`}
+                  className="w-full h-full object-cover object-center"
+                />
+              ) : themeAssets[activeThemeId]?.reveal_background_url ? (
                 <img
                   src={themeAssets[activeThemeId]!.reveal_background_url!}
                   alt="Theme Reveal Backdrop Scene"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                 />
               ) : (
                 <div className="w-full h-full" style={{ backgroundColor: activeTheme.bgColor }} />
               )}
-              {/* Targeted gradient overlay for text legibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-1" />
+              {/* High contrast gradient overlay for text legibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/35 pointer-events-none z-1" />
             </motion.div>
 
             {/* Separately Padded Foreground / Text Layer Stacked On Top (z-10) */}
