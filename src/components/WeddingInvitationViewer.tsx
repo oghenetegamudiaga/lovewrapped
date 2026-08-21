@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest, ThemeAssetsMap } from '../types';
@@ -137,11 +137,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   onNavigate,
   isSpike = false,
 }) => {
-  const [stage, setStage] = useState<'loading' | 'cover' | 'unsealing' | 'doors_opening' | 'drone_zooming' | 'view_prompt' | 'unveiled'>(
-    isSpike ? 'cover' : 'loading'
+  const [stage, setStage] = useState<'loading' | 'cover' | 'unsealing' | 'hero_hold' | 'detail_reveal' | 'detail_hold'>(
+    isSpike ? 'detail_hold' : 'loading'
   );
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const [isUnsealing, setIsUnsealing] = useState<boolean>(false);
+  const heroHoldTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
 
   // Dynamic Theme & Variant Styles Computation
@@ -343,17 +344,49 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   const isReducedMotion = prefersReducedMotion;
 
+  const handleTransitionToDetail = useCallback(() => {
+    if (heroHoldTimerRef.current) {
+      clearTimeout(heroHoldTimerRef.current);
+      heroHoldTimerRef.current = null;
+    }
+
+    if (isReducedMotion) {
+      setStage('detail_hold');
+    } else {
+      setStage('detail_reveal');
+      setTimeout(() => {
+        setStage('detail_hold');
+      }, 800);
+    }
+  }, [isReducedMotion]);
+
+  useEffect(() => {
+    if (stage !== 'hero_hold') return;
+
+    // 4-second auto-advance timer for hero hold
+    heroHoldTimerRef.current = setTimeout(() => {
+      handleTransitionToDetail();
+    }, 4000);
+
+    return () => {
+      if (heroHoldTimerRef.current) {
+        clearTimeout(heroHoldTimerRef.current);
+        heroHoldTimerRef.current = null;
+      }
+    };
+  }, [stage, handleTransitionToDetail]);
+
   const handleUnseal = () => {
     if (isUnsealing || stage !== 'cover') return;
     setIsUnsealing(true);
 
     if (isReducedMotion) {
-      setStage('unveiled');
+      setStage('detail_hold');
       setIsUnsealing(false);
     } else {
       setStage('unsealing');
       setTimeout(() => {
-        setStage('unveiled');
+        setStage('hero_hold');
         setIsUnsealing(false);
       }, 1900);
     }
@@ -1121,25 +1154,36 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           )}
         </AnimatePresence>
 
-        {/* Scenes 3 & 4 (Phase 3 Hero Hold State) */}
-        {stage === 'unveiled' && (
+        {/* Scenes 3 & 4 (Phase 3 Hero Hold & Phase 4 Detail Card) */}
+        {(stage === 'hero_hold' || stage === 'detail_reveal' || stage === 'detail_hold') && (
           <motion.div
             key="unveiled-content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none"
+            onClick={() => {
+              if (stage === 'hero_hold') {
+                handleTransitionToDetail();
+              }
+            }}
+            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none cursor-pointer"
             style={{ backgroundColor: activeTheme.bgColor }}
           >
-            {/* Layer 0: Background Layer with Ambient Motion (11s continuous loop) */}
+            {/* Layer 0: Background Layer (Ambient motion in hero_hold, scale push in detail_reveal, static in detail_hold) */}
             <motion.div
               className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
               animate={
-                !isReducedMotion
+                stage === 'detail_reveal'
+                  ? { scale: 1.08 }
+                  : stage === 'hero_hold' && !isReducedMotion
                   ? { scale: [1, 1.02, 1] }
                   : { scale: 1 }
               }
-              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+              transition={
+                stage === 'detail_reveal'
+                  ? { duration: 0.8, ease: 'easeOut' }
+                  : { duration: 11, repeat: Infinity, ease: 'easeInOut' }
+              }
             >
               {themeAssets[activeThemeId]?.reveal_background_url ? (
                 <img
@@ -1154,52 +1198,80 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-1" />
             </motion.div>
 
-            {/* Separately Padded Foreground / Text Layer Stacked On Top (z-10, STATIC text) */}
+            {/* Separately Padded Foreground / Text Layer Stacked On Top (z-10) */}
             <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Layer 1: Mid Layer - Couple Photo with Ambient Parallax (9s continuous loop out-of-sync) */}
-              {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && (
-                <div className="pt-2">
-                  <motion.div
-                    animate={
-                      !isReducedMotion
-                        ? { scale: [1, 1.025, 1], y: [0, -3, 0] }
-                        : { scale: 1, y: 0 }
-                    }
-                    transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-                    className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border pointer-events-none mx-auto"
-                    style={{ borderColor: `${accentColor}40` }}
-                  >
-                    <img
-                      src={wedding.cover_photo_url}
-                      alt={`${coupleNames} Portrait`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  </motion.div>
-                </div>
+              {/* Phase 3 Hero Composition (Visible during hero_hold) */}
+              {stage === 'hero_hold' && (
+                <>
+                  {/* Layer 1: Mid Layer - Couple Photo with Ambient Parallax (9s continuous loop out-of-sync) */}
+                  {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && (
+                    <div className="pt-2">
+                      <motion.div
+                        animate={
+                          !isReducedMotion
+                            ? { scale: [1, 1.025, 1], y: [0, -3, 0] }
+                            : { scale: 1, y: 0 }
+                        }
+                        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+                        className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border pointer-events-none mx-auto"
+                        style={{ borderColor: `${accentColor}40` }}
+                      >
+                        <img
+                          src={wedding.cover_photo_url}
+                          alt={`${coupleNames} Portrait`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      </motion.div>
+                    </div>
+                  )}
+
+                  {/* Hero Header & Tap-to-Proceed Prompt */}
+                  <div className="text-center space-y-4 pt-2 border-b border-white/10 pb-8">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+                    >
+                      Official Invitation
+                    </span>
+
+                    {guest && (
+                      <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
+                        Warm Welcome, {guest.name}
+                      </p>
+                    )}
+
+                    <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                      {coupleNames}
+                    </h2>
+                    <p className="text-xs italic opacity-80">
+                      Are getting married!
+                    </p>
+
+                    <p className="text-[10px] uppercase tracking-widest opacity-60 animate-pulse pt-2" style={{ color: accentColor }}>
+                      Tap anywhere to view RSVP & Details
+                    </p>
+                  </div>
+                </>
               )}
 
-              {/* Scene 3: Save-the-Date Graphic & Countdown (Static Foreground) */}
-              <div className="text-center space-y-4 pt-2 border-b border-white/10 pb-8">
-                <span
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+              {/* Phase 4 Focused Detail & RSVP Card Hold (Visible during detail_reveal & detail_hold) */}
+              {(stage === 'detail_reveal' || stage === 'detail_hold') && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
+                  className="space-y-6"
                 >
-                  Official Invitation
-                </span>
-
-              {guest && (
-                <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accentColor }}>
-                  Warm Welcome, {guest.name}
-                </p>
-              )}
-
-              <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
-                {coupleNames}
-              </h2>
-              <p className="text-xs italic opacity-80">
-                Are getting married!
-              </p>
+                  {/* Subtle Couple Context Header */}
+                  <div className="text-center space-y-1 pb-4 border-b border-white/10">
+                    <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accentColor }}>
+                      Celebration of {coupleNames}
+                    </p>
+                    <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                      Event Details & RSVP
+                    </h3>
+                  </div>
 
               {/* LIVE COUNTDOWN TIMER BANNER */}
               <div
@@ -1244,31 +1316,32 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   <p className="text-xs" style={{ color: accentColor }}>Calculating event countdown...</p>
                 )}
               </div>
-            </div>
 
-            {/* Scene 4: Dynamically Ordered Sections */}
-            <div className="space-y-6">
-              {sectionOrder.map((key) => renderSectionByKey(key))}
-            </div>
+              {/* Scene 4: Dynamically Ordered Sections */}
+              <div className="space-y-6">
+                {sectionOrder.map((key) => renderSectionByKey(key))}
+              </div>
+            </motion.div>
+          )}
 
-            {/* Footer Replay */}
-            <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs">
-              <button
-                onClick={handleReplay}
-                className="px-4 py-2 rounded-full font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-                style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Replay Invitation</span>
-              </button>
+          {/* Footer Replay */}
+          <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs">
+            <button
+              onClick={handleReplay}
+              className="px-4 py-2 rounded-full font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Replay Invitation</span>
+            </button>
 
-              <span className="text-[10px] opacity-50">
-                Weddings by Amorah
-              </span>
-            </div>
-            </div>
-          </motion.div>
-        )}
+            <span className="text-[10px] opacity-50">
+              Weddings by Amorah
+            </span>
+          </div>
+        </div>
+      </motion.div>
+    )}
       </div>
 
       {/* Floating Background Music Player with Mute/Unmute toggle */}
