@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image, Camera } from 'lucide-react';
+import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image, Camera, Mail } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest, ThemeAssetsMap } from '../types';
 import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
 import { submitWeddingRsvpApi, getPublicThemeAssetsApi } from '../lib/api';
@@ -1288,16 +1288,16 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 {sectionOrder.map((key) => renderSectionByKey(key))}
               </div>
 
-              {/* WedX-Style Bottom Action Row: 3 White Circular Icon Badges Over Photo */}
+              {/* WedX-Style Bottom Action Row: 3 White Circular Icon Badges Over Photo (Matching Reference) */}
               <motion.div
                 initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="sticky bottom-4 z-40 w-full flex items-center justify-center gap-6 sm:gap-10 pointer-events-auto py-2"
+                className="sticky bottom-6 z-40 w-full flex items-center justify-center gap-7 sm:gap-11 pointer-events-auto py-2"
               >
-                {/* 1. Gift Registry Button (Circular White Badge) */}
+                {/* 1. Gift Registry Button (White Circular Ring Badge) */}
                 {hasRegistryInfo && (
-                  <div className="flex flex-col items-center gap-1.5">
+                  <div className="flex flex-col items-center gap-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -1309,34 +1309,34 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                           if (el) el.scrollIntoView({ behavior: 'smooth' });
                         }
                       }}
-                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-2xl border border-white/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
                       title="Gift Registry"
                     >
-                      <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-slate-800" />
+                      <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
                     </button>
-                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                      Registry
+                    <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                      Gift Registry
                     </span>
                   </div>
                 )}
 
-                {/* 2. RSVP Button (Circular White Badge) */}
-                <div className="flex flex-col items-center gap-1.5">
+                {/* 2. RSVP Button (White Circular Ring Badge with Envelope) */}
+                <div className="flex flex-col items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setIsRsvpModalOpen(true)}
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-rose-600 flex items-center justify-center shadow-2xl border border-white/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
                     title="Respond to RSVP"
                   >
-                    <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-rose-600 fill-rose-600" />
+                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
                   </button>
-                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                  <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                     RSVP
                   </span>
                 </div>
 
-                {/* 3. Gallery / Media Button (Circular White Badge) */}
-                <div className="flex flex-col items-center gap-1.5">
+                {/* 3. Gallery / Media Button (White Circular Ring Badge with Camera) */}
+                <div className="flex flex-col items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -1347,12 +1347,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                         if (el) el.scrollIntoView({ behavior: 'smooth' });
                       }
                     }}
-                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-2xl border border-white/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
                     title="Photo Gallery"
                   >
-                    <Camera className="w-6 h-6 sm:w-7 sm:h-7 text-slate-800" />
+                    <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
                   </button>
-                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                  <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                     Gallery
                   </span>
                 </div>
