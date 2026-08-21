@@ -638,7 +638,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
           <div className="w-full">
             {/* Header & Step Indicator */}
             <div className="text-center mb-8">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-start mb-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -652,10 +652,6 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                 >
                   <ArrowLeft className="w-4 h-4" /> Change Tier
                 </button>
-
-                <div className="eyebrow-pill">
-                  <span>Step {step <= 5 ? step : 5} of 5</span>
-                </div>
               </div>
 
               <h1 className="font-serif text-3xl sm:text-4xl font-bold text-maroon mb-2">
