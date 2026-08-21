@@ -947,6 +947,27 @@ async function requireCoupleAuth(req: express.Request, res: express.Response, ne
   }
 }
 
+async function optionalCoupleAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  try {
+    const sessionCookie = req.cookies?.couple_session;
+    if (sessionCookie) {
+      const session = await unsealData<{
+        id: string;
+        email: string;
+        full_name?: string | null;
+        loggedInAt: number;
+      }>(sessionCookie, { password: SESSION_SECRET });
+
+      if (session && session.id && session.email) {
+        (req as any).coupleSession = session;
+      }
+    }
+  } catch (err) {
+    // Silently ignore invalid session cookie for optional auth
+  }
+  return next();
+}
+
 // POST /api/weddings/signup
 apiRouter.post('/weddings/signup', weddingsAuthLimiter, async (req, res) => {
   try {
@@ -1919,15 +1940,18 @@ async function processWeddingPhotoUpload(
       });
 
     if (uploadError) {
-      console.error(`Supabase wedding-cover-photos storage upload error for ${prefix}:`, uploadError);
-      throw new Error(`Failed to upload ${prefix} image to Supabase storage: ${uploadError.message}`);
+      console.warn(`⚠️ Supabase wedding-cover-photos storage upload error for ${prefix}:`, uploadError);
+      // Fallback to returning compressed URL so creation workflow never fails or blocks
+      return trimmed;
     }
 
     const { data: publicUrlData } = supabase.storage
       .from('wedding-cover-photos')
       .getPublicUrl(cleanFileName);
 
-    return publicUrlData.publicUrl;
+    if (publicUrlData && publicUrlData.publicUrl) {
+      return publicUrlData.publicUrl;
+    }
   }
 
   // Fallback when Supabase storage is not configured (transient memory)
@@ -1935,7 +1959,7 @@ async function processWeddingPhotoUpload(
 }
 
 // POST /api/weddings/upload-cover-photo — Upload couple cover photo to Supabase storage
-apiRouter.post('/weddings/upload-cover-photo', requireCoupleAuth, async (req, res) => {
+apiRouter.post('/weddings/upload-cover-photo', optionalCoupleAuth, async (req, res) => {
   try {
     const { coverPhoto, image } = req.body;
     const rawData = coverPhoto || image;
@@ -1953,7 +1977,7 @@ apiRouter.post('/weddings/upload-cover-photo', requireCoupleAuth, async (req, re
 });
 
 // POST /api/weddings/upload-gallery-photo — Upload gallery photo to Supabase storage
-apiRouter.post('/weddings/upload-gallery-photo', requireCoupleAuth, async (req, res) => {
+apiRouter.post('/weddings/upload-gallery-photo', optionalCoupleAuth, async (req, res) => {
   try {
     const { galleryPhoto, image } = req.body;
     const rawData = galleryPhoto || image;
@@ -2761,6 +2785,9 @@ apiRouter.patch('/weddings/dashboard/:weddingId/info', requireCoupleAuth, async 
     }
     if (music_track !== undefined) {
       updates.music_track = typeof music_track === 'string' && VALID_MUSIC_TRACKS.has(music_track) ? music_track : 'romantic-strings';
+    }
+    if (req.body.cover_photo_url !== undefined) {
+      updates.cover_photo_url = typeof req.body.cover_photo_url === 'string' && req.body.cover_photo_url.trim() ? req.body.cover_photo_url.trim() : null;
     }
     if (Array.isArray(req.body.gallery_photos)) {
       updates.gallery_photos = req.body.gallery_photos.filter((p: any) => typeof p === 'string' && p.trim()).slice(0, 10);

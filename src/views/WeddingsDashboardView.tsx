@@ -11,6 +11,8 @@ import {
   deleteCoupleWeddingGuestApi,
   importCoupleWeddingGuestsCsvApi,
   exportCoupleWeddingGuestsCsvUrl,
+  uploadWeddingCoverPhotoApi,
+  uploadWeddingGalleryPhotoApi,
 } from '../lib/api';
 
 interface WeddingsDashboardViewProps {
@@ -56,6 +58,10 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   const [editGroomFirstName, setEditGroomFirstName] = useState('');
   const [editGroomOtherNames, setEditGroomOtherNames] = useState('');
   const [editCoupleNames, setEditCoupleNames] = useState('');
+  const [editCoverPhotoUrl, setEditCoverPhotoUrl] = useState('');
+  const [editGalleryPhotos, setEditGalleryPhotos] = useState<string[]>([]);
+  const [isUploadingDashboardCover, setIsUploadingDashboardCover] = useState(false);
+  const [isUploadingDashboardGallery, setIsUploadingDashboardGallery] = useState(false);
   const [isSavingInfo, setIsSavingInfo] = useState(false);
   const [infoSaveSuccess, setInfoSaveSuccess] = useState(false);
 
@@ -105,6 +111,8 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
         setEditGroomFirstName(dashRes.wedding.groom_first_name || '');
         setEditGroomOtherNames(dashRes.wedding.groom_other_names || '');
         setEditCoupleNames(dashRes.wedding.couple_names || '');
+        setEditCoverPhotoUrl(dashRes.wedding.cover_photo_url || '');
+        setEditGalleryPhotos(dashRes.wedding.gallery_photos || []);
       }
 
       if (evList.length > 0) {
@@ -210,6 +218,8 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
         section_order: editSectionOrder,
         registry_info: editRegistryInfo,
         love_story: editLoveStory,
+        cover_photo_url: editCoverPhotoUrl || null,
+        gallery_photos: editGalleryPhotos,
       });
 
       setWedding(res.wedding);
@@ -220,6 +230,125 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
     } finally {
       setIsSavingInfo(false);
     }
+  };
+
+  const handleDashboardCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image file size must be smaller than 10MB.');
+      return;
+    }
+
+    setIsUploadingDashboardCover(true);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const scale = Math.min(1, MAX_WIDTH / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          uploadWeddingCoverPhotoApi(compressedUrl)
+            .then((res) => {
+              if (res.publicUrl || res.url) {
+                setEditCoverPhotoUrl(res.publicUrl || res.url);
+              }
+            })
+            .catch((err) => {
+              alert(err.message || 'Failed to upload cover photo.');
+            })
+            .finally(() => {
+              setIsUploadingDashboardCover(false);
+            });
+        } else {
+          setIsUploadingDashboardCover(false);
+        }
+      };
+      img.onerror = () => setIsUploadingDashboardCover(false);
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => setIsUploadingDashboardCover(false);
+    reader.readAsDataURL(file);
+  };
+
+  const handleDashboardGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 10 - editGalleryPhotos.length;
+    if (remainingSlots <= 0) {
+      alert('Maximum of 10 gallery photos reached.');
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    setIsUploadingDashboardGallery(true);
+
+    let completedCount = 0;
+    filesToUpload.forEach((file: File) => {
+      if (file.size > 10 * 1024 * 1024) {
+        completedCount++;
+        if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const scale = Math.min(1, MAX_WIDTH / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+            uploadWeddingGalleryPhotoApi(compressedUrl)
+              .then((res) => {
+                const storageUrl = res.publicUrl || res.url;
+                if (storageUrl) {
+                  setEditGalleryPhotos((prev) => [...prev, storageUrl].slice(0, 10));
+                }
+              })
+              .catch((err) => {
+                console.error('Gallery photo upload error:', err);
+              })
+              .finally(() => {
+                completedCount++;
+                if (completedCount >= filesToUpload.length) {
+                  setIsUploadingDashboardGallery(false);
+                }
+              });
+          } else {
+            completedCount++;
+            if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
+          }
+        };
+        img.onerror = () => {
+          completedCount++;
+          if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = () => {
+        completedCount++;
+        if (completedCount >= filesToUpload.length) setIsUploadingDashboardGallery(false);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleOpenAddGuestModal = () => {
@@ -651,6 +780,84 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                       onChange={(e) => setEditLoveStory(e.target.value)}
                       className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
                     />
+                  </div>
+
+                  {/* Cover Photo Upload Slot */}
+                  <div>
+                    <label className="block font-semibold text-maroon mb-1 text-xs">Featured Cover Photo</label>
+                    <div className="flex items-center gap-4">
+                      {editCoverPhotoUrl ? (
+                        <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-cream-border shrink-0">
+                          <img src={editCoverPhotoUrl} alt="Cover" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setEditCoverPhotoUrl('')}
+                            className="absolute top-1 right-1 bg-maroon/80 text-cream text-[10px] p-1 rounded-full cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="w-full p-4 border-2 border-dashed border-cream-border hover:border-coral rounded-2xl flex flex-col items-center justify-center cursor-pointer bg-cream/30 hover:bg-cream/70 transition-all">
+                          {isUploadingDashboardCover ? (
+                            <span className="text-xs text-maroon font-semibold">Uploading Cover Photo...</span>
+                          ) : (
+                            <>
+                              <Upload className="w-5 h-5 text-mauve mb-1" />
+                              <span className="text-xs font-semibold text-maroon">Upload Cover Photo</span>
+                              <span className="text-[10px] text-mauve mt-0.5">PNG, JPG up to 10MB</span>
+                              <input type="file" accept="image/*" onChange={handleDashboardCoverUpload} disabled={isUploadingDashboardCover} className="hidden" />
+                            </>
+                          )}
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pre-Wedding Photo Gallery Upload Slot */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-semibold text-maroon text-xs">Pre-Wedding Photo Gallery ({editGalleryPhotos.length} / 10)</label>
+                    </div>
+
+                    {editGalleryPhotos.length < 10 && (
+                      <label className="w-full p-4 border-2 border-dashed border-cream-border hover:border-coral rounded-2xl flex flex-col items-center justify-center cursor-pointer bg-cream/30 hover:bg-cream/70 transition-all">
+                        {isUploadingDashboardGallery ? (
+                          <span className="text-xs text-maroon font-semibold">Uploading Gallery Photos...</span>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5 text-mauve mb-1" />
+                            <span className="text-xs font-semibold text-maroon">Add Pre-Wedding Photos</span>
+                            <span className="text-[10px] text-mauve mt-0.5">Upload photos for your gallery grid</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              disabled={isUploadingDashboardGallery}
+                              onChange={handleDashboardGalleryUpload}
+                              className="hidden"
+                            />
+                          </>
+                        )}
+                      </label>
+                    )}
+
+                    {editGalleryPhotos.length > 0 && (
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-1">
+                        {editGalleryPhotos.map((photoUrl, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-cream-border group">
+                            <img src={photoUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setEditGalleryPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                              className="absolute top-1 right-1 bg-maroon/80 text-cream text-[10px] p-1 rounded-full cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
