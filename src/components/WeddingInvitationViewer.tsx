@@ -1121,33 +1121,66 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           )}
         </AnimatePresence>
 
-        {/* Scenes 3 & 4 (Revealed Content) */}
+        {/* Scenes 3 & 4 (Phase 3 Hero Hold State) */}
         {stage === 'unveiled' && (
           <motion.div
             key="unveiled-content"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full"
+            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none"
             style={{ backgroundColor: activeTheme.bgColor }}
           >
-            {/* Full-Bleed Edge-to-Edge Reveal Background Image (Vivid Clarity) */}
-            {themeAssets[activeThemeId]?.reveal_background_url && (
-              <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            {/* Layer 0: Background Layer with Ambient Motion (11s continuous loop) */}
+            <motion.div
+              className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+              animate={
+                !isReducedMotion
+                  ? { scale: [1, 1.02, 1] }
+                  : { scale: 1 }
+              }
+              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              {themeAssets[activeThemeId]?.reveal_background_url ? (
                 <img
                   src={themeAssets[activeThemeId]!.reveal_background_url!}
                   alt="Theme Reveal Backdrop Scene"
                   className="w-full h-full object-cover"
                 />
-                {/* Targeted gradient overlay for text readability without washing out the photo */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pointer-events-none z-1" />
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-full" style={{ backgroundColor: activeTheme.bgColor }} />
+              )}
+              {/* Targeted gradient overlay for text legibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none z-1" />
+            </motion.div>
 
-            {/* Separately Padded Content Layer Stacked On Top (z-10) */}
+            {/* Separately Padded Foreground / Text Layer Stacked On Top (z-10, STATIC text) */}
             <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Scene 3: Save-the-Date Graphic & Countdown */}
-              <div className="text-center space-y-4 pt-4 border-b border-white/10 pb-8">
+              {/* Layer 1: Mid Layer - Couple Photo with Ambient Parallax (9s continuous loop out-of-sync) */}
+              {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && (
+                <div className="pt-2">
+                  <motion.div
+                    animate={
+                      !isReducedMotion
+                        ? { scale: [1, 1.025, 1], y: [0, -3, 0] }
+                        : { scale: 1, y: 0 }
+                    }
+                    transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+                    className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border pointer-events-none mx-auto"
+                    style={{ borderColor: `${accentColor}40` }}
+                  >
+                    <img
+                      src={wedding.cover_photo_url}
+                      alt={`${coupleNames} Portrait`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Scene 3: Save-the-Date Graphic & Countdown (Static Foreground) */}
+              <div className="text-center space-y-4 pt-2 border-b border-white/10 pb-8">
                 <span
                   className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider"
                   style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
