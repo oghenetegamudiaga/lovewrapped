@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image } from 'lucide-react';
+import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image, Camera } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest, ThemeAssetsMap } from '../types';
 import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
 import { submitWeddingRsvpApi, getPublicThemeAssetsApi } from '../lib/api';
@@ -1288,76 +1288,74 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 {sectionOrder.map((key) => renderSectionByKey(key))}
               </div>
 
-              {/* WedX-Style Bottom Action Bar (RSVP, Registry, Media) */}
+              {/* WedX-Style Bottom Action Row: 3 White Circular Icon Badges Over Photo */}
               <motion.div
-                initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+                initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="sticky bottom-0 z-40 w-full p-4 border-t backdrop-blur-md flex items-center justify-between gap-2.5 shadow-2xl shrink-0 rounded-2xl"
-                style={{
-                  backgroundColor: `${activeTheme.cardBgColor}F5`,
-                  borderColor: `${accentColor}40`,
-                }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="sticky bottom-4 z-40 w-full flex items-center justify-center gap-6 sm:gap-10 pointer-events-auto py-2"
               >
-                {/* 1. RSVP Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsRsvpModalOpen(true)}
-                  className="flex-1 py-2.5 px-4 rounded-full font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                  style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
-                >
-                  <Heart className="w-3.5 h-3.5 fill-current" />
-                  <span>RSVP</span>
-                </button>
-
-                {/* 2. Registry Button (Only shown if registry_url or registry_info is non-empty) */}
+                {/* 1. Gift Registry Button (Circular White Badge) */}
                 {hasRegistryInfo && (
+                  <div className="flex flex-col items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sanitizedUrl = getSanitizedRegistryUrl(wedding?.registry_url || wedding?.registry_info);
+                        if (sanitizedUrl) {
+                          window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
+                        } else {
+                          const el = document.getElementById('registry-section');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-2xl border border-white/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      title="Gift Registry"
+                    >
+                      <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-slate-800" />
+                    </button>
+                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                      Registry
+                    </span>
+                  </div>
+                )}
+
+                {/* 2. RSVP Button (Circular White Badge) */}
+                <div className="flex flex-col items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsRsvpModalOpen(true)}
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-rose-600 flex items-center justify-center shadow-2xl border border-white/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    title="Respond to RSVP"
+                  >
+                    <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-rose-600 fill-rose-600" />
+                  </button>
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                    RSVP
+                  </span>
+                </div>
+
+                {/* 3. Gallery / Media Button (Circular White Badge) */}
+                <div className="flex flex-col items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => {
-                      const sanitizedUrl = getSanitizedRegistryUrl(wedding?.registry_url || wedding?.registry_info);
-                      if (sanitizedUrl) {
-                        window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
+                      if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
+                        setLightboxPhoto(wedding.gallery_photos[0]);
                       } else {
-                        const el = document.getElementById('registry-section');
+                        const el = document.getElementById('gallery-section');
                         if (el) el.scrollIntoView({ behavior: 'smooth' });
                       }
                     }}
-                    className="px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
-                    style={{
-                      backgroundColor: `${activeTheme.bgColor}99`,
-                      borderColor: `${accentColor}50`,
-                      color: secondaryColor,
-                    }}
-                    title="Gift Registry"
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/95 text-slate-800 flex items-center justify-center shadow-2xl border border-white/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    title="Photo Gallery"
                   >
-                    <Gift className="w-3.5 h-3.5" style={{ color: accentColor }} />
-                    <span>Registry</span>
+                    <Camera className="w-6 h-6 sm:w-7 sm:h-7 text-slate-800" />
                   </button>
-                )}
-
-                {/* 3. Media (Gallery) Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
-                      setLightboxPhoto(wedding.gallery_photos[0]);
-                    } else {
-                      const el = document.getElementById('gallery-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="px-4 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
-                  style={{
-                    backgroundColor: `${activeTheme.bgColor}99`,
-                    borderColor: `${accentColor}50`,
-                    color: secondaryColor,
-                  }}
-                  title="Photo Gallery"
-                >
-                  <Image className="w-3.5 h-3.5" style={{ color: accentColor }} />
-                  <span>Media</span>
-                </button>
+                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                    Gallery
+                  </span>
+                </div>
               </motion.div>
 
           {/* Footer Replay */}
