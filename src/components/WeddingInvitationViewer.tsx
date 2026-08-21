@@ -137,8 +137,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   onNavigate,
   isSpike = false,
 }) => {
-  const [stage, setStage] = useState<'loading' | 'cover' | 'unsealing' | 'hero_hold' | 'detail_reveal' | 'detail_hold'>(
-    isSpike ? 'detail_hold' : 'loading'
+  const [stage, setStage] = useState<'loading' | 'cover' | 'unsealing' | 'hero_hold' | 'detail_reveal' | 'detail_hold' | 'action_entrance' | 'ready'>(
+    isSpike ? 'ready' : 'loading'
   );
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const [isUnsealing, setIsUnsealing] = useState<boolean>(false);
@@ -351,11 +351,14 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     }
 
     if (isReducedMotion) {
-      setStage('detail_hold');
+      setStage('ready');
     } else {
       setStage('detail_reveal');
       setTimeout(() => {
-        setStage('detail_hold');
+        setStage('action_entrance');
+        setTimeout(() => {
+          setStage('ready');
+        }, 500);
       }, 800);
     }
   }, [isReducedMotion]);
@@ -1154,8 +1157,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           )}
         </AnimatePresence>
 
-        {/* Scenes 3 & 4 (Phase 3 Hero Hold & Phase 4 Detail Card) */}
-        {(stage === 'hero_hold' || stage === 'detail_reveal' || stage === 'detail_hold') && (
+        {/* Scenes 3 & 4 (Phase 3 Hero Hold, Phase 4 Detail Card & Phase 5 Action Bar) */}
+        {(stage === 'hero_hold' || stage === 'detail_reveal' || stage === 'detail_hold' || stage === 'action_entrance' || stage === 'ready') && (
           <motion.div
             key="unveiled-content"
             initial={{ opacity: 0 }}
@@ -1169,6 +1172,15 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none cursor-pointer"
             style={{ backgroundColor: activeTheme.bgColor }}
           >
+            {/* Phase 5: Subtle Screen Wake-Up Pulse Overlay */}
+            {stage === 'action_entrance' && !isReducedMotion && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.15, 0] }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
+                className="absolute inset-0 z-50 bg-white pointer-events-none"
+              />
+            )}
             {/* Layer 0: Background Layer (Ambient motion in hero_hold, scale push in detail_reveal, static in detail_hold) */}
             <motion.div
               className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
@@ -1255,8 +1267,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 </>
               )}
 
-              {/* Phase 4 Focused Detail & RSVP Card Hold (Visible during detail_reveal & detail_hold) */}
-              {(stage === 'detail_reveal' || stage === 'detail_hold') && (
+              {/* Phase 4 Focused Detail & RSVP Card Hold (Visible during detail_reveal, detail_hold, action_entrance, ready) */}
+              {(stage === 'detail_reveal' || stage === 'detail_hold' || stage === 'action_entrance' || stage === 'ready') && (
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1321,6 +1333,77 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               <div className="space-y-6">
                 {sectionOrder.map((key) => renderSectionByKey(key))}
               </div>
+            </motion.div>
+          )}
+
+          {/* Phase 5: Bottom Action Bar Entrance */}
+          {(stage === 'action_entrance' || stage === 'ready') && (
+            <motion.div
+              initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="sticky bottom-0 z-40 w-full p-4 border-t backdrop-blur-md flex items-center justify-between gap-3 shadow-2xl shrink-0"
+              style={{
+                backgroundColor: `${activeTheme.cardBgColor}F5`,
+                borderColor: `${accentColor}40`,
+              }}
+            >
+              {/* Action 1: Quick Scroll to RSVP Form */}
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('rsvp-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex-1 py-2.5 px-4 rounded-full font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+              >
+                <Heart className="w-3.5 h-3.5 fill-current" />
+                <span>RSVP Now</span>
+              </button>
+
+              {/* Action 2: Add to Calendar */}
+              {activeEvents[0] && (
+                <a
+                  href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                    `${coupleNames} - ${activeEvents[0].title}`
+                  )}&location=${encodeURIComponent(
+                    `${activeEvents[0].venue_name}, ${activeEvents[0].venue_address || ''}`
+                  )}&details=${encodeURIComponent(`Wedding Celebration for ${fullCoupleNames}`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3.5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
+                  style={{
+                    backgroundColor: `${activeTheme.bgColor}99`,
+                    borderColor: `${accentColor}50`,
+                    color: secondaryColor,
+                  }}
+                  title="Add to Google Calendar"
+                >
+                  <Calendar className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                  <span className="hidden sm:inline">Calendar</span>
+                </a>
+              )}
+
+              {/* Action 3: Copy Share Link */}
+              <button
+                type="button"
+                onClick={() => {
+                  const shareUrl = window.location.href;
+                  navigator.clipboard.writeText(shareUrl);
+                  alert('Invitation link copied to clipboard!');
+                }}
+                className="px-3.5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer hover:opacity-90 active:scale-95"
+                style={{
+                  backgroundColor: `${activeTheme.bgColor}99`,
+                  borderColor: `${accentColor}50`,
+                  color: secondaryColor,
+                }}
+                title="Copy Invitation Link"
+              >
+                <ExternalLink className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                <span className="hidden sm:inline">Share</span>
+              </button>
             </motion.div>
           )}
 
