@@ -127,13 +127,6 @@ export const IphoneDeviceMockup: React.FC<IphoneDeviceMockupProps> = ({
           )}
         </div>
       </div>
-
-      {/* Outer Caption Badge */}
-      <div className="mt-3 text-center">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-semibold text-mauve uppercase tracking-widest bg-cream-card px-3 py-1 rounded-full border border-cream-border">
-          <Smartphone className="w-3.5 h-3.5 text-coral" /> iPhone 17 Live Interactive Preview
-        </span>
-      </div>
     </div>
   );
 };
