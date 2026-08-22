@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image, Camera, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest, ThemeAssetsMap } from '../types';
@@ -164,22 +164,24 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     : ['schedule', 'love_story', 'registry', 'rsvp'];
 
   // Normalize multi-event array
-  const activeEvents: WeddingEvent[] = propEvents && propEvents.length > 0
-    ? propEvents
-    : singleEvent
-    ? [singleEvent]
-    : [
-        {
-          id: 'demo-ev-1',
-          wedding_id: 'demo',
-          title: 'Wedding Celebration & Reception',
-          date: 'December 18, 2026',
-          time: '10:00 AM',
-          venue_name: 'Eko Grand Ballroom',
-          venue_address: 'Victoria Island, Lagos, Nigeria',
-          created_at: new Date().toISOString(),
-        },
-      ];
+  const activeEvents: WeddingEvent[] = useMemo(() => {
+    return propEvents && propEvents.length > 0
+      ? propEvents
+      : singleEvent
+      ? [singleEvent]
+      : [
+          {
+            id: 'demo-ev-1',
+            wedding_id: 'demo',
+            title: 'Wedding Celebration & Reception',
+            date: 'December 18, 2026',
+            time: '10:00 AM',
+            venue_name: 'Eko Grand Ballroom',
+            venue_address: 'Victoria Island, Lagos, Nigeria',
+            created_at: new Date().toISOString(),
+          },
+        ];
+  }, [propEvents, singleEvent]);
 
   // RSVP Form state
   const [guestName, setGuestName] = useState(guest?.name || '');
@@ -209,6 +211,23 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [activeGalleryIndex, setActiveGalleryIndex] = useState<number>(0);
   const personalizedCardRef = useRef<HTMLDivElement>(null);
 
+  // Name display computation (First Names for primary cards, Full Names for legal/details)
+  const firstNames = wedding?.bride_first_name && wedding?.groom_first_name
+    ? `${wedding.bride_first_name} & ${wedding.groom_first_name}`
+    : (wedding?.couple_names ? wedding.couple_names.split('&').map((n) => n.trim().split(' ')[0]).join(' & ') : 'Becky & Martins');
+
+  const fullCoupleNames = wedding?.bride_first_name && wedding?.groom_first_name
+    ? `${wedding.bride_first_name}${wedding.bride_other_names ? ' ' + wedding.bride_other_names : ''} & ${wedding.groom_first_name}${wedding.groom_other_names ? ' ' + wedding.groom_other_names : ''}`
+    : (wedding?.couple_names || 'Becky & Martins');
+
+  const coupleNames = firstNames;
+  const coverPhoto = wedding?.cover_photo_url || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80';
+  const loveStory = wedding?.love_story || 'From quiet morning walks to a lifetime of laughter, we are overjoyed to celebrate our special day with the people who mean the world to us.';
+  const registryInfo = wedding?.registry_info || 'Your presence at our wedding is the greatest gift of all. If you wish to honor us with a gift, a monetary contribution towards our new home would be warmly appreciated.';
+
+  const nameParts = firstNames.split('&').map((n) => n.trim());
+  const initials = nameParts.length >= 2 ? `${nameParts[0][0]} & ${nameParts[1][0]}` : 'B & M';
+
   const galleryPhotosList = React.useMemo(() => {
     const list: string[] = [];
     if (wedding?.gallery_photos && Array.isArray(wedding.gallery_photos)) {
@@ -216,21 +235,21 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         if (typeof p === 'string' && p.trim()) list.push(p.trim());
       });
     }
-    if (list.length === 0 && wedding?.cover_photo_url && wedding.cover_photo_url.trim()) {
-      list.push(wedding.cover_photo_url.trim());
+    if (list.length === 0 && coverPhoto && coverPhoto.trim()) {
+      list.push(coverPhoto.trim());
     }
     return list;
-  }, [wedding?.gallery_photos, wedding?.cover_photo_url]);
+  }, [wedding?.gallery_photos, coverPhoto]);
 
   useEffect(() => {
-    if (wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0) {
-      console.log('[WeddingInvitationViewer] Cover photo URL set:', wedding.cover_photo_url);
+    if (coverPhoto && coverPhoto.trim().length > 0) {
+      console.log('[WeddingInvitationViewer] Cover photo URL set:', coverPhoto);
       setCoverPhotoStatus('loading');
     } else {
-      console.log('[WeddingInvitationViewer] No cover_photo_url set; using theme pattern fallback.');
+      console.log('[WeddingInvitationViewer] No cover photo set; using theme pattern fallback.');
       setCoverPhotoStatus('error');
     }
-  }, [wedding?.cover_photo_url]);
+  }, [coverPhoto]);
 
   const getSanitizedRegistryUrl = (rawUrl?: string | null): string | null => {
     if (!rawUrl || !rawUrl.trim()) return null;
@@ -310,22 +329,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [isPastAllEvents, setIsPastAllEvents] = useState<boolean>(false);
   const [targetEventTitle, setTargetEventTitle] = useState<string>('');
 
-  // Name display computation (First Names for primary cards, Full Names for legal/details)
-  const firstNames = wedding?.bride_first_name && wedding?.groom_first_name
-    ? `${wedding.bride_first_name} & ${wedding.groom_first_name}`
-    : (wedding?.couple_names ? wedding.couple_names.split('&').map((n) => n.trim().split(' ')[0]).join(' & ') : 'Becky & Martins');
 
-  const fullCoupleNames = wedding?.bride_first_name && wedding?.groom_first_name
-    ? `${wedding.bride_first_name}${wedding.bride_other_names ? ' ' + wedding.bride_other_names : ''} & ${wedding.groom_first_name}${wedding.groom_other_names ? ' ' + wedding.groom_other_names : ''}`
-    : (wedding?.couple_names || 'Becky & Martins');
-
-  const coupleNames = firstNames;
-  const coverPhoto = wedding?.cover_photo_url || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80';
-  const loveStory = wedding?.love_story || 'From quiet morning walks to a lifetime of laughter, we are overjoyed to celebrate our special day with the people who mean the world to us.';
-  const registryInfo = wedding?.registry_info || 'Your presence at our wedding is the greatest gift of all. If you wish to honor us with a gift, a monetary contribution towards our new home would be warmly appreciated.';
-
-  const nameParts = firstNames.split('&').map((n) => n.trim());
-  const initials = nameParts.length >= 2 ? `${nameParts[0][0]} & ${nameParts[1][0]}` : 'B & M';
 
   // Live Countdown Interval Effect
   useEffect(() => {
@@ -956,10 +960,10 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   animate={!isReducedMotion ? { scale: [1, 1.02, 1] } : { scale: 1 }}
                   transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && coverPhotoStatus !== 'error' ? (
+                  {coverPhoto && coverPhoto.trim().length > 0 && coverPhotoStatus !== 'error' ? (
                     <motion.img
-                      key={wedding.cover_photo_url}
-                      src={wedding.cover_photo_url}
+                      key={coverPhoto}
+                      src={coverPhoto}
                       alt={`${coupleNames} Full-Bleed Viewport Photo`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: coverPhotoStatus === 'loaded' ? 1 : 0.5 }}
@@ -999,14 +1003,23 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40 pointer-events-none z-1" />
                 </motion.div>
 
-                {/* Top Header Badge on Photo Screen */}
-                <div className="relative z-10 p-6 text-center pt-8">
+                {/* Top Header Badge & Overlay Info on Photo Screen */}
+                <div className="relative z-10 p-6 text-center pt-8 space-y-2">
                   <span
                     className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider shadow-lg backdrop-blur-md"
                     style={{ backgroundColor: `${activeTheme.cardBgColor}CC`, borderColor: `${accentColor}40`, color: accentColor }}
                   >
                     Official Wedding Invitation
                   </span>
+                  <h1
+                    className={`text-2xl sm:text-3xl font-bold leading-tight drop-shadow-md text-white ${serifClass}`}
+                  >
+                    {coupleNames}
+                  </h1>
+                  <p className="text-xs opacity-90 font-medium tracking-wide text-white/90">
+                    {activeEvents[0] ? formatEventDateTime(activeEvents[0].date, activeEvents[0].time).formattedDate : 'December 18, 2026'}
+                    {activeEvents[0]?.venue_name && ` • ${activeEvents[0].venue_name}`}
+                  </p>
                 </div>
 
                 {/* Bottom Section on Photo Screen: Action Buttons Row */}
