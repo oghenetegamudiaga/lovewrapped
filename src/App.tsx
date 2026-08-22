@@ -233,7 +233,7 @@ export default function App() {
           <AdminView />
         )}
 
-        {currentPath === '/weddings' && (
+        {(currentPath === '/weddings' || currentPath === '/wedding') && (
           <WeddingsLandingView onNavigate={navigate} currentCouple={currentCouple} onLogout={handleCoupleLogout} />
         )}
 

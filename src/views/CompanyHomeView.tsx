@@ -23,21 +23,22 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
           Amorah creates interactive digital stories and scene-based invitations for life's most meaningful occasions — from anniversaries and romantic surprises to weddings.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-4 w-full sm:w-auto">
-          <a
-            href="#products"
-            className="px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+          <button
+            id="company-hero-create-wedding-button"
+            onClick={() => onNavigate('/wedding')}
+            className="w-full sm:w-auto px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
           >
-            <span>Explore Products</span>
+            <span>Create a Wedding Invitation</span>
             <ArrowRight className="w-5 h-5 text-coral" />
-          </a>
+          </button>
 
           <button
-            id="company-hero-create-button"
-            onClick={() => onNavigate('/pricing')}
-            className="px-6 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-medium text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
+            id="company-hero-create-moment-button"
+            onClick={() => onNavigate('/create')}
+            className="w-full sm:w-auto px-6 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-medium text-base hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Create Yours</span>
+            <span>Create a Moment</span>
           </button>
         </div>
       </section>
