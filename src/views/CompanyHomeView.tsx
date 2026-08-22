@@ -84,7 +84,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
           customPreview={
             <IphoneDeviceMockup
               demoUrl="/w/wedding/dvds-and-dvs"
-              coverPhotoUrl="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80"
+              coverPhotoUrl="/demo-wedding/wedding-cover.jpg"
               title="Weddings by Amorah"
             />
           }

@@ -172,7 +172,7 @@ const siteContentStore: Map<string, string> = new Map([
   ['pricing_free_desc', 'Perfect for a quick, heartfelt surprise with interactive slides & music.'],
   ['pricing_paid_title', 'Paid Story'],
   ['pricing_paid_desc', 'For unforgettable anniversaries, birthdays & grand romantic gestures.'],
-  ['weddings_demo_cover_photo_url', 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80'],
+  ['weddings_demo_cover_photo_url', '/demo-wedding/wedding-cover.jpg'],
 ]);
 
 // Seed Demo CRM Contacts
@@ -303,11 +303,12 @@ const seedDemoWedding: Wedding = {
   theme_id: 'classic-romance',
   color_variant: 'burgundy-gold',
   font_variant: 'serif-classic',
-  cover_photo_url: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80',
+  cover_photo_url: '/demo-wedding/wedding-cover.jpg',
   gallery_photos: [
-    'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1000&q=80',
-    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1000&q=80',
+    '/demo-wedding/wedding-cover.jpg',
+    '/demo-wedding/wedding-picnic.jpg',
+    '/demo-wedding/wedding-poolside.jpg',
+    '/demo-wedding/wedding-traditional.jpg',
   ],
   registry_url: 'https://www.amazon.com/baby-reg/demo',
   registry_info: 'https://www.amazon.com/baby-reg/demo',

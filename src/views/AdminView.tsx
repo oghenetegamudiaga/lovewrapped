@@ -3938,7 +3938,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                             <p className="text-xs font-semibold text-maroon text-center">Live Wedding Demo Preview</p>
                             <IphoneDeviceMockup
                               demoUrl={`/w/wedding/${DEMO_WEDDING_SLUG}`}
-                              coverPhotoUrl={demoCoverUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80'}
+                              coverPhotoUrl={demoCoverUrl || '/demo-wedding/wedding-cover.jpg'}
                               title="Weddings by Amorah"
                             />
                           </div>

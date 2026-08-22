@@ -22,7 +22,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const { content } = useSiteContent();
-  const demoCoverPhotoUrl = content['weddings_demo_cover_photo_url'] || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80';
+  const demoCoverPhotoUrl = content['weddings_demo_cover_photo_url'] || '/demo-wedding/wedding-cover.jpg';
 
   useEffect(() => {
     const checkAuthStatus = async () => {
