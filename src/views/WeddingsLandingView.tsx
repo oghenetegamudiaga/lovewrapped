@@ -7,6 +7,7 @@ import { useSiteContent } from '../lib/useSiteContent';
 import { WeddingFeatures } from '../components/landing/WeddingFeatures';
 import { WeddingSteps } from '../components/landing/WeddingSteps';
 import { WeddingFaq } from '../components/landing/WeddingFaq';
+import { IphoneDeviceMockup } from '../components/landing/IphoneDeviceMockup';
 
 interface WeddingsLandingViewProps {
   onNavigate: (path: string) => void;
@@ -173,24 +174,12 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
         </p>
 
         {/* INTERACTIVE PHONE MOCKUP IN HERO */}
-        <div id="phone-mockup-section" className="relative w-full max-w-sm sm:max-w-md mx-auto pt-4">
-          <div className="relative mx-auto rounded-[48px] border-[10px] border-[#1F050C] bg-[#1F050C] shadow-2xl p-2 phone-card-shadow">
-            {/* Phone Notch & Speaker Pill */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-[#1F050C] rounded-b-2xl z-40 flex items-center justify-center">
-              <div className="w-10 h-1 rounded-full bg-white/20" />
-            </div>
-
-            {/* Embedded Live Interactive Viewer Component */}
-            <div className="relative rounded-[36px] overflow-hidden h-[680px] w-full">
-              <WeddingInvitationViewer isSpike wedding={{ cover_photo_url: demoCoverPhotoUrl } as any} onNavigate={onNavigate} />
-            </div>
-          </div>
-
-          <div className="mt-4 text-center">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-semibold text-mauve uppercase tracking-widest bg-cream-card px-3 py-1 rounded-full border border-cream-border">
-              <Smartphone className="w-3.5 h-3.5 text-coral" /> Interactive Live Preview — Tap wax seal to open
-            </span>
-          </div>
+        <div id="phone-mockup-section" className="pt-4 w-full">
+          <IphoneDeviceMockup
+            demoUrl="/w/wedding/dvds-and-dvs"
+            coverPhotoUrl={demoCoverPhotoUrl}
+            title="Weddings by Amorah"
+          />
         </div>
       </section>
 
