@@ -3,6 +3,7 @@ import { Heart, Calendar, MapPin, AlertCircle } from 'lucide-react';
 import { resolveThemeStyles } from '../config/weddingThemes';
 import { getPublicThemeAssetsApi } from '../lib/api';
 import { TextZone, CardTemplateRecord, CardTemplateField } from '../types';
+import { WEDDING_INVITATION_PRESET_FIELDS } from '../config/templatePresets';
 
 export const TEMPLATE_CARD_COUPLE_NAME_COLOR = '#3A0D22';
 export const TEMPLATE_CARD_DETAIL_TEXT_COLOR = '#000000';
@@ -148,24 +149,16 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
       } ${className}`}
     >
       {/* Custom Card Template Backdrop (If present) */}
-      {template && template.text_fields && template.text_fields.length > 0 ? (
+      {(resolvedTemplateUrl || template?.image_url) ? (
         <>
-          {template.image_url ? (
-            <img
-              src={template.image_url}
-              alt={template.name || 'Invitation Card Template'}
-              className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-            />
-          ) : (
-            <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-6 text-center bg-rose-950/80 text-rose-100 border-2 border-dashed border-rose-500/50">
-              <AlertCircle className="w-8 h-8 text-rose-400 mb-2" />
-              <span className="font-serif font-bold text-sm">No Template Artwork Image Set</span>
-              <span className="text-xs opacity-75 mt-1">Upload a background template image in Admin &gt; Templates</span>
-            </div>
-          )}
+          <img
+            src={resolvedTemplateUrl || template?.image_url || ''}
+            alt={template?.name || 'Invitation Card Template'}
+            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          />
 
-          {/* Config-driven absolute text fields */}
-          {template.text_fields.map((field) => {
+          {/* Config-driven absolute text fields (9-Field Preset Engine) */}
+          {((template && template.text_fields && template.text_fields.length > 0) ? template.text_fields : WEDDING_INVITATION_PRESET_FIELDS).map((field) => {
             if (field.field_key === 'date_split') {
               return (
                 <div
@@ -224,8 +217,8 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
             if (field.field_key === 'couple_names') {
               const bride = brideFirstName || 'Bride';
               const groom = groomFirstName || 'Groom';
-              const maxSz = field.max_font_size || 38;
-              const minSz = field.min_font_size || 22;
+              const maxSz = field.max_font_size || 34;
+              const minSz = field.min_font_size || 20;
               const longestNameLen = Math.max(bride.length, groom.length);
               const computedSize = longestNameLen <= 8 ? maxSz : Math.max(minSz, Math.round(maxSz - (longestNameLen - 8) * 1.2));
 
@@ -438,67 +431,6 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
               </div>
             );
           })}
-        </>
-      ) : resolvedTemplateUrl ? (
-        <>
-          <img
-            src={resolvedTemplateUrl}
-            alt="Custom Invitation Card Template"
-            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-          />
-
-          {/* Absolute Text Zone Container positioned via configured percentage box */}
-          <div
-            className="absolute z-10 p-2 flex flex-col justify-center items-center text-center overflow-hidden pointer-events-none"
-            style={{
-              top: `${zone.top}%`,
-              left: `${zone.left}%`,
-              width: `${zone.width}%`,
-              height: `${zone.height}%`,
-            }}
-          >
-            <div className="w-full my-auto px-2 space-y-2.5 overflow-hidden pointer-events-auto">
-              <h1
-                className={`text-2xl sm:text-3xl md:text-4xl font-bold tracking-wide leading-tight ${serifClass}`}
-                style={{ color: TEMPLATE_CARD_COUPLE_NAME_COLOR }}
-              >
-                {brideFirstName || 'Bride'} & {groomFirstName || 'Groom'}
-              </h1>
-
-              {customText ? (
-                <p
-                  className="text-xs sm:text-sm font-semibold uppercase tracking-widest"
-                  style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
-                >
-                  {customText}
-                </p>
-              ) : (
-                <p
-                  className="text-[11px] sm:text-xs font-semibold uppercase tracking-widest"
-                  style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
-                >
-                  Save The Date
-                </p>
-              )}
-
-              <div
-                className="text-xs sm:text-sm font-bold tracking-wider pt-0.5 flex items-center justify-center gap-1.5"
-                style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
-              >
-                <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }} />
-                <span>{formattedDate}</span>
-              </div>
-
-              {venueName && (
-                <p
-                  className="text-[11px] sm:text-xs font-semibold truncate max-w-xs mx-auto"
-                  style={{ color: TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
-                >
-                  {venueName} {venueAddress ? `• ${venueAddress}` : ''}
-                </p>
-              )}
-            </div>
-          </div>
         </>
       ) : (
         <>
