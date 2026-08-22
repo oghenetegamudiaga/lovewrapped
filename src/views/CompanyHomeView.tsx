@@ -68,7 +68,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
           bgColor="bg-cream-card/60"
         />
 
-        {/* 2. Weddings by Amorah Section (Image Left, Copy Right — Stacked below Moments) */}
+        {/* 2. Weddings by Amorah Section (iPhone 17 Live Demo Mockup Left, Copy Right — Stacked below Moments) */}
         <ProductShowcase
           eyebrow="PRODUCT LINE"
           title="Weddings by Amorah"
@@ -81,8 +81,13 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
           ctaText="Create Wedding Invitation"
           ctaPath="/weddings/create"
           onNavigate={onNavigate}
-          imageSrc="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80"
-          imageAlt="Weddings by Amorah Digital Invitation Preview"
+          customPreview={
+            <IphoneDeviceMockup
+              demoUrl="/w/wedding/dvds-and-dvs"
+              coverPhotoUrl="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80"
+              title="Weddings by Amorah"
+            />
+          }
           imagePosition="left"
           bgColor="bg-cream"
         />
