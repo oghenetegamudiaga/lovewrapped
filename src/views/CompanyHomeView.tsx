@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ShieldCheck, PlayCircle } from 'lucide-react';
+import { ArrowRight, PlayCircle } from 'lucide-react';
 import { ProductShowcase } from '../components/landing/ProductShowcase';
 import { Testimonials } from '../components/landing/Testimonials';
 import { HomepageFaq } from '../components/landing/HomepageFaq';
@@ -12,7 +12,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
   return (
     <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Hero Section */}
-      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
+      <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6 max-w-4xl">
           Turn Every Special Moment Into an<br />
           <em className="italic font-normal text-coral">Unforgettable Digital Experience.</em>
@@ -22,7 +22,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
           Amorah creates interactive digital stories and scene-based invitations for life's most meaningful occasions — from anniversaries and romantic surprises to weddings.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-8 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center justify-center gap-4 w-full sm:w-auto">
           <a
             href="#products"
             className="px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
@@ -39,11 +39,6 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
             <span>Create Yours</span>
           </button>
         </div>
-
-        <p className="text-xs text-mauve/80 font-medium tracking-wide flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-coral inline" />
-          <span>No app installation required • Instant shareable links • Beautiful on all devices</span>
-        </p>
       </section>
 
       {/* Stacked Full-Width Product Showcase Sections */}
