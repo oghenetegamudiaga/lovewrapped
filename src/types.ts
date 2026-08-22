@@ -157,6 +157,8 @@ export interface WeddingTheme {
   };
 }
 
+export type MusicSourceType = 'curated' | 'spotify' | 'apple_music' | 'soundcloud';
+
 export interface Wedding {
   id: string;
   couple_account_id: string;
@@ -175,6 +177,9 @@ export interface Wedding {
   love_story?: string | null;
   gallery_photos?: string[] | null;
   music_track?: string | null;
+  music_source_type?: MusicSourceType;
+  music_external_id?: string | null;
+  music_external_meta?: Record<string, any> | null;
   registry_info?: string | null;
   registry_url?: string | null;
   is_paid: boolean;
@@ -258,6 +263,9 @@ export interface CreateWeddingPayload {
   love_story?: string;
   gallery_photos?: string[];
   music_track?: string;
+  music_source_type?: MusicSourceType;
+  music_external_id?: string | null;
+  music_external_meta?: Record<string, any> | null;
   registry_info?: string;
   // Multi-event array (backward compatible with single event)
   events?: WeddingEventPayload[];

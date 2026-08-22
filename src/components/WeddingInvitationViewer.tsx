@@ -263,7 +263,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   const hasRegistryInfo = !!(
     (wedding?.registry_url && wedding.registry_url.trim().length > 0) ||
-    (wedding?.registry_info && wedding.registry_info.trim().length > 0)
+    (wedding?.registry_info && wedding.registry_info.trim().length > 0) ||
+    isSpike
   );
 
   useEffect(() => {
@@ -1023,12 +1024,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 </div>
 
                 {/* Bottom Section on Photo Screen: Action Buttons Row */}
-                <div className="relative z-10 p-6 pb-8 text-center">
+                <div className="relative z-10 p-3 sm:p-6 pb-5 sm:pb-8 text-center">
                   {/* Circular Icon Action Badges (Gift Registry, RSVP, Gallery, Event Details) */}
-                  <div className="flex items-center justify-center gap-5 sm:gap-9 flex-wrap select-none">
+                  <div className="flex items-center justify-center gap-3 sm:gap-9 flex-nowrap sm:flex-wrap select-none max-w-full">
                     {/* 1. Gift Registry Button */}
                     {hasRegistryInfo && (
-                      <div className="flex flex-col items-center gap-2">
+                      <div className="flex flex-col items-center gap-1.5 sm:gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -1043,34 +1044,34 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                               }, 100);
                             }
                           }}
-                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                          className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
                           title="Gift Registry"
                         >
-                          <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                          <Gift className="w-4 h-4 sm:w-6 sm:h-6 text-white stroke-[2]" />
                         </button>
-                        <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                        <span className="text-[10px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] whitespace-nowrap">
                           Gift Registry
                         </span>
                       </div>
                     )}
 
                     {/* 2. RSVP Button */}
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
                       <button
                         type="button"
                         onClick={() => setIsRsvpModalOpen(true)}
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                        className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
                         title="Respond to RSVP"
                       >
-                        <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                        <Mail className="w-4 h-4 sm:w-6 sm:h-6 text-white stroke-[2]" />
                       </button>
-                      <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                      <span className="text-[10px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] whitespace-nowrap">
                         RSVP
                       </span>
                     </div>
 
                     {/* 3. Gallery / Media Button */}
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -1085,27 +1086,27 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                             }, 100);
                           }
                         }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                        className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
                         title="Photo Gallery"
                       >
-                        <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                        <Camera className="w-4 h-4 sm:w-6 sm:h-6 text-white stroke-[2]" />
                       </button>
-                      <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                      <span className="text-[10px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] whitespace-nowrap">
                         Gallery
                       </span>
                     </div>
 
                     {/* 4. Event Details Button */}
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
                       <button
                         type="button"
                         onClick={() => setActiveView('details')}
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                        className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
                         title="Event Details"
                       >
-                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                        <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-white stroke-[2]" />
                       </button>
-                      <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                      <span className="text-[10px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] whitespace-nowrap">
                         Event Details
                       </span>
                     </div>
@@ -1349,9 +1350,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         )}
       </div>
 
-      {/* Floating Background Music Player with Mute/Unmute toggle */}
+      {/* Floating Background Music Player / Embed Widget */}
       <MusicPlayerToggle
         musicTrackId={wedding?.music_track}
+        musicSourceType={wedding?.music_source_type}
+        musicExternalId={wedding?.music_external_id}
+        musicExternalMeta={wedding?.music_external_meta}
         accentColor={accentColor}
         bgColor={activeTheme.bgColor}
       />

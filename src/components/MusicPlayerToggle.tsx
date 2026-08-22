@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, Music } from 'lucide-react';
+import { MusicSourceType } from '../types';
 
 export interface CuratedTrackInfo {
   id: string;
@@ -31,6 +32,9 @@ export const CURATED_MUSIC_TRACKS: Record<string, CuratedTrackInfo> = {
 
 interface MusicPlayerToggleProps {
   musicTrackId?: string | null;
+  musicSourceType?: MusicSourceType | null;
+  musicExternalId?: string | null;
+  musicExternalMeta?: Record<string, any> | null;
   accentColor?: string;
   bgColor?: string;
   className?: string;
@@ -38,6 +42,9 @@ interface MusicPlayerToggleProps {
 
 export const MusicPlayerToggle: React.FC<MusicPlayerToggleProps> = ({
   musicTrackId,
+  musicSourceType = 'curated',
+  musicExternalId,
+  musicExternalMeta,
   accentColor = '#D4AF37',
   bgColor = '#2A0812',
   className = '',
@@ -46,9 +53,22 @@ export const MusicPlayerToggle: React.FC<MusicPlayerToggleProps> = ({
   const [isMuted, setIsMuted] = useState(true); // Starts muted to comply with browser autoplay policies
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const isSpotify = musicSourceType === 'spotify' && !!musicExternalId;
+  const isAppleMusic = musicSourceType === 'apple_music' && (!!musicExternalMeta?.country || !!musicExternalId);
+  const isSoundCloud = musicSourceType === 'soundcloud' && (!!musicExternalMeta?.trackUrl || !!musicExternalMeta?.embedUrl || !!musicExternalId);
+  const isCurated = !isSpotify && !isAppleMusic && !isSoundCloud;
+
   const activeTrack = (musicTrackId && CURATED_MUSIC_TRACKS[musicTrackId]) || CURATED_MUSIC_TRACKS['romantic-strings'];
 
   useEffect(() => {
+    if (!isCurated) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      return;
+    }
+
     const audio = new Audio(activeTrack.url);
     audio.loop = true;
     audio.muted = true;
@@ -66,7 +86,7 @@ export const MusicPlayerToggle: React.FC<MusicPlayerToggleProps> = ({
       audio.pause();
       audioRef.current = null;
     };
-  }, [activeTrack.url]);
+  }, [activeTrack.url, isCurated]);
 
   const toggleMute = () => {
     if (!audioRef.current) return;
@@ -85,6 +105,73 @@ export const MusicPlayerToggle: React.FC<MusicPlayerToggleProps> = ({
     }
   };
 
+  // 1. Spotify Official Compact Player Embed
+  if (isSpotify) {
+    return (
+      <div className={`fixed bottom-4 right-4 z-50 max-w-[280px] w-full shadow-2xl rounded-2xl overflow-hidden border border-white/20 backdrop-blur-md ${className}`}>
+        <iframe
+          src={`https://open.spotify.com/embed/track/${musicExternalId}?utm_source=generator&theme=0`}
+          width="100%"
+          height="80"
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          title="Spotify Embedded Track"
+          className="rounded-2xl"
+        />
+      </div>
+    );
+  }
+
+  // 2. Apple Music Official Compact Player Embed
+  if (isAppleMusic) {
+    const country = musicExternalMeta?.country || 'us';
+    const albumId = musicExternalMeta?.albumId;
+    const songId = musicExternalMeta?.songId || musicExternalId;
+    const embedSrc = albumId && songId
+      ? `https://embed.music.apple.com/${country}/album/${albumId}?i=${songId}`
+      : `https://embed.music.apple.com/${country}/album/${songId}`;
+
+    return (
+      <div className={`fixed bottom-4 right-4 z-50 max-w-[300px] w-full shadow-2xl rounded-2xl overflow-hidden border border-white/20 bg-black/90 backdrop-blur-md ${className}`}>
+        <iframe
+          src={embedSrc}
+          width="100%"
+          height="175"
+          frameBorder="0"
+          allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
+          loading="lazy"
+          title="Apple Music Embedded Song"
+          className="rounded-2xl w-full"
+        />
+      </div>
+    );
+  }
+
+  // 3. SoundCloud Official Compact Player Embed
+  if (isSoundCloud) {
+    const trackUrl = musicExternalMeta?.trackUrl || musicExternalId;
+    const embedSrc = musicExternalMeta?.embedUrl || (trackUrl ? `https://w.soundcloud.com/player/?url=${encodeURIComponent(trackUrl)}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false` : undefined);
+
+    if (embedSrc) {
+      return (
+        <div className={`fixed bottom-4 right-4 z-50 max-w-[300px] w-full shadow-2xl rounded-2xl overflow-hidden border border-white/20 bg-black/90 backdrop-blur-md ${className}`}>
+          <iframe
+            src={embedSrc}
+            width="100%"
+            height="166"
+            frameBorder="0"
+            allow="autoplay"
+            loading="lazy"
+            title="SoundCloud Embedded Track"
+            className="rounded-2xl w-full"
+          />
+        </div>
+      );
+    }
+  }
+
+  // 4. Curated Track Player with Mute/Unmute Toggle
   return (
     <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
       <button

@@ -3,6 +3,7 @@ import { Heart, Sparkles, Calendar, CheckCircle2, ArrowRight, ShieldCheck, UserC
 import { getCoupleMeApi, getCoupleMyWeddingsApi, logoutCoupleApi } from '../lib/api';
 import { CoupleAccount } from '../types';
 import { WeddingInvitationViewer } from '../components/WeddingInvitationViewer';
+import { useSiteContent } from '../lib/useSiteContent';
 
 interface WeddingsLandingViewProps {
   onNavigate: (path: string) => void;
@@ -15,6 +16,9 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
   const [weddingsCount, setWeddingsCount] = useState<number>(0);
   const [firstWeddingId, setFirstWeddingId] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  const { content } = useSiteContent();
+  const demoCoverPhotoUrl = content['weddings_demo_cover_photo_url'] || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80';
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -175,7 +179,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
 
             {/* Embedded Live Interactive Viewer Component */}
             <div className="relative rounded-[36px] overflow-hidden h-[680px] w-full">
-              <WeddingInvitationViewer isSpike onNavigate={onNavigate} />
+              <WeddingInvitationViewer isSpike wedding={{ cover_photo_url: demoCoverPhotoUrl } as any} onNavigate={onNavigate} />
             </div>
           </div>
 

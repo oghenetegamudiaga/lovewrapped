@@ -180,6 +180,9 @@ CREATE TABLE IF NOT EXISTS public.weddings (
   gallery_photos TEXT[] NOT NULL DEFAULT ARRAY[]::text[],
   love_story TEXT,
   music_track TEXT,
+  music_source_type TEXT NOT NULL DEFAULT 'curated' CHECK (music_source_type IN ('curated', 'spotify', 'apple_music', 'soundcloud')),
+  music_external_id TEXT,
+  music_external_meta JSONB,
   registry_info TEXT,
   is_paid BOOLEAN NOT NULL DEFAULT false,
   payment_reference TEXT,
@@ -411,6 +414,14 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "Public read access for wedding-cover-photos bucket"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'wedding-cover-photos');
+
+-- Migration Block for Multi-Platform Music Links (Spotify, Apple Music & SoundCloud)
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS music_source_type TEXT NOT NULL DEFAULT 'curated';
+ALTER TABLE public.weddings DROP CONSTRAINT IF EXISTS weddings_music_source_type_check;
+ALTER TABLE public.weddings ADD CONSTRAINT weddings_music_source_type_check CHECK (music_source_type IN ('curated', 'spotify', 'apple_music', 'soundcloud'));
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS music_external_id TEXT;
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS music_external_meta JSONB;
+
 
 
 

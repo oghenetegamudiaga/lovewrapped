@@ -688,3 +688,19 @@ export async function deleteAdminDemoPhotoApi(photoUrl: string): Promise<{ succe
     body: JSON.stringify({ photoUrl, id: 'wedding-demo-001', slug: 'dvds-and-dvs' }),
   });
 }
+
+/**
+ * Validate & extract Spotify / Apple Music / SoundCloud music link (Server-side validation).
+ */
+export async function validateMusicLinkApi(url: string): Promise<{
+  valid: boolean;
+  type?: 'spotify' | 'apple_music' | 'soundcloud';
+  externalId?: string | null;
+  externalMeta?: Record<string, any> | null;
+  message?: string;
+}> {
+  return apiFetch('/weddings/validate-music-link', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
+}

@@ -90,7 +90,7 @@ import { WEDDING_THEMES } from '../config/weddingThemes';
 
 interface AdminViewProps {}
 
-const DEFAULT_CMS_FIELDS: Array<{ key: string; label: string; section: 'hero' | 'pricing'; type: 'input' | 'textarea' }> = [
+const DEFAULT_CMS_FIELDS: Array<{ key: string; label: string; section: 'hero' | 'pricing'; type: 'input' | 'textarea' | 'image' }> = [
   { key: 'hero_eyebrow', label: 'Hero Eyebrow Pill', section: 'hero', type: 'input' },
   { key: 'hero_title_prefix', label: 'Hero Headline Prefix', section: 'hero', type: 'input' },
   { key: 'hero_title_highlight', label: 'Hero Headline Italic Highlight', section: 'hero', type: 'input' },
@@ -98,6 +98,7 @@ const DEFAULT_CMS_FIELDS: Array<{ key: string; label: string; section: 'hero' | 
   { key: 'hero_cta_create', label: 'Primary CTA Button Text', section: 'hero', type: 'input' },
   { key: 'hero_cta_view_demo', label: 'Secondary CTA (Watch Demo) Text', section: 'hero', type: 'input' },
   { key: 'hero_tagline', label: 'Hero Bottom Tagline', section: 'hero', type: 'input' },
+  { key: 'weddings_demo_cover_photo_url', label: 'Weddings Landing Demo Cover Photo', section: 'hero', type: 'image' },
 
   { key: 'pricing_badge', label: 'Pricing Eyebrow Badge', section: 'pricing', type: 'input' },
   { key: 'pricing_title', label: 'Pricing Main Title', section: 'pricing', type: 'input' },
@@ -1589,6 +1590,45 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                               onChange={(e) => setSiteContent((prev) => ({ ...prev, [field.key]: e.target.value }))}
                               className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
                             />
+                          ) : field.type === 'image' ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="https://..."
+                                  value={currentValue}
+                                  onChange={(e) => setSiteContent((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                                  className="flex-1 p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
+                                />
+                                <label className="px-3 py-2.5 rounded-xl bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs cursor-pointer inline-flex items-center gap-1.5 shrink-0 transition-all shadow-sm">
+                                  <Upload className="w-3.5 h-3.5 text-coral" />
+                                  <span>Upload</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (!file) return;
+                                      try {
+                                        const url = await uploadFileToStorage(file);
+                                        if (url) {
+                                          setSiteContent((prev) => ({ ...prev, [field.key]: url }));
+                                          handleSaveContentKey(field.key, url);
+                                        }
+                                      } catch (err: any) {
+                                        alert(err.message || 'Image upload failed');
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                              {currentValue && (
+                                <div className="relative h-24 rounded-xl overflow-hidden border border-cream-border bg-black/10">
+                                  <img src={currentValue} alt="Demo Cover Preview" className="w-full h-full object-cover" />
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <input
                               type="text"
