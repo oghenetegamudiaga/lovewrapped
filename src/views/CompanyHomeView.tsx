@@ -3,6 +3,7 @@ import { ArrowRight, PlayCircle } from 'lucide-react';
 import { ProductShowcase } from '../components/landing/ProductShowcase';
 import { Testimonials } from '../components/landing/Testimonials';
 import { HomepageFaq } from '../components/landing/HomepageFaq';
+import { IphoneDeviceMockup } from '../components/landing/IphoneDeviceMockup';
 
 interface CompanyHomeViewProps {
   onNavigate: (path: string) => void;
@@ -43,7 +44,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
 
       {/* Stacked Full-Width Product Showcase Sections */}
       <div id="products" className="scroll-mt-12">
-        {/* 1. Amorah Moments Section (Copy Left, Image Right) */}
+        {/* 1. Amorah Moments Section (Copy Left, iPhone 17 Live Demo Mockup Right) */}
         <ProductShowcase
           eyebrow="PRODUCT LINE"
           title="Amorah Moments"
@@ -56,8 +57,13 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
           ctaText="Create Moments"
           ctaPath="/pricing"
           onNavigate={onNavigate}
-          imageSrc="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80"
-          imageAlt="Amorah Moments Digital Experience Preview"
+          customPreview={
+            <IphoneDeviceMockup
+              demoUrl="/w/demo"
+              coverPhotoUrl="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80"
+              title="Amorah Moments"
+            />
+          }
           imagePosition="right"
           bgColor="bg-cream-card/60"
         />

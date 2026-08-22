@@ -9,8 +9,9 @@ export interface ProductShowcaseProps {
   ctaText: string;
   ctaPath: string;
   onNavigate: (path: string) => void;
-  imageSrc: string;
-  imageAlt: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  customPreview?: React.ReactNode;
   imagePosition?: 'left' | 'right';
   bgColor?: string;
 }
@@ -25,6 +26,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   onNavigate,
   imageSrc,
   imageAlt,
+  customPreview,
   imagePosition = 'right',
   bgColor = 'bg-cream',
 }) => {
@@ -76,20 +78,26 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </div>
 
           {/* Image / Demo Side */}
-          <div className="w-full lg:w-1/2">
-            <div className="relative mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-cream-card bg-[#1F050C] max-w-md lg:max-w-none">
-              <img
-                src={imageSrc}
-                alt={imageAlt}
-                loading="lazy"
-                className="w-full h-[360px] sm:h-[460px] lg:h-[500px] object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-maroon/80 via-transparent to-transparent flex items-end p-6 text-cream">
-                <span className="text-xs uppercase font-sans font-semibold tracking-widest text-cream/90 bg-maroon/80 px-3 py-1 rounded-full border border-white/10 backdrop-blur-xs">
-                  {title} Live Preview
-                </span>
+          <div className="w-full lg:w-1/2 flex justify-center">
+            {customPreview ? (
+              customPreview
+            ) : (
+              <div className="relative mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-cream-card bg-[#1F050C] max-w-md lg:max-w-none w-full">
+                {imageSrc && (
+                  <img
+                    src={imageSrc}
+                    alt={imageAlt || title}
+                    loading="lazy"
+                    className="w-full h-[360px] sm:h-[460px] lg:h-[500px] object-cover object-center"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-maroon/80 via-transparent to-transparent flex items-end p-6 text-cream">
+                  <span className="text-xs uppercase font-sans font-semibold tracking-widest text-cream/90 bg-maroon/80 px-3 py-1 rounded-full border border-white/10 backdrop-blur-xs">
+                    {title} Live Preview
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
