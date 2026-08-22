@@ -1,5 +1,8 @@
 import React from 'react';
-import { Heart, Sparkles, ArrowRight, ShieldCheck, Layers, Calendar, CheckCircle2, UserCheck, PlayCircle } from 'lucide-react';
+import { ArrowRight, ShieldCheck, PlayCircle } from 'lucide-react';
+import { ProductShowcase } from '../components/landing/ProductShowcase';
+import { Testimonials } from '../components/landing/Testimonials';
+import { HomepageFaq } from '../components/landing/HomepageFaq';
 
 interface CompanyHomeViewProps {
   onNavigate: (path: string) => void;
@@ -10,7 +13,6 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
     <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
-
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6 max-w-4xl">
           Turn Every Special Moment Into an<br />
           <em className="italic font-normal text-coral">Unforgettable Digital Experience.</em>
@@ -44,111 +46,54 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
         </p>
       </section>
 
-      {/* Products Section */}
-      <section id="products" className="py-16 sm:py-20 px-4 sm:px-6 bg-cream-card/60 border-y border-cream-border/60">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-maroon mb-3">
-              Crafted for Your Moments
-            </h2>
-            <p className="text-mauve text-base max-w-xl mx-auto">
-              Choose the perfect Amorah product for your celebration.
-            </p>
-          </div>
+      {/* Stacked Full-Width Product Showcase Sections */}
+      <div id="products" className="scroll-mt-12">
+        {/* 1. Amorah Moments Section (Copy Left, Image Right) */}
+        <ProductShowcase
+          eyebrow="PRODUCT LINE"
+          title="Amorah Moments"
+          description="Personalized interactive digital cards for anniversaries, birthdays, proposals, and romantic surprises. A few memories, a few honest words, one beautiful story they’ll want to replay."
+          bullets={[
+            'Interactive multi-slide storytelling with photos & music',
+            'Voice message recordings & custom slide themes',
+            'Instant shareable link with zero app downloads',
+          ]}
+          ctaText="Create Moments"
+          ctaPath="/pricing"
+          onNavigate={onNavigate}
+          imageSrc="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80"
+          imageAlt="Amorah Moments Digital Experience Preview"
+          imagePosition="right"
+          bgColor="bg-cream-card/60"
+        />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-            {/* Product Card 1: Amorah Love Stories */}
-            <div className="bg-cream border border-cream-border p-8 sm:p-10 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Heart className="w-32 h-32 text-coral fill-coral" />
-              </div>
+        {/* 2. Weddings by Amorah Section (Image Left, Copy Right — Stacked below Moments) */}
+        <ProductShowcase
+          eyebrow="PRODUCT LINE"
+          title="Weddings by Amorah"
+          description="Cinematic digital wedding invitations, multi-event schedules, and real-time RSVP management. Designed to give your guests an unforgettable preview of your wedding day."
+          bullets={[
+            'Scene-based digital invitations with animated typography',
+            'Real-time guest RSVP tracking & dietary preferences',
+            'Traditional, White Wedding & Reception multi-event support',
+          ]}
+          ctaText="Create Wedding Invitation"
+          ctaPath="/weddings/create"
+          onNavigate={onNavigate}
+          imageSrc="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80"
+          imageAlt="Weddings by Amorah Digital Invitation Preview"
+          imagePosition="left"
+          bgColor="bg-cream"
+        />
+      </div>
 
-              <div className="relative z-10 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-coral/10 text-coral flex items-center justify-center mb-6">
-                  <Heart className="w-6 h-6 fill-coral" />
-                </div>
-                <span className="text-xs font-semibold text-coral uppercase tracking-wider">Product line</span>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-maroon mt-1 mb-3">
-                  Amorah Moments
-                </h3>
-                <p className="text-mauve text-sm sm:text-base leading-relaxed mb-6">
-                  Personalized interactive digital cards for anniversaries, birthdays, proposals, and romantic surprises. A few memories, a few honest words, one beautiful story they’ll want to replay.
-                </p>
+      {/* 3. Customer Reviews Section */}
+      <Testimonials />
 
-                <ul className="space-y-3 text-xs sm:text-sm text-maroon/90 font-medium">
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-coral shrink-0" />
-                    <span>Interactive multi-slide storytelling with photos & music</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-coral shrink-0" />
-                    <span>Voice message recordings & custom slide themes</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-coral shrink-0" />
-                    <span>Instant shareable link with zero app downloads</span>
-                  </li>
-                </ul>
-              </div>
+      {/* 4. Homepage Accordion FAQ Section */}
+      <HomepageFaq />
 
-              <div className="relative z-10 pt-4 border-t border-cream-border/60 flex items-center justify-between">
-                <button
-                  id="home-explore-love-stories-button"
-                  onClick={() => onNavigate('/love-stories')}
-                  className="w-full py-3.5 px-6 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-sm shadow-md hover:scale-[1.01] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Explore Moments</span>
-                  <ArrowRight className="w-4 h-4 text-coral" />
-                </button>
-              </div>
-            </div>
-
-            {/* Product Card 2: Weddings by Amorah */}
-            <div className="bg-cream border border-cream-border p-8 sm:p-10 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
-              <div className="relative z-10 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-maroon/10 text-maroon flex items-center justify-center mb-6">
-                  <Heart className="w-6 h-6 text-coral" />
-                </div>
-                <span className="text-xs font-semibold text-coral uppercase tracking-wider">Product line</span>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-maroon mt-1 mb-3">
-                  Weddings by Amorah
-                </h3>
-                <p className="text-mauve text-sm sm:text-base leading-relaxed mb-6">
-                  Cinematic digital wedding invitations, multi-event schedules, and real-time RSVP management. Designed to give your guests an unforgettable preview of your wedding day.
-                </p>
-
-                <ul className="space-y-3 text-xs sm:text-sm text-maroon/90 font-medium">
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-coral shrink-0" />
-                    <span>Scene-based digital invitations with animated typography</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-coral shrink-0" />
-                    <span>Real-time guest RSVP tracking & dietary preferences</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-coral shrink-0" />
-                    <span>Traditional, White Wedding & Reception multi-event support</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="relative z-10 pt-4 border-t border-cream-border/60 flex items-center justify-between">
-                <button
-                  id="home-explore-weddings-button"
-                  onClick={() => onNavigate('/weddings')}
-                  className="w-full py-3.5 px-6 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Explore Weddings</span>
-                  <ArrowRight className="w-4 h-4 text-coral" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Demo Teaser & Trust Section */}
+      {/* 5. Demo Teaser & Final CTA Section */}
       <section className="py-20 px-4 text-center max-w-4xl mx-auto">
         <div className="p-8 sm:p-12 rounded-3xl bg-maroon text-cream shadow-xl relative overflow-hidden">
           <div className="relative z-10 space-y-4">
