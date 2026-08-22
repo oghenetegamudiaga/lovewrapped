@@ -4,6 +4,9 @@ import { getCoupleMeApi, getCoupleMyWeddingsApi, logoutCoupleApi } from '../lib/
 import { CoupleAccount } from '../types';
 import { WeddingInvitationViewer } from '../components/WeddingInvitationViewer';
 import { useSiteContent } from '../lib/useSiteContent';
+import { WeddingFeatures } from '../components/landing/WeddingFeatures';
+import { WeddingSteps } from '../components/landing/WeddingSteps';
+import { WeddingFaq } from '../components/landing/WeddingFaq';
 
 interface WeddingsLandingViewProps {
   onNavigate: (path: string) => void;
@@ -191,51 +194,14 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
         </div>
       </section>
 
-      {/* Feature Highlights Grid */}
-      <section className="py-16 px-4 sm:px-6 bg-cream-card/60 border-y border-cream-border/60">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-maroon mb-3">
-              Crafted for Your Special Day
-            </h2>
-            <p className="text-mauve text-base max-w-xl mx-auto">
-              Everything you need to invite, excite, and manage your wedding guests effortlessly.
-            </p>
-          </div>
+      {/* 1. Text-Led Editorial Features Section */}
+      <WeddingFeatures />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-cream border border-cream-border p-6 sm:p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-coral/10 text-coral flex items-center justify-center">
-                <Layers className="w-6 h-6" />
-              </div>
-              <h3 className="font-serif text-xl font-semibold text-maroon">Scene-Based Invitations</h3>
-              <p className="text-mauve text-sm leading-relaxed">
-                Step away from flat static PDFs. Deliver cinematic, multi-scene digital invitations complete with music, dynamic typography, and personalized details.
-              </p>
-            </div>
+      {/* 2. How It Works / Steps Section */}
+      <WeddingSteps onActionClick={handleCreateYoursRedirect} />
 
-            <div className="bg-cream border border-cream-border p-6 sm:p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-maroon/10 text-maroon flex items-center justify-center">
-                <UserCheck className="w-6 h-6" />
-              </div>
-              <h3 className="font-serif text-xl font-semibold text-maroon">Seamless RSVP Tracking</h3>
-              <p className="text-mauve text-sm leading-relaxed">
-                Real-time RSVP collection with guest details, dietary preferences, and custom messages delivered straight to your couple dashboard.
-              </p>
-            </div>
-
-            <div className="bg-cream border border-cream-border p-6 sm:p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-coral/10 text-coral flex items-center justify-center">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <h3 className="font-serif text-xl font-semibold text-maroon">Multi-Event Support</h3>
-              <p className="text-mauve text-sm leading-relaxed">
-                Whether you have a Traditional ceremony, White Wedding, or Reception, seamlessly manage and share event schedules in one place.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 3. Interactive Accordion FAQ Section */}
+      <WeddingFaq />
 
       {/* CTA Footer Section */}
       <section className="py-20 px-4 text-center max-w-4xl mx-auto">
