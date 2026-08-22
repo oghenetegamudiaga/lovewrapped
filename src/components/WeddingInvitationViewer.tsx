@@ -1293,6 +1293,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       brideFirstName={wedding?.bride_first_name || nameParts[0] || 'Bride'}
                       groomFirstName={wedding?.groom_first_name || nameParts[1] || 'Groom'}
                       customText={guestName.trim() || guest?.name || 'Honored Guest'}
+                      inviteeName={guestName.trim() || guest?.name || 'Honored Guest'}
                       weddingDate={activeEvents[0]?.date}
                       venueName={activeEvents[0]?.venue_name}
                       venueAddress={activeEvents[0]?.venue_address || undefined}
