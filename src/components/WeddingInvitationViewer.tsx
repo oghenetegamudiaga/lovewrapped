@@ -386,10 +386,6 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
     }
   };
 
-  const handleEnterInvitation = () => {
-    setStage('unveiled');
-  };
-
   const handleReplay = () => {
     setStage('cover');
   };
@@ -865,7 +861,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             </motion.div>
           )}
 
-          {stage !== 'loading' && stage !== 'unveiled' && (
+          {stage === 'cover' && (
             <motion.div
               key="cover-layer"
               initial={{ opacity: 1 }}
@@ -979,35 +975,6 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                     Click to Open Invitation
                   </motion.p>
                 </div>
-              )}
-
-              {/* End State: "View Invitation" Prompt (Appears after Drone Zoom) */}
-              {stage === 'view_prompt' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.6 }}
-                  className="relative z-30 my-auto p-6 rounded-3xl border text-center space-y-4 shadow-2xl max-w-xs mx-auto backdrop-blur-md"
-                  style={{ backgroundColor: `${activeTheme.bgColor}EE`, borderColor: `${accentColor}60` }}
-                >
-                  <div className="space-y-1 pt-2">
-                    <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
-                      {coupleNames}
-                    </h3>
-                    <p className="text-xs text-white/80 italic">
-                      Warmly welcome you to their celebration
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleEnterInvitation}
-                    className="w-full py-3.5 px-6 rounded-full font-bold text-xs uppercase tracking-wider shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-                    style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
-                  >
-                    <span>View Official Invitation</span>
-                  </button>
-                </motion.div>
               )}
             </motion.div>
           )}
