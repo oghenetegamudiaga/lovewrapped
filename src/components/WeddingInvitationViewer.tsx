@@ -204,7 +204,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [isDownloadingCard, setIsDownloadingCard] = useState<boolean>(false);
   const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
   const [coverPhotoStatus, setCoverPhotoStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [activeView, setActiveView] = useState<'photo_hero' | 'details'>('photo_hero');
+  const [activeView, setActiveView] = useState<'photo_hero' | 'details' | 'card_download'>('photo_hero');
   const personalizedCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1281,7 +1281,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   </div>
                 </div>
               </motion.div>
-            ) : (
+            ) : activeView === 'details' ? (
               /* View 2: Screen 3 (Dedicated Template Detail & Scroll Screen) */
               <motion.div
                 key="template-details-screen"
@@ -1402,6 +1402,117 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   </div>
                 </div>
               </motion.div>
+            ) : (
+              /* View 3: Screen 4 (Personalized Card Download Page) */
+              <motion.div
+                key="card-download-screen"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none"
+                style={{ backgroundColor: activeTheme.bgColor }}
+              >
+                {/* 100% Template-Themed Paper Texture Background */}
+                <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none z-0 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                  <filter id="download-paper-noise">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+                    <feColorMatrix type="saturate" values="0" />
+                  </filter>
+                  <rect width="100%" height="100%" filter="url(#download-paper-noise)" />
+                </svg>
+
+                {/* Sticky Navigation Header with Back to Invitation Button */}
+                <div
+                  className="sticky top-0 z-30 px-4 py-3 border-b backdrop-blur-md flex items-center justify-between shadow-md shrink-0"
+                  style={{ backgroundColor: `${activeTheme.cardBgColor}F0`, borderColor: `${accentColor}30` }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('details')}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer hover:opacity-80 active:scale-95"
+                    style={{ backgroundColor: `${activeTheme.bgColor}99`, borderColor: `${accentColor}40`, color: secondaryColor }}
+                  >
+                    <span>← Return to Invitation</span>
+                  </button>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>
+                    Personalized Card
+                  </span>
+                </div>
+
+                {/* Card Container & Download Controls */}
+                <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-6 flex flex-col items-center justify-center">
+                  <div className="text-center space-y-1 max-w-sm mx-auto">
+                    <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: accentColor }}>
+                      Official Pass
+                    </span>
+                    <h3 className={`text-2xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                      Your Personalized Invitation Card
+                    </h3>
+                    <p className="text-xs opacity-75">
+                      Save your official invitation pass to your device to bring to the wedding celebration.
+                    </p>
+                  </div>
+
+                  {/* Rendered Personalized Card (Full Resolution Engine) */}
+                  <div className="py-2 overflow-hidden flex justify-center w-full max-w-md mx-auto">
+                    <StaticInviteCard
+                      cardRef={personalizedCardRef}
+                      brideFirstName={wedding?.bride_first_name || nameParts[0] || 'Bride'}
+                      groomFirstName={wedding?.groom_first_name || nameParts[1] || 'Groom'}
+                      customText={guestName.trim() || guest?.name || 'Honored Guest'}
+                      weddingDate={activeEvents[0]?.date}
+                      venueName={activeEvents[0]?.venue_name}
+                      venueAddress={activeEvents[0]?.venue_address || undefined}
+                      themeId={wedding?.theme_id}
+                      colorVariant={wedding?.color_variant || undefined}
+                      fontVariant={wedding?.font_variant || undefined}
+                      watermark={false}
+                    />
+                  </div>
+
+                  {/* Download Buttons */}
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xs pt-2">
+                    <button
+                      type="button"
+                      disabled={isDownloadingCard}
+                      onClick={() => handleDownloadPersonalizedCard('png')}
+                      className="w-full py-3 px-6 rounded-full font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
+                      style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>{isDownloadingCard ? 'Saving Image...' : 'Save Invitation (PNG)'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isDownloadingCard}
+                      onClick={() => handleDownloadPersonalizedCard('jpeg')}
+                      className="w-full py-2.5 px-5 rounded-full border text-xs font-semibold backdrop-blur-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
+                      style={{
+                        backgroundColor: `${activeTheme.cardBgColor}CC`,
+                        borderColor: `${accentColor}40`,
+                        color: secondaryColor,
+                      }}
+                    >
+                      <Image className="w-3.5 h-3.5" />
+                      <span>{isDownloadingCard ? 'Saving Image...' : 'Save as JPEG'}</span>
+                    </button>
+                  </div>
+
+                  {/* Way Back to Main Experience */}
+                  <div className="pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setActiveView('details')}
+                      className="text-xs opacity-75 hover:opacity-100 underline tracking-wider"
+                      style={{ color: accentColor }}
+                    >
+                      ← Return to Full Invitation Experience
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
         )}
@@ -1465,12 +1576,13 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                     type="button"
                     onClick={() => {
                       setIsRsvpModalOpen(false);
-                      setRsvpSuccess(false);
+                      setActiveView('card_download');
                     }}
-                    className="px-6 py-2.5 rounded-full font-bold text-xs shadow-md transition-all cursor-pointer"
+                    className="w-full py-3 px-6 rounded-full font-bold text-xs shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
                     style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
                   >
-                    Close Window
+                    <Download className="w-4 h-4" />
+                    <span>Download Your Invitation</span>
                   </button>
                 </div>
               ) : (
