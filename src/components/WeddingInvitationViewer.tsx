@@ -1009,10 +1009,10 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   </span>
                 </div>
 
-                {/* Bottom Section on Photo Screen: 3 Circular Action Buttons + View Details Prompt */}
-                <div className="relative z-10 p-6 pb-8 space-y-6 text-center">
-                  {/* WedX-Style 3 White Circular Icon Action Badges (Gift Registry, RSVP, Gallery) */}
-                  <div className="flex items-center justify-center gap-7 sm:gap-11">
+                {/* Bottom Section on Photo Screen: Action Buttons Row */}
+                <div className="relative z-10 p-6 pb-8 text-center">
+                  {/* Circular Icon Action Badges (Gift Registry, RSVP, Gallery, Event Details) */}
+                  <div className="flex items-center justify-center gap-5 sm:gap-9 flex-wrap select-none">
                     {/* 1. Gift Registry Button */}
                     {hasRegistryInfo && (
                       <div className="flex flex-col items-center gap-2">
@@ -1081,25 +1081,21 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                         Gallery
                       </span>
                     </div>
-                  </div>
 
-                  {/* Proceed to Detail Screen Control */}
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveView('details')}
-                      className="inline-flex items-center gap-2 py-2 px-5 rounded-full border text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-lg"
-                      style={{
-                        backgroundColor: `${activeTheme.cardBgColor}E6`,
-                        borderColor: `${accentColor}50`,
-                        color: secondaryColor,
-                      }}
-                    >
-                      <span>VIEW EVENT DETAILS</span>
-                      <motion.span animate={{ y: [0, 3, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                        ↓
-                      </motion.span>
-                    </button>
+                    {/* 4. Event Details Button */}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveView('details')}
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                        title="Event Details"
+                      >
+                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                      </button>
+                      <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                        Event Details
+                      </span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
