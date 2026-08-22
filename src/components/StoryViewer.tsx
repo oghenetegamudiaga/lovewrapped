@@ -5,6 +5,7 @@ import { Experience, Slide } from '../types';
 import { SlideCard } from './SlideCard';
 import { soundSynth } from '../lib/sound';
 import { reactToExperienceApi } from '../lib/api';
+import { MusicPlayerToggle } from './MusicPlayerToggle';
 
 interface StoryViewerProps {
   experience: Experience;
@@ -556,13 +557,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         </div>
       )}
 
-      {/* Watermark for Free Plan */}
-      {experience.tier === 'free' && (
-        <div className="absolute bottom-0 inset-x-0 z-30 py-2 px-3 bg-black/85 text-center text-[10px] text-rose-300/90 font-medium border-t border-rose-900/40 backdrop-blur-md flex items-center justify-center gap-1">
-          <Heart className="w-3 h-3 text-rose-400 fill-rose-400" />
-          <span>Created with <strong>Amorah</strong> • Create your own free story</span>
-        </div>
-      )}
+      {/* Floating Background Music Player */}
+      <MusicPlayerToggle
+        musicTrackId={experience.music_track || 'iyawo-mi'}
+        musicSourceType={experience.music_source_type}
+        musicExternalId={experience.music_external_id}
+        musicExternalMeta={experience.music_external_meta}
+      />
     </div>
   );
 };

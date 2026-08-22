@@ -10,6 +10,12 @@ export interface CuratedTrackInfo {
 }
 
 export const CURATED_MUSIC_TRACKS: Record<string, CuratedTrackInfo> = {
+  'iyawo-mi': {
+    id: 'iyawo-mi',
+    name: 'Iyawo Mi — Timi Dakolo',
+    genre: 'Afro-Romantic Serenade',
+    url: '/audio/iyawo-mi.mp3',
+  },
   'romantic-strings': {
     id: 'romantic-strings',
     name: 'Romantic Strings & Orchestral Serenade',
@@ -58,7 +64,7 @@ export const MusicPlayerToggle: React.FC<MusicPlayerToggleProps> = ({
   const isSoundCloud = musicSourceType === 'soundcloud' && (!!musicExternalMeta?.trackUrl || !!musicExternalMeta?.embedUrl || !!musicExternalId);
   const isCurated = !isSpotify && !isAppleMusic && !isSoundCloud;
 
-  const activeTrack = (musicTrackId && CURATED_MUSIC_TRACKS[musicTrackId]) || CURATED_MUSIC_TRACKS['romantic-strings'];
+  const activeTrack = (musicTrackId && CURATED_MUSIC_TRACKS[musicTrackId]) || CURATED_MUSIC_TRACKS['iyawo-mi'];
 
   useEffect(() => {
     if (!isCurated) {

@@ -24,6 +24,10 @@ export interface Experience {
   payment_reference: string | null;
   creator_email?: string;
   voice_message_url?: string | null;
+  music_track?: string | null;
+  music_source_type?: MusicSourceType;
+  music_external_id?: string | null;
+  music_external_meta?: Record<string, any> | null;
   views_count: number;
   reactions_count: number;
   created_at: string;
