@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image, Camera, Mail } from 'lucide-react';
+import { RefreshCw, Calendar, MapPin, Check, Heart, Gift, MessageSquare, Send, Clock, UserCheck, AlertCircle, UserPlus, Download, ExternalLink, X, Image, Camera, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Wedding, WeddingEvent, WeddingTheme, WeddingGuest, ThemeAssetsMap } from '../types';
 import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
 import { submitWeddingRsvpApi, getPublicThemeAssetsApi } from '../lib/api';
@@ -205,7 +205,22 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
   const [coverPhotoStatus, setCoverPhotoStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [activeView, setActiveView] = useState<'photo_hero' | 'details' | 'card_download'>('photo_hero');
+  const [isGalleryOpen, setIsGalleryOpen] = useState<boolean>(false);
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState<number>(0);
   const personalizedCardRef = useRef<HTMLDivElement>(null);
+
+  const galleryPhotosList = React.useMemo(() => {
+    const list: string[] = [];
+    if (wedding?.gallery_photos && Array.isArray(wedding.gallery_photos)) {
+      wedding.gallery_photos.forEach((p) => {
+        if (typeof p === 'string' && p.trim()) list.push(p.trim());
+      });
+    }
+    if (list.length === 0 && wedding?.cover_photo_url && wedding.cover_photo_url.trim()) {
+      list.push(wedding.cover_photo_url.trim());
+    }
+    return list;
+  }, [wedding?.gallery_photos, wedding?.cover_photo_url]);
 
   useEffect(() => {
     if (wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0) {
@@ -1240,8 +1255,9 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       <button
                         type="button"
                         onClick={() => {
-                          if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
-                            setLightboxPhoto(wedding.gallery_photos[0]);
+                          if (galleryPhotosList.length > 0) {
+                            setActiveGalleryIndex(0);
+                            setIsGalleryOpen(true);
                           } else {
                             setActiveView('details');
                             setTimeout(() => {
@@ -1723,31 +1739,111 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           </motion.div>
         )}
 
-        {/* Photo Gallery Lightbox Modal Overlay */}
-        {lightboxPhoto && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setLightboxPhoto(null)}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
-          >
-            <div className="relative max-w-3xl max-h-[90vh] w-full flex items-center justify-center">
-              <img
-                src={lightboxPhoto}
-                alt="Enlarged pre-wedding photo"
-                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/20"
-              />
-              <button
-                type="button"
-                onClick={() => setLightboxPhoto(null)}
-                className="absolute -top-4 -right-4 bg-white/20 hover:bg-white/40 text-white rounded-full p-2 backdrop-blur transition-all"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-          </motion.div>
-        )}
+        {/* Multi-Photo Gallery Carousel Modal Overlay */}
+        <AnimatePresence>
+          {isGalleryOpen && galleryPhotosList.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg flex flex-col items-center justify-between p-4 sm:p-6 select-none"
+            >
+              {/* Top Header & Dismiss Button */}
+              <div className="w-full flex items-center justify-between text-white border-b border-white/10 pb-3 z-10">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-4 h-4" style={{ color: accentColor }} />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    Photo Gallery ({activeGalleryIndex + 1} of {galleryPhotosList.length})
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsGalleryOpen(false)}
+                  className="p-2 text-white/70 hover:text-white rounded-full bg-white/10 hover:bg-white/20 transition-all cursor-pointer"
+                  title="Close Gallery"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Main Active Photo Container with Carousel Controls */}
+              <div className="relative w-full max-w-4xl flex-1 flex items-center justify-center py-4 px-2 sm:px-12 my-auto">
+                {/* Left Arrow Button */}
+                {galleryPhotosList.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveGalleryIndex((prev) => (prev === 0 ? galleryPhotosList.length - 1 : prev - 1));
+                    }}
+                    className="absolute left-2 sm:left-4 z-20 p-3 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white backdrop-blur transition-all cursor-pointer active:scale-95 shadow-xl"
+                    title="Previous Photo"
+                  >
+                    <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+                  </button>
+                )}
+
+                {/* Current Enlarged Photo */}
+                <div className="relative max-h-[75vh] w-full flex items-center justify-center overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={galleryPhotosList[activeGalleryIndex]}
+                      src={galleryPhotosList[activeGalleryIndex]}
+                      alt={`Gallery photo ${activeGalleryIndex + 1}`}
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                      className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/15"
+                    />
+                  </AnimatePresence>
+                </div>
+
+                {/* Right Arrow Button */}
+                {galleryPhotosList.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveGalleryIndex((prev) => (prev === galleryPhotosList.length - 1 ? 0 : prev + 1));
+                    }}
+                    className="absolute right-2 sm:right-4 z-20 p-3 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 text-white backdrop-blur transition-all cursor-pointer active:scale-95 shadow-xl"
+                    title="Next Photo"
+                  >
+                    <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+                  </button>
+                )}
+              </div>
+
+              {/* Bottom Thumbnail Strip Indicator */}
+              <div className="w-full flex flex-col items-center gap-3 pt-2 z-10">
+                {galleryPhotosList.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto max-w-full px-4 py-1">
+                    {galleryPhotosList.map((photo, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveGalleryIndex(idx)}
+                        className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                          idx === activeGalleryIndex
+                            ? 'border-emerald-400 scale-110 shadow-lg'
+                            : 'border-white/20 opacity-50 hover:opacity-80'
+                        }`}
+                      >
+                        <img src={photo} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <span className="text-[11px] opacity-60">
+                  Showing {activeGalleryIndex + 1} of {galleryPhotosList.length} photos
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </AnimatePresence>
     </div>
   );
