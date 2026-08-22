@@ -204,6 +204,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [isDownloadingCard, setIsDownloadingCard] = useState<boolean>(false);
   const [themeAssets, setThemeAssets] = useState<ThemeAssetsMap>({});
   const [coverPhotoStatus, setCoverPhotoStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [activeView, setActiveView] = useState<'photo_hero' | 'details'>('photo_hero');
   const personalizedCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1115,234 +1116,295 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
           )}
         </AnimatePresence>
 
-        {/* Scene 3 & 4 (Terminal Resting State: Full-Bleed Photo Screen & WedX Action Bar) */}
+        {/* Scene 3 & 4 (Terminal Resting State: Full-Bleed Photo Screen OR Template Details Screen) */}
         {stage === 'ready' && (
-          <motion.div
-            key="unveiled-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none"
-            style={{ backgroundColor: activeTheme.bgColor }}
-          >
-            {/* Phase 5: Subtle Screen Wake-Up Pulse Overlay */}
-            {stage === 'action_entrance' && !isReducedMotion && (
+          <AnimatePresence mode="wait">
+            {activeView === 'photo_hero' ? (
+              /* View 1: Screen 2 (Dedicated Full-Bleed Couple Photo Hero Screen) */
               <motion.div
+                key="photo-hero-screen"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0.15, 0] }}
-                transition={{ duration: 0.4, ease: 'easeInOut' }}
-                className="absolute inset-0 z-50 bg-white pointer-events-none"
-              />
-            )}
-            {/* Layer 0: Full-Bleed Viewport Background Layer with Continuous Ambient Motion (9s loop) */}
-            <motion.div
-              className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
-              animate={!isReducedMotion ? { scale: [1, 1.02, 1] } : { scale: 1 }}
-              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && coverPhotoStatus !== 'error' ? (
-                <motion.img
-                  key={wedding.cover_photo_url}
-                  src={wedding.cover_photo_url}
-                  alt={`${coupleNames} Full-Bleed Backdrop`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: coverPhotoStatus === 'loaded' ? 1 : 0.5 }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                  onLoad={() => {
-                    console.log('[WeddingInvitationViewer] Cover photo loaded successfully.');
-                    setCoverPhotoStatus('loaded');
-                  }}
-                  onError={() => {
-                    console.warn('[WeddingInvitationViewer] Cover photo failed to load:', wedding.cover_photo_url);
-                    setCoverPhotoStatus('error');
-                  }}
-                  className="w-full h-full object-cover object-center"
-                />
-              ) : themeAssets[activeThemeId]?.reveal_background_url ? (
-                <img
-                  src={themeAssets[activeThemeId]!.reveal_background_url!}
-                  alt="Theme Reveal Backdrop Scene"
-                  className="w-full h-full object-cover object-center"
-                />
-              ) : (
-                <div
-                  className="w-full h-full relative flex items-center justify-center overflow-hidden"
-                  style={{ backgroundColor: activeTheme.bgColor }}
-                >
-                  {/* Intentional theme texture + radial glow fallback */}
-                  <div
-                    className="absolute inset-0 opacity-25"
-                    style={{
-                      backgroundImage: `radial-gradient(circle at 50% 40%, ${accentColor} 0%, transparent 70%)`,
-                    }}
-                  />
-                  <svg className="w-full h-full opacity-10 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
-                    <filter id="fallback-pattern-noise">
-                      <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch" />
-                      <feColorMatrix type="saturate" values="0" />
-                    </filter>
-                    <rect width="100%" height="100%" filter="url(#fallback-pattern-noise)" />
-                  </svg>
-                </div>
-              )}
-              {/* Calibrated gradient overlay for text legibility without overall dimming */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/30 pointer-events-none z-1" />
-            </motion.div>
-
-            {/* Separately Padded Foreground / Text Layer Stacked On Top (z-10) */}
-            <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Couple Context Header */}
-              <div className="text-center space-y-1 pb-4 border-b border-white/10">
-                <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accentColor }}>
-                  Celebration of {coupleNames}
-                </p>
-                <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
-                  {coupleNames}
-                </h2>
-                {guest && (
-                  <p className="text-xs font-semibold uppercase tracking-widest pt-1" style={{ color: accentColor }}>
-                    Warm Welcome, {guest.name}
-                  </p>
-                )}
-              </div>
-
-              {/* LIVE COUNTDOWN TIMER BANNER */}
-              <div
-                className="p-4 rounded-2xl border space-y-2 text-center shadow-lg"
-                style={{ backgroundColor: `${activeTheme.bgColor}F2`, borderColor: `${accentColor}40` }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="relative flex-1 h-full w-full overflow-hidden flex flex-col justify-between select-none"
               >
-                {isPastAllEvents ? (
-                  <div className="space-y-1 py-1">
-                    <Heart className="w-5 h-5 mx-auto fill-current" style={{ color: accentColor }} />
-                    <p className={`font-bold text-sm ${serifClass}`} style={{ color: secondaryColor }}>
-                      Thank you for celebrating with us!
-                    </p>
-                    <p className="text-[10px] opacity-60">
-                      Our wedding events have concluded. We are forever grateful for your love and support.
-                    </p>
-                  </div>
-                ) : timeLeft ? (
-                  <div className="space-y-2">
-                    <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-1" style={{ color: accentColor }}>
-                      <Clock className="w-3 h-3" /> Countdown To {targetEventTitle || 'Special Day'}
-                    </p>
-                    <div className="grid grid-cols-4 gap-2 font-mono text-center">
-                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.days}</span>
-                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Days</span>
+                {/* Layer 0: Full-Bleed Viewport Photo Backdrop with Continuous Ambient Motion (9s loop) */}
+                <motion.div
+                  className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+                  animate={!isReducedMotion ? { scale: [1, 1.02, 1] } : { scale: 1 }}
+                  transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  {wedding?.cover_photo_url && wedding.cover_photo_url.trim().length > 0 && coverPhotoStatus !== 'error' ? (
+                    <motion.img
+                      key={wedding.cover_photo_url}
+                      src={wedding.cover_photo_url}
+                      alt={`${coupleNames} Full-Bleed Viewport Photo`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: coverPhotoStatus === 'loaded' ? 1 : 0.5 }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      onLoad={() => setCoverPhotoStatus('loaded')}
+                      onError={() => setCoverPhotoStatus('error')}
+                      className="w-full h-full object-cover object-center"
+                    />
+                  ) : themeAssets[activeThemeId]?.reveal_background_url ? (
+                    <img
+                      src={themeAssets[activeThemeId]!.reveal_background_url!}
+                      alt="Theme Reveal Backdrop Scene"
+                      className="w-full h-full object-cover object-center"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full relative flex items-center justify-center overflow-hidden"
+                      style={{ backgroundColor: activeTheme.bgColor }}
+                    >
+                      {/* Intentional theme texture + radial glow fallback */}
+                      <div
+                        className="absolute inset-0 opacity-25"
+                        style={{
+                          backgroundImage: `radial-gradient(circle at 50% 40%, ${accentColor} 0%, transparent 70%)`,
+                        }}
+                      />
+                      <svg className="w-full h-full opacity-10 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                        <filter id="fallback-pattern-noise">
+                          <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch" />
+                          <feColorMatrix type="saturate" values="0" />
+                        </filter>
+                        <rect width="100%" height="100%" filter="url(#fallback-pattern-noise)" />
+                      </svg>
+                    </div>
+                  )}
+                  {/* High contrast gradient overlay for text legibility without overall dimming */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/40 pointer-events-none z-1" />
+                </motion.div>
+
+                {/* Top Header Badge on Photo Screen */}
+                <div className="relative z-10 p-6 text-center pt-8">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-[10px] font-semibold uppercase tracking-wider shadow-lg backdrop-blur-md"
+                    style={{ backgroundColor: `${activeTheme.cardBgColor}CC`, borderColor: `${accentColor}40`, color: accentColor }}
+                  >
+                    Official Wedding Invitation
+                  </span>
+                </div>
+
+                {/* Bottom Section on Photo Screen: 3 Circular Action Buttons + View Details Prompt */}
+                <div className="relative z-10 p-6 pb-8 space-y-6 text-center">
+                  {/* WedX-Style 3 White Circular Icon Action Badges (Gift Registry, RSVP, Gallery) */}
+                  <div className="flex items-center justify-center gap-7 sm:gap-11">
+                    {/* 1. Gift Registry Button */}
+                    {hasRegistryInfo && (
+                      <div className="flex flex-col items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sanitizedUrl = getSanitizedRegistryUrl(wedding?.registry_url || wedding?.registry_info);
+                            if (sanitizedUrl) {
+                              window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
+                            } else {
+                              setActiveView('details');
+                              setTimeout(() => {
+                                const el = document.getElementById('registry-section');
+                                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                              }, 100);
+                            }
+                          }}
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                          title="Gift Registry"
+                        >
+                          <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                        </button>
+                        <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                          Gift Registry
+                        </span>
                       </div>
-                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.hours}</span>
-                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Hours</span>
-                      </div>
-                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.minutes}</span>
-                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Mins</span>
-                      </div>
-                      <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                        <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.seconds}</span>
-                        <span className="text-[9px] uppercase" style={{ color: accentColor }}>Secs</span>
-                      </div>
+                    )}
+
+                    {/* 2. RSVP Button */}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsRsvpModalOpen(true)}
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                        title="Respond to RSVP"
+                      >
+                        <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                      </button>
+                      <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                        RSVP
+                      </span>
+                    </div>
+
+                    {/* 3. Gallery / Media Button */}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
+                            setLightboxPhoto(wedding.gallery_photos[0]);
+                          } else {
+                            setActiveView('details');
+                            setTimeout(() => {
+                              const el = document.getElementById('gallery-section');
+                              if (el) el.scrollIntoView({ behavior: 'smooth' });
+                            }, 100);
+                          }
+                        }}
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
+                        title="Photo Gallery"
+                      >
+                        <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                      </button>
+                      <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                        Gallery
+                      </span>
                     </div>
                   </div>
-                ) : (
-                  <p className="text-xs" style={{ color: accentColor }}>Calculating event countdown...</p>
-                )}
-              </div>
 
-              {/* Scene 4: Dynamically Ordered Sections */}
-              <div className="space-y-6">
-                {sectionOrder.map((key) => renderSectionByKey(key))}
-              </div>
-
-              {/* WedX-Style Bottom Action Row: 3 White Circular Icon Badges Over Photo (Matching Reference) */}
-              <motion.div
-                initial={isReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="sticky bottom-6 z-40 w-full flex items-center justify-center gap-7 sm:gap-11 pointer-events-auto py-2"
-              >
-                {/* 1. Gift Registry Button (White Circular Ring Badge) */}
-                {hasRegistryInfo && (
-                  <div className="flex flex-col items-center gap-2">
+                  {/* Proceed to Detail Screen Control */}
+                  <div>
                     <button
                       type="button"
-                      onClick={() => {
-                        const sanitizedUrl = getSanitizedRegistryUrl(wedding?.registry_url || wedding?.registry_info);
-                        if (sanitizedUrl) {
-                          window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
-                        } else {
-                          const el = document.getElementById('registry-section');
-                          if (el) el.scrollIntoView({ behavior: 'smooth' });
-                        }
+                      onClick={() => setActiveView('details')}
+                      className="inline-flex items-center gap-2 py-2 px-5 rounded-full border text-xs font-semibold uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-lg"
+                      style={{
+                        backgroundColor: `${activeTheme.cardBgColor}E6`,
+                        borderColor: `${accentColor}50`,
+                        color: secondaryColor,
                       }}
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
-                      title="Gift Registry"
                     >
-                      <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
+                      <span>View Event Details & RSVP</span>
+                      <motion.span animate={{ y: [0, 3, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                        ↓
+                      </motion.span>
                     </button>
-                    <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                      Gift Registry
-                    </span>
                   </div>
-                )}
-
-                {/* 2. RSVP Button (White Circular Ring Badge with Envelope) */}
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsRsvpModalOpen(true)}
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
-                    title="Respond to RSVP"
-                  >
-                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
-                  </button>
-                  <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                    RSVP
-                  </span>
-                </div>
-
-                {/* 3. Gallery / Media Button (White Circular Ring Badge with Camera) */}
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (wedding?.gallery_photos && wedding.gallery_photos.length > 0) {
-                        setLightboxPhoto(wedding.gallery_photos[0]);
-                      } else {
-                        const el = document.getElementById('gallery-section');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }}
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white bg-black/25 backdrop-blur-xs flex items-center justify-center text-white cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg"
-                    title="Photo Gallery"
-                  >
-                    <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[2]" />
-                  </button>
-                  <span className="text-[11px] sm:text-xs font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                    Gallery
-                  </span>
                 </div>
               </motion.div>
+            ) : (
+              /* View 2: Screen 3 (Dedicated Template Detail & Scroll Screen) */
+              <motion.div
+                key="template-details-screen"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none"
+                style={{ backgroundColor: activeTheme.bgColor }}
+              >
+                {/* 100% Template-Themed Background ONLY — NO COUPLE PHOTO */}
+                <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none z-0 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                  <filter id="detail-paper-noise">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
+                    <feColorMatrix type="saturate" values="0" />
+                  </filter>
+                  <rect width="100%" height="100%" filter="url(#detail-paper-noise)" />
+                </svg>
 
-          {/* Footer Replay */}
-          <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs">
-            <button
-              onClick={handleReplay}
-              className="px-4 py-2 rounded-full font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-              style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Replay Invitation</span>
-            </button>
+                {/* Sticky Navigation Bar with Back to Cover Button */}
+                <div
+                  className="sticky top-0 z-30 px-4 py-3 border-b backdrop-blur-md flex items-center justify-between shadow-md shrink-0"
+                  style={{ backgroundColor: `${activeTheme.cardBgColor}F0`, borderColor: `${accentColor}30` }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('photo_hero')}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer hover:opacity-80 active:scale-95"
+                    style={{ backgroundColor: `${activeTheme.bgColor}99`, borderColor: `${accentColor}40`, color: secondaryColor }}
+                  >
+                    <span>← Photo Cover</span>
+                  </button>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>
+                    {coupleNames}
+                  </span>
+                </div>
 
-            <span className="text-[10px] opacity-50">
-              Weddings by Amorah
-            </span>
-          </div>
-        </div>
-      </motion.div>
-    )}
+                {/* Scrollable Detail Content (Padded Stack) */}
+                <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
+                  {/* Couple Context Header */}
+                  <div className="text-center space-y-1 pb-4 border-b border-white/10">
+                    <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accentColor }}>
+                      Celebration of {coupleNames}
+                    </p>
+                    <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                      {coupleNames}
+                    </h2>
+                    {guest && (
+                      <p className="text-xs font-semibold uppercase tracking-widest pt-1" style={{ color: accentColor }}>
+                        Warm Welcome, {guest.name}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* LIVE COUNTDOWN TIMER BANNER */}
+                  <div
+                    className="p-4 rounded-2xl border space-y-2 text-center shadow-lg"
+                    style={{ backgroundColor: `${activeTheme.bgColor}F2`, borderColor: `${accentColor}40` }}
+                  >
+                    {isPastAllEvents ? (
+                      <div className="space-y-1 py-1">
+                        <Heart className="w-5 h-5 mx-auto fill-current" style={{ color: accentColor }} />
+                        <p className={`font-bold text-sm ${serifClass}`} style={{ color: secondaryColor }}>
+                          Thank you for celebrating with us!
+                        </p>
+                        <p className="text-[10px] opacity-60">
+                          Our wedding events have concluded. We are forever grateful for your love and support.
+                        </p>
+                      </div>
+                    ) : timeLeft ? (
+                      <div className="space-y-2">
+                        <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-1" style={{ color: accentColor }}>
+                          <Clock className="w-3 h-3" /> Countdown To {targetEventTitle || 'Special Day'}
+                        </p>
+                        <div className="grid grid-cols-4 gap-2 font-mono text-center">
+                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.days}</span>
+                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Days</span>
+                          </div>
+                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.hours}</span>
+                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Hours</span>
+                          </div>
+                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.minutes}</span>
+                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Mins</span>
+                          </div>
+                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
+                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.seconds}</span>
+                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Secs</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs" style={{ color: accentColor }}>Calculating event countdown...</p>
+                    )}
+                  </div>
+
+                  {/* Dynamically Ordered Sections */}
+                  <div className="space-y-6">
+                    {sectionOrder.map((key) => renderSectionByKey(key))}
+                  </div>
+
+                  {/* Footer Replay */}
+                  <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs">
+                    <button
+                      onClick={handleReplay}
+                      className="px-4 py-2 rounded-full font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                      style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Replay Invitation</span>
+                    </button>
+
+                    <span className="text-[10px] opacity-50">
+                      Weddings by Amorah
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
 
       {/* Floating Background Music Player with Mute/Unmute toggle */}
