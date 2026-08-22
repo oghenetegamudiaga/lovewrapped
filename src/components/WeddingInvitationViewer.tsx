@@ -1299,6 +1299,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       themeId={wedding?.theme_id}
                       colorVariant={wedding?.color_variant || undefined}
                       fontVariant={wedding?.font_variant || undefined}
+                      cardTemplateUrl={wedding?.card_template_url || undefined}
+                      template={wedding?.template || undefined}
                       watermark={false}
                     />
                   </div>

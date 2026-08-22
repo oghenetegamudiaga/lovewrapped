@@ -186,6 +186,8 @@ export interface Wedding {
   music_external_meta?: Record<string, any> | null;
   registry_info?: string | null;
   registry_url?: string | null;
+  card_template_url?: string | null;
+  template?: CardTemplateRecord | null;
   is_paid: boolean;
   payment_reference?: string | null;
   created_at: string;

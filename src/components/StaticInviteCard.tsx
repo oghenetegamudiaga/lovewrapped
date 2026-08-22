@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Heart, Calendar, MapPin } from 'lucide-react';
+import { Heart, Calendar, MapPin, AlertCircle } from 'lucide-react';
 import { resolveThemeStyles } from '../config/weddingThemes';
 import { getPublicThemeAssetsApi } from '../lib/api';
 import { TextZone, CardTemplateRecord, CardTemplateField } from '../types';
@@ -134,7 +134,7 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
     }
   };
 
-  const isCustomTemplateActive = Boolean(template || resolvedTemplateUrl);
+  const isCustomTemplateActive = Boolean((template && (template.image_url || template.text_fields?.length)) || resolvedTemplateUrl);
 
   return (
     <div
@@ -150,11 +150,19 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
       {/* Custom Card Template Backdrop (If present) */}
       {template && template.text_fields && template.text_fields.length > 0 ? (
         <>
-          <img
-            src={template.image_url}
-            alt={template.name || 'Invitation Card Template'}
-            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-          />
+          {template.image_url ? (
+            <img
+              src={template.image_url}
+              alt={template.name || 'Invitation Card Template'}
+              className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+            />
+          ) : (
+            <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-6 text-center bg-rose-950/80 text-rose-100 border-2 border-dashed border-rose-500/50">
+              <AlertCircle className="w-8 h-8 text-rose-400 mb-2" />
+              <span className="font-serif font-bold text-sm">No Template Artwork Image Set</span>
+              <span className="text-xs opacity-75 mt-1">Upload a background template image in Admin &gt; Templates</span>
+            </div>
+          )}
 
           {/* Config-driven absolute text fields */}
           {template.text_fields.map((field) => {
