@@ -376,29 +376,6 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
               );
             }
 
-            if (field.field_key === 'footer_note') {
-              const noteText = field.static_text || 'FORMAL INVITATION TO FOLLOW';
-              return (
-                <div
-                  key={field.field_key}
-                  className="absolute z-10 pointer-events-none flex flex-col items-center justify-center w-full overflow-hidden"
-                  style={{
-                    left: `${field.x}%`,
-                    top: `${field.y}%`,
-                    width: `${field.width}%`,
-                  }}
-                >
-                  <span className="h-[1px] w-3/4 bg-current opacity-25 mb-2" style={{ backgroundColor: field.color || accentColor }} />
-                  <span
-                    className="text-[0.7em] font-semibold uppercase tracking-[0.25em]"
-                    style={{ color: field.color || TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
-                  >
-                    {noteText}
-                  </span>
-                </div>
-              );
-            }
-
             const val = resolveFieldValue(field);
             if (!val) return null;
 
@@ -435,67 +412,64 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
       ) : (
         <>
           {/* Decorative Outer Frame Trim */}
-          <div
-            className="absolute inset-3 border rounded-2xl pointer-events-none opacity-40"
-            style={{ borderColor: accentColor }}
-          />
-          <div
-            className="absolute inset-5 border rounded-xl pointer-events-none opacity-25"
-            style={{ borderColor: accentColor }}
-          />
+          <div className="absolute inset-2 border border-white/20 rounded-2xl pointer-events-none z-0" />
 
-          {/* Top Header Ornaments */}
-          <div className="relative z-10 space-y-2 pt-2">
-            <div className="flex items-center justify-center gap-2">
-              <span className="h-[1px] w-8 bg-current opacity-40" style={{ backgroundColor: accentColor }} />
-              <span
-                className="text-[10px] tracking-[0.3em] font-semibold uppercase px-3 py-1 rounded-full border border-current opacity-90"
-                style={{ color: accentColor, borderColor: `${accentColor}50` }}
-              >
-                {customText ? 'Official Invitation' : 'Save The Date'}
-              </span>
-              <span className="h-[1px] w-8 bg-current opacity-40" style={{ backgroundColor: accentColor }} />
-            </div>
-
-            <p className={`text-xs sm:text-sm opacity-80 ${sansClass} tracking-widest uppercase`}>
+          {/* Top Badge */}
+          <div className="space-y-1">
+            <span
+              className="inline-block px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-semibold border backdrop-blur-md shadow-sm"
+              style={{
+                backgroundColor: `${cardBgColor}80`,
+                borderColor: `${accentColor}40`,
+                color: accentColor,
+              }}
+            >
+              Official Invitation
+            </span>
+            <p className="text-[11px] uppercase tracking-widest opacity-80" style={{ color: secondaryColor }}>
               Together with their families
             </p>
           </div>
 
-          {/* Main Content Area */}
-          <div className="relative z-10 space-y-5 my-auto py-4 w-full">
-            {/* Couple Names */}
-            <div className="space-y-1">
-              <h1
-                className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide leading-tight ${serifClass}`}
-                style={{ color: accentColor }}
-              >
-                {brideFirstName || 'Bride'}
-              </h1>
-              <div className="flex items-center justify-center gap-3 my-1">
-                <span className="h-[1px] w-12 opacity-30" style={{ backgroundColor: accentColor }} />
-                <Heart className="w-4 h-4 animate-pulse fill-current" style={{ color: accentColor }} />
-                <span className="h-[1px] w-12 opacity-30" style={{ backgroundColor: accentColor }} />
-              </div>
-              <h1
-                className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide leading-tight ${serifClass}`}
-                style={{ color: accentColor }}
-              >
-                {groomFirstName || 'Groom'}
-              </h1>
+          {/* Main Couple Names */}
+          <div className="my-auto space-y-2 py-4">
+            <h2
+              className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide leading-tight ${serifClass}`}
+              style={{ color: accentColor }}
+            >
+              {brideFirstName || 'Bride'}
+            </h2>
+
+            <div className="flex items-center justify-center gap-3 my-1">
+              <span className="h-[1px] w-8 bg-current opacity-30" style={{ color: accentColor }} />
+              <Heart className="w-5 h-5 fill-current animate-pulse" style={{ color: accentColor }} />
+              <span className="h-[1px] w-8 bg-current opacity-30" style={{ color: accentColor }} />
             </div>
 
-            {/* Personalized Guest Invitation Slot */}
-            {customText && (
-              <div className="space-y-1 my-2">
-                <p className="text-[11px] uppercase tracking-[0.25em] opacity-75 font-light">
-                  request the presence of
+            <h2
+              className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide leading-tight ${serifClass}`}
+              style={{ color: accentColor }}
+            >
+              {groomFirstName || 'Groom'}
+            </h2>
+
+            {/* Personalized Guest Name */}
+            {inviteeName && (
+              <div className="pt-3">
+                <p className="text-[10px] uppercase tracking-widest opacity-60 mb-1" style={{ color: secondaryColor }}>
+                  Request the presence of
                 </p>
                 <div
-                  className="inline-block px-5 py-2 rounded-2xl text-base sm:text-lg font-serif font-bold tracking-wide bg-black/25 backdrop-blur border shadow-md"
-                  style={{ color: secondaryColor, borderColor: `${accentColor}40` }}
+                  className="inline-block px-4 py-1.5 rounded-full border shadow-sm backdrop-blur-md"
+                  style={{
+                    backgroundColor: `${cardBgColor}A0`,
+                    borderColor: `${accentColor}30`,
+                    color: accentColor,
+                  }}
                 >
-                  {customText}
+                  <span className={`text-xs sm:text-sm font-semibold tracking-wide ${serifClass}`}>
+                    {inviteeName}
+                  </span>
                 </div>
               </div>
             )}
@@ -545,24 +519,16 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
       )}
 
       {/* Footer / Watermark Slot */}
-      <div className={`relative z-10 w-full pt-2 flex flex-col items-center justify-center gap-1.5 ${activeTemplateUrl ? '' : 'border-t border-white/10'}`}>
-        <p
-          className="text-[10px] tracking-[0.2em] uppercase font-semibold opacity-85"
-          style={activeTemplateUrl ? { color: TEMPLATE_CARD_DETAIL_TEXT_COLOR } : undefined}
-        >
-          Formal Invitation To Follow
-        </p>
-
-        {/* Tasteful "Made with Amorah" Watermark (When enabled) */}
-        {watermark && (
+      {watermark && (
+        <div className="relative z-10 w-full pt-2 flex flex-col items-center justify-center gap-1.5">
           <div
             id="amorah-watermark-badge"
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider bg-black/40 backdrop-blur border border-white/20 text-white/90 shadow-sm"
           >
             <span>Made with <strong className="font-bold text-amber-200">Amorah</strong></span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

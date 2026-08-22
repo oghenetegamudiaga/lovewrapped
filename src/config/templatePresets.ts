@@ -1,9 +1,9 @@
 import { CardTemplateField } from '../types';
 
 /**
- * Standard 9-Field Wedding Invitation Layout Preset
+ * Standard 8-Field Wedding Invitation Layout Preset
  * Matches the official wedding invitation artwork structure:
- * Badge -> Family Line -> Stacked Couple Names -> Invitee Prefix -> Invitee Name -> Monogram Seal -> Marriage Date Line -> Venue -> Footer Note
+ * Badge -> Family Line -> Stacked Couple Names -> Invitee Prefix -> Invitee Name -> Monogram Seal -> Marriage Date Line -> Venue
  */
 export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
   {
@@ -24,7 +24,7 @@ export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
     label: 'Family Line (e.g. TOGETHER WITH THEIR FAMILIES)',
     static_text: 'TOGETHER WITH THEIR FAMILIES',
     x: 10,
-    y: 17,
+    y: 18,
     width: 80,
     max_font_size: 12,
     min_font_size: 10,
@@ -36,7 +36,7 @@ export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
     field_key: 'couple_names',
     label: 'Couple Names (Stacked with Heart)',
     x: 10,
-    y: 24,
+    y: 26,
     width: 80,
     max_font_size: 34,
     min_font_size: 22,
@@ -49,7 +49,7 @@ export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
     label: 'Invitee Prefix (e.g. REQUEST THE PRESENCE OF)',
     static_text: 'REQUEST THE PRESENCE OF',
     x: 10,
-    y: 47,
+    y: 49,
     width: 80,
     max_font_size: 11,
     min_font_size: 9,
@@ -61,7 +61,7 @@ export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
     field_key: 'invitee_name',
     label: 'Invitee Guest Name (Dynamic Pill Badge)',
     x: 15,
-    y: 53,
+    y: 55,
     width: 70,
     max_font_size: 20,
     min_font_size: 14,
@@ -73,7 +73,7 @@ export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
     field_key: 'monogram_seal',
     label: 'Monogram Circular Seal (Initial Monogram)',
     x: 40,
-    y: 62,
+    y: 65,
     width: 20,
     max_font_size: 16,
     min_font_size: 12,
@@ -86,7 +86,7 @@ export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
     label: 'Marriage Date Line (Static Prefix + Date Pill)',
     static_text: 'ARE GETTING MARRIED ON',
     x: 10,
-    y: 71,
+    y: 74,
     width: 80,
     max_font_size: 13,
     min_font_size: 10,
@@ -98,23 +98,10 @@ export const WEDDING_INVITATION_PRESET_FIELDS: CardTemplateField[] = [
     field_key: 'venue',
     label: 'Venue & Location (with Location Pin Icon)',
     x: 10,
-    y: 80,
+    y: 84,
     width: 80,
     max_font_size: 13,
     min_font_size: 11,
-    color: '#4A2E35',
-    align: 'center',
-    font_family: 'sans',
-  },
-  {
-    field_key: 'footer_note',
-    label: 'Footer Note (e.g. FORMAL INVITATION TO FOLLOW)',
-    static_text: 'FORMAL INVITATION TO FOLLOW',
-    x: 10,
-    y: 87,
-    width: 80,
-    max_font_size: 11,
-    min_font_size: 9,
     color: '#4A2E35',
     align: 'center',
     font_family: 'sans',
