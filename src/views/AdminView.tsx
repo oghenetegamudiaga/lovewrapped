@@ -45,6 +45,8 @@ import {
   Legend,
 } from 'recharts';
 import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType, AdminRole, AdminRecord, BlogPost, ThemeAssetsMap, ThemeAssetRecord, CardTemplateRecord, CardTemplateField } from '../types';
+import { DEMO_MOMENTS_ID, DEMO_MOMENTS_SLUG, DEMO_WEDDING_ID, DEMO_WEDDING_SLUG } from '../constants';
+import { IphoneDeviceMockup } from '../components/landing/IphoneDeviceMockup';
 import {
   getAdminMeApi,
   adminLoginApi,
@@ -56,6 +58,9 @@ import {
   getAdminDemoWeddingApi,
   updateAdminDemoWeddingApi,
   deleteAdminDemoPhotoApi,
+  getAdminDemoMomentsApi,
+  updateAdminDemoMomentsApi,
+  deleteAdminDemoMomentsPhotoApi,
   uploadFileToStorage,
   deleteAdminExperienceApi,
   updateAdminExperiencePaymentStatusApi,
@@ -109,8 +114,8 @@ const DEFAULT_CMS_FIELDS: Array<{ key: string; label: string; section: 'hero' | 
 ];
 
 // Single Source of Truth Constants for Seeded Demo Record
-export const DEMO_RECORD_ID = 'wedding-demo-001';
-export const DEMO_RECORD_SLUG = 'dvds-and-dvs';
+export const DEMO_RECORD_ID = DEMO_WEDDING_ID;
+export const DEMO_RECORD_SLUG = DEMO_WEDDING_SLUG;
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -182,7 +187,21 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users' | 'crm' | 'settings' | 'blog' | 'weddings' | 'templates' | 'demo_editor'>(initialTab);
   const [crmSubTab, setCrmSubTab] = useState<'contacts' | 'cms'>('contacts');
 
-  // Dedicated Demo Editor State
+  // Unified Demo Content State
+  const [demoSubTab, setDemoSubTab] = useState<'moments' | 'wedding'>('moments');
+
+  // Moments Demo State
+  const [momentsSenderName, setMomentsSenderName] = useState('David');
+  const [momentsReceiverName, setMomentsReceiverName] = useState('Sophia');
+  const [momentsOccasion, setMomentsOccasion] = useState('3rd Wedding Anniversary');
+  const [momentsSlides, setMomentsSlides] = useState<{ id: string; type: string; content?: string; url?: string; caption?: string; order: number }[]>([]);
+  const [momentsIsLoading, setMomentsIsLoading] = useState(false);
+  const [momentsIsSaving, setMomentsIsSaving] = useState(false);
+  const [momentsIsUploading, setMomentsIsUploading] = useState(false);
+  const [momentsSuccess, setMomentsSuccess] = useState<string | null>(null);
+  const [momentsError, setMomentsError] = useState<string | null>(null);
+
+  // Wedding Demo State
   const [demoBrideName, setDemoBrideName] = useState('Sophia');
   const [demoGroomName, setDemoGroomName] = useState('David');
   const [demoOccasion, setDemoOccasion] = useState('3rd Wedding Anniversary');
@@ -196,11 +215,15 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
   const [demoError, setDemoError] = useState<string | null>(null);
 
-  // Automatically fetch demo record data whenever demo_editor tab is active
+  // Automatically fetch both demo records whenever demo_editor tab is active
   useEffect(() => {
     if (activeTab === 'demo_editor') {
       setDemoIsLoading(true);
+      setMomentsIsLoading(true);
       setDemoError(null);
+      setMomentsError(null);
+
+      // Fetch Wedding Demo
       getAdminDemoWeddingApi()
         .then((res) => {
           if (res.success && res.wedding) {
@@ -223,8 +246,21 @@ export const AdminView: React.FC<AdminViewProps> = () => {
             }
           }
         })
-        .catch((err) => setDemoError(err.message || 'Failed to load demo record.'))
+        .catch((err) => setDemoError(err.message || 'Failed to load demo wedding record.'))
         .finally(() => setDemoIsLoading(false));
+
+      // Fetch Moments Demo
+      getAdminDemoMomentsApi()
+        .then((res) => {
+          if (res.success && res.experience) {
+            setMomentsSenderName(res.experience.sender_name || 'David');
+            setMomentsReceiverName(res.experience.receiver_name || 'Sophia');
+            setMomentsOccasion(res.experience.occasion || '3rd Wedding Anniversary');
+            setMomentsSlides(res.experience.slides || []);
+          }
+        })
+        .catch((err) => setMomentsError(err.message || 'Failed to load demo moments record.'))
+        .finally(() => setMomentsIsLoading(false));
     }
   }, [activeTab]);
 
@@ -1040,7 +1076,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                     }`}
                   >
                     <Edit3 className="w-3.5 h-3.5" />
-                    <span>Edit Demo</span>
+                    <span>Demo Content</span>
                   </button>
                 </>
               )}
@@ -3316,315 +3352,604 @@ export const AdminView: React.FC<AdminViewProps> = () => {
             </div>
           )}
 
-          {/* Dedicated Demo Editor Tab View */}
+          {/* Unified Demo Content Tab View */}
           {activeTab === 'demo_editor' && (
             <AdminErrorBoundary>
               <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cream-card p-6 rounded-3xl border border-cream-border">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/15 text-coral text-[10px] font-bold uppercase tracking-wider mb-2">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Dedicated Demo Record Only</span>
-                  </div>
-                  <h2 className="font-serif text-xl font-bold text-maroon">Seeded Demo Experience Editor</h2>
-                  <p className="text-xs text-mauve">
-                    Edit couple names, schedule entries, registry URL, and photo gallery for the public landing page demo (/w/demo).
-                  </p>
+                {/* Demo Type Sub-Tab Selector */}
+                <div className="flex items-center gap-2 bg-cream-card p-1.5 rounded-2xl border border-cream-border w-fit">
+                  <button
+                    type="button"
+                    onClick={() => setDemoSubTab('moments')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      demoSubTab === 'moments'
+                        ? 'bg-maroon text-cream shadow-xs'
+                        : 'text-mauve hover:text-maroon'
+                    }`}
+                  >
+                    Amorah Moments Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDemoSubTab('wedding')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      demoSubTab === 'wedding'
+                        ? 'bg-maroon text-cream shadow-xs'
+                        : 'text-mauve hover:text-maroon'
+                    }`}
+                  >
+                    Weddings by Amorah Demo
+                  </button>
                 </div>
 
-                <a
-                  href="/w/demo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-full bg-cream border border-cream-border hover:bg-cream-border text-maroon font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <Eye className="w-3.5 h-3.5 text-coral" />
-                  <span>Preview Live Demo</span>
-                </a>
-              </div>
-
-              {demoSuccess && (
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{demoSuccess}</span>
-                </div>
-              )}
-
-              {demoError && (
-                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-coral text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-coral shrink-0" />
-                  <span>{demoError}</span>
-                </div>
-              )}
-
-              {demoIsLoading ? (
-                <div className="p-12 text-center text-mauve">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-coral" />
-                  <p className="text-xs">Loading demo record details...</p>
-                </div>
-              ) : (
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setDemoIsSaving(true);
-                    setDemoSuccess(null);
-                    setDemoError(null);
-                    try {
-                      const res = await updateAdminDemoWeddingApi({
-                        id: 'wedding-demo-001',
-                        slug: 'dvds-and-dvs',
-                        bride_first_name: demoBrideName,
-                        groom_first_name: demoGroomName,
-                        occasion: demoOccasion,
-                        cover_photo_url: demoCoverUrl,
-                        gallery_photos: demoGalleryPhotos,
-                        registry_url: demoRegistryUrl,
-                        events: demoEvents,
-                      });
-                      if (res.success) {
-                        setDemoSuccess('Demo experience updated successfully! Public demo /w/demo reflects your changes.');
-                      }
-                    } catch (err: any) {
-                      setDemoError(err.message || 'Failed to update demo experience.');
-                    } finally {
-                      setDemoIsSaving(false);
-                    }
-                  }}
-                  className="space-y-6"
-                >
-                  {/* Couple Names & Title */}
-                  <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
-                    <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
-                      <Heart className="w-4 h-4 text-coral fill-coral" />
-                      <span>Couple & Occasion Details</span>
-                    </h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Sub-Tab 1: Moments Demo Editor */}
+                {demoSubTab === 'moments' && (
+                  <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cream-card p-6 rounded-3xl border border-cream-border">
                       <div>
-                        <label className="block text-xs font-semibold text-mauve mb-1">Bride's First Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={demoBrideName}
-                          onChange={(e) => setDemoBrideName(e.target.value)}
-                          className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                        />
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/15 text-coral text-[10px] font-bold uppercase tracking-wider mb-2">
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>Dedicated Demo Record Only ({DEMO_MOMENTS_ID} / {DEMO_MOMENTS_SLUG})</span>
+                        </div>
+                        <h2 className="font-serif text-xl font-bold text-maroon">Seeded Amorah Moments Demo Editor</h2>
+                        <p className="text-xs text-mauve">
+                          Edit sender/recipient names, occasion title, and slide content/photos for the public Moments demo (/w/demo).
+                        </p>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-mauve mb-1">Groom's First Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={demoGroomName}
-                          onChange={(e) => setDemoGroomName(e.target.value)}
-                          className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                        />
-                      </div>
+                      <a
+                        href="/w/demo"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-full bg-cream border border-cream-border hover:bg-cream-border text-maroon font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-coral" />
+                        <span>Preview Live Demo</span>
+                      </a>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-mauve mb-1">Occasion / Title</label>
-                        <input
-                          type="text"
-                          value={demoOccasion}
-                          onChange={(e) => setDemoOccasion(e.target.value)}
-                          className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                        />
+                    {momentsSuccess && (
+                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>{momentsSuccess}</span>
                       </div>
+                    )}
 
-                      <div>
-                        <label className="block text-xs font-semibold text-mauve mb-1">Registry Link / Info URL</label>
-                        <input
-                          type="url"
-                          placeholder="https://www.amazon.com/baby-reg/demo"
-                          value={demoRegistryUrl}
-                          onChange={(e) => setDemoRegistryUrl(e.target.value)}
-                          className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
-                        />
+                    {momentsError && (
+                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-coral text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-coral shrink-0" />
+                        <span>{momentsError}</span>
                       </div>
-                    </div>
-                  </div>
+                    )}
 
-                  {/* Demo Photos Management */}
-                  <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
-                          <Upload className="w-4 h-4 text-coral" />
-                          <span>Demo Photo Gallery ({demoGalleryPhotos.length} Photos)</span>
-                        </h3>
-                        <p className="text-xs text-mauve">Upload or remove pre-wedding photos for the demo invitation.</p>
+                    {momentsIsLoading ? (
+                      <div className="p-12 text-center text-mauve">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-coral" />
+                        <p className="text-xs">Loading Moments demo record details...</p>
                       </div>
-
-                      <label className="px-4 py-2 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md transition-all cursor-pointer inline-flex items-center gap-1.5">
-                        <Plus className="w-4 h-4 text-coral" />
-                        <span>{demoIsUploading ? 'Uploading...' : 'Add Demo Photo'}</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          disabled={demoIsUploading}
-                          className="hidden"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            setDemoIsUploading(true);
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            setMomentsIsSaving(true);
+                            setMomentsSuccess(null);
+                            setMomentsError(null);
                             try {
-                              const uploadedUrl = await uploadFileToStorage(file);
-                              if (uploadedUrl) {
-                                setDemoGalleryPhotos((prev) => [...prev, uploadedUrl]);
-                                if (!demoCoverUrl) setDemoCoverUrl(uploadedUrl);
+                              const res = await updateAdminDemoMomentsApi({
+                                id: DEMO_MOMENTS_ID,
+                                slug: DEMO_MOMENTS_SLUG,
+                                sender_name: momentsSenderName,
+                                receiver_name: momentsReceiverName,
+                                occasion: momentsOccasion,
+                                slides: momentsSlides,
+                              });
+                              if (res.success) {
+                                setMomentsSuccess('Moments demo updated successfully! Public demo /w/demo and live homepage previews now reflect your changes.');
                               }
                             } catch (err: any) {
-                              setDemoError(err.message || 'Failed to upload photo.');
+                              setMomentsError(err.message || 'Failed to update Moments demo experience.');
                             } finally {
-                              setDemoIsUploading(false);
+                              setMomentsIsSaving(false);
                             }
                           }}
-                        />
-                      </label>
-                    </div>
+                          className="lg:col-span-2 space-y-6"
+                        >
+                          {/* Sender, Receiver & Occasion */}
+                          <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
+                            <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
+                              <Heart className="w-4 h-4 text-coral fill-coral" />
+                              <span>Moments Header & Sender Info</span>
+                            </h3>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
-                      {demoGalleryPhotos.map((photo, idx) => (
-                        <div key={idx} className="relative group rounded-2xl overflow-hidden border border-cream-border aspect-square bg-black/10">
-                          <img src={photo} alt={`Demo photo ${idx + 1}`} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-semibold text-mauve mb-1">Sender Name</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={momentsSenderName}
+                                  onChange={(e) => setMomentsSenderName(e.target.value)}
+                                  className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-mauve mb-1">Recipient Name</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={momentsReceiverName}
+                                  onChange={(e) => setMomentsReceiverName(e.target.value)}
+                                  className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-mauve mb-1">Occasion Title</label>
+                              <input
+                                type="text"
+                                required
+                                value={momentsOccasion}
+                                onChange={(e) => setMomentsOccasion(e.target.value)}
+                                className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Moments Slides Editor */}
+                          <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
+                                <Layers className="w-4 h-4 text-coral" />
+                                <span>Moments Slides ({momentsSlides.length} Slides)</span>
+                              </h3>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setMomentsSlides((prev) => [
+                                      ...prev,
+                                      {
+                                        id: `slide-${Date.now()}`,
+                                        type: 'text',
+                                        content: 'New message slide text...',
+                                        order: prev.length + 1,
+                                      },
+                                    ]);
+                                  }}
+                                  className="px-3.5 py-1.5 rounded-full bg-cream border border-cream-border hover:bg-cream-border text-maroon text-xs font-semibold cursor-pointer flex items-center gap-1"
+                                >
+                                  <Plus className="w-3.5 h-3.5 text-coral" />
+                                  <span>Add Text Slide</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              {momentsSlides.map((slide, idx) => (
+                                <div key={slide.id || idx} className="p-4 rounded-2xl bg-cream/60 border border-cream-border space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-maroon">
+                                      Slide #{idx + 1} ({slide.type === 'image' ? 'Photo Slide' : 'Text Slide'})
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setMomentsSlides((prev) => prev.filter((_, i) => i !== idx))}
+                                      className="text-xs text-rose-600 hover:underline cursor-pointer"
+                                    >
+                                      Remove Slide
+                                    </button>
+                                  </div>
+
+                                  {slide.type === 'image' ? (
+                                    <div className="space-y-3">
+                                      {slide.url && (
+                                        <div className="relative rounded-xl overflow-hidden border border-cream-border h-36 bg-black/10">
+                                          <img src={slide.url} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                      )}
+
+                                      <div>
+                                        <label className="block text-[11px] font-semibold text-mauve mb-1">Image URL</label>
+                                        <input
+                                          type="url"
+                                          value={slide.url || ''}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            setMomentsSlides((prev) => prev.map((s, i) => (i === idx ? { ...s, url: val } : s)));
+                                          }}
+                                          className="w-full p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <label className="block text-[11px] font-semibold text-mauve mb-1">Photo Caption</label>
+                                        <input
+                                          type="text"
+                                          placeholder="Caption text..."
+                                          value={slide.caption || ''}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            setMomentsSlides((prev) => prev.map((s, i) => (i === idx ? { ...s, caption: val } : s)));
+                                          }}
+                                          className="w-full p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-mauve mb-1">Slide Text Message</label>
+                                      <textarea
+                                        rows={3}
+                                        value={slide.content || ''}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          setMomentsSlides((prev) => prev.map((s, i) => (i === idx ? { ...s, content: val } : s)));
+                                        }}
+                                        className="w-full p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Save Controls */}
+                          <div className="flex items-center justify-end gap-3 pt-4 border-t border-cream-border">
                             <button
-                              type="button"
-                              onClick={async () => {
-                                if (!confirm('Remove this photo from demo gallery?')) return;
-                                try {
-                                  const res = await deleteAdminDemoPhotoApi(photo);
-                                  if (res.success) {
-                                    setDemoGalleryPhotos(res.gallery_photos);
-                                  }
-                                } catch (err: any) {
-                                  setDemoError(err.message || 'Failed to delete photo.');
-                                }
-                              }}
-                              className="p-2 rounded-full bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-md cursor-pointer"
-                              title="Delete photo"
+                              type="submit"
+                              disabled={momentsIsSaving}
+                              className="px-8 py-3 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Save className="w-4 h-4 text-coral" />
+                              <span>{momentsIsSaving ? 'Saving Moments Record...' : 'Save Moments Demo Changes'}</span>
                             </button>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                        </form>
 
-                  {/* Demo Event Schedule */}
-                  <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-coral" />
-                        <span>Demo Event Schedule</span>
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDemoEvents((prev) => [
-                            ...prev,
-                            {
-                              id: `evt-demo-${Date.now()}`,
-                              title: 'New Celebration Event',
-                              date: '2026-11-22',
-                              time: '04:00 PM - 10:00 PM',
-                              venue_name: 'Grand Ballroom',
-                              venue_address: 'Lagos, Nigeria',
-                            },
-                          ]);
-                        }}
-                        className="px-3.5 py-1.5 rounded-full bg-cream border border-cream-border hover:bg-cream-border text-maroon text-xs font-semibold cursor-pointer flex items-center gap-1"
+                        {/* Live iPhone Preview inside Admin Dashboard */}
+                        <div className="lg:col-span-1 sticky top-6">
+                          <div className="bg-cream-card p-4 rounded-3xl border border-cream-border space-y-3">
+                            <p className="text-xs font-semibold text-maroon text-center">Live Moments Demo Preview</p>
+                            <IphoneDeviceMockup
+                              demoUrl="/w/demo"
+                              coverPhotoUrl="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80"
+                              title="Amorah Moments"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sub-Tab 2: Wedding Demo Editor */}
+                {demoSubTab === 'wedding' && (
+                  <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cream-card p-6 rounded-3xl border border-cream-border">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/15 text-coral text-[10px] font-bold uppercase tracking-wider mb-2">
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>Dedicated Demo Record Only ({DEMO_WEDDING_ID} / {DEMO_WEDDING_SLUG})</span>
+                        </div>
+                        <h2 className="font-serif text-xl font-bold text-maroon">Seeded Wedding Demo Editor</h2>
+                        <p className="text-xs text-mauve">
+                          Edit couple names, schedule entries, registry URL, and photo gallery for the public landing page demo (/w/wedding/{DEMO_WEDDING_SLUG}).
+                        </p>
+                      </div>
+
+                      <a
+                        href={`/w/wedding/${DEMO_WEDDING_SLUG}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 rounded-full bg-cream border border-cream-border hover:bg-cream-border text-maroon font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs"
                       >
-                        <Plus className="w-3.5 h-3.5 text-coral" />
-                        <span>Add Event</span>
-                      </button>
+                        <Eye className="w-3.5 h-3.5 text-coral" />
+                        <span>Preview Live Demo</span>
+                      </a>
                     </div>
 
-                    <div className="space-y-4">
-                      {demoEvents.map((ev, idx) => (
-                        <div key={ev.id || idx} className="p-4 rounded-2xl bg-cream/60 border border-cream-border space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-maroon">Event #{idx + 1}</span>
+                    {demoSuccess && (
+                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>{demoSuccess}</span>
+                      </div>
+                    )}
+
+                    {demoError && (
+                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-coral text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-coral shrink-0" />
+                        <span>{demoError}</span>
+                      </div>
+                    )}
+
+                    {demoIsLoading ? (
+                      <div className="p-12 text-center text-mauve">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-coral" />
+                        <p className="text-xs">Loading Wedding demo record details...</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            setDemoIsSaving(true);
+                            setDemoSuccess(null);
+                            setDemoError(null);
+                            try {
+                              const res = await updateAdminDemoWeddingApi({
+                                id: DEMO_WEDDING_ID,
+                                slug: DEMO_WEDDING_SLUG,
+                                bride_first_name: demoBrideName,
+                                groom_first_name: demoGroomName,
+                                occasion: demoOccasion,
+                                cover_photo_url: demoCoverUrl,
+                                gallery_photos: demoGalleryPhotos,
+                                registry_url: demoRegistryUrl,
+                                events: demoEvents,
+                              });
+                              if (res.success) {
+                                setDemoSuccess('Wedding demo updated successfully! Public demo /w/wedding/dvds-and-dvs and live homepage previews now reflect your changes.');
+                              }
+                            } catch (err: any) {
+                              setDemoError(err.message || 'Failed to update Wedding demo experience.');
+                            } finally {
+                              setDemoIsSaving(false);
+                            }
+                          }}
+                          className="lg:col-span-2 space-y-6"
+                        >
+                          {/* Couple Names & Title */}
+                          <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
+                            <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
+                              <Heart className="w-4 h-4 text-coral fill-coral" />
+                              <span>Couple & Occasion Details</span>
+                            </h3>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-semibold text-mauve mb-1">Bride's First Name</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={demoBrideName}
+                                  onChange={(e) => setDemoBrideName(e.target.value)}
+                                  className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-mauve mb-1">Groom's First Name</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={demoGroomName}
+                                  onChange={(e) => setDemoGroomName(e.target.value)}
+                                  className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-semibold text-mauve mb-1">Occasion / Title</label>
+                                <input
+                                  type="text"
+                                  value={demoOccasion}
+                                  onChange={(e) => setDemoOccasion(e.target.value)}
+                                  className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-mauve mb-1">Registry Link / Info URL</label>
+                                <input
+                                  type="url"
+                                  placeholder="https://www.amazon.com/baby-reg/demo"
+                                  value={demoRegistryUrl}
+                                  onChange={(e) => setDemoRegistryUrl(e.target.value)}
+                                  className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Demo Photos Management */}
+                          <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
+                                  <Upload className="w-4 h-4 text-coral" />
+                                  <span>Demo Photo Gallery ({demoGalleryPhotos.length} Photos)</span>
+                                </h3>
+                                <p className="text-xs text-mauve">Upload or remove pre-wedding photos for the demo invitation.</p>
+                              </div>
+
+                              <label className="px-4 py-2 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-md transition-all cursor-pointer inline-flex items-center gap-1.5">
+                                <Plus className="w-4 h-4 text-coral" />
+                                <span>{demoIsUploading ? 'Uploading...' : 'Add Demo Photo'}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  disabled={demoIsUploading}
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    setDemoIsUploading(true);
+                                    try {
+                                      const uploadedUrl = await uploadFileToStorage(file);
+                                      if (uploadedUrl) {
+                                        setDemoGalleryPhotos((prev) => [...prev, uploadedUrl]);
+                                        if (!demoCoverUrl) setDemoCoverUrl(uploadedUrl);
+                                      }
+                                    } catch (err: any) {
+                                      setDemoError(err.message || 'Failed to upload photo.');
+                                    } finally {
+                                      setDemoIsUploading(false);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
+                              {demoGalleryPhotos.map((photo, idx) => (
+                                <div key={idx} className="relative group rounded-2xl overflow-hidden border border-cream-border aspect-square bg-black/10">
+                                  <img src={photo} alt={`Demo photo ${idx + 1}`} className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        if (!confirm('Remove this photo from demo gallery?')) return;
+                                        try {
+                                          const res = await deleteAdminDemoPhotoApi(photo);
+                                          if (res.success) {
+                                            setDemoGalleryPhotos(res.gallery_photos);
+                                          }
+                                        } catch (err: any) {
+                                          setDemoError(err.message || 'Failed to delete photo.');
+                                        }
+                                      }}
+                                      className="p-2 rounded-full bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-md cursor-pointer"
+                                      title="Delete photo"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Demo Event Schedule */}
+                          <div className="glass-card p-6 rounded-3xl border border-cream-border space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-serif font-bold text-base text-maroon flex items-center gap-2">
+                                <Layers className="w-4 h-4 text-coral" />
+                                <span>Demo Event Schedule</span>
+                              </h3>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDemoEvents((prev) => [
+                                    ...prev,
+                                    {
+                                      id: `evt-demo-${Date.now()}`,
+                                      title: 'New Celebration Event',
+                                      date: '2026-11-22',
+                                      time: '04:00 PM - 10:00 PM',
+                                      venue_name: 'Grand Ballroom',
+                                      venue_address: 'Lagos, Nigeria',
+                                    },
+                                  ]);
+                                }}
+                                className="px-3.5 py-1.5 rounded-full bg-cream border border-cream-border hover:bg-cream-border text-maroon text-xs font-semibold cursor-pointer flex items-center gap-1"
+                              >
+                                <Plus className="w-3.5 h-3.5 text-coral" />
+                                <span>Add Event</span>
+                              </button>
+                            </div>
+
+                            <div className="space-y-4">
+                              {demoEvents.map((ev, idx) => (
+                                <div key={ev.id || idx} className="p-4 rounded-2xl bg-cream/60 border border-cream-border space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-maroon">Event #{idx + 1}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setDemoEvents((prev) => prev.filter((_, i) => i !== idx))}
+                                      className="text-xs text-rose-600 hover:underline cursor-pointer"
+                                    >
+                                      Remove Event
+                                    </button>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <input
+                                      type="text"
+                                      placeholder="Event Title"
+                                      value={ev.title}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, title: val } : item)));
+                                      }}
+                                      className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                                    />
+
+                                    <input
+                                      type="date"
+                                      value={ev.date}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, date: val } : item)));
+                                      }}
+                                      className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                                    />
+                                  </div>
+
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <input
+                                      type="text"
+                                      placeholder="Venue Name"
+                                      value={ev.venue_name}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, venue_name: val } : item)));
+                                      }}
+                                      className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                                    />
+
+                                    <input
+                                      type="text"
+                                      placeholder="Venue Address"
+                                      value={ev.venue_address}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, venue_address: val } : item)));
+                                      }}
+                                      className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Save Controls */}
+                          <div className="flex items-center justify-end gap-3 pt-4 border-t border-cream-border">
                             <button
-                              type="button"
-                              onClick={() => setDemoEvents((prev) => prev.filter((_, i) => i !== idx))}
-                              className="text-xs text-rose-600 hover:underline cursor-pointer"
+                              type="submit"
+                              disabled={demoIsSaving}
+                              className="px-8 py-3 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
                             >
-                              Remove Event
+                              <Save className="w-4 h-4 text-coral" />
+                              <span>{demoIsSaving ? 'Saving Demo Record...' : 'Save Wedding Demo Changes'}</span>
                             </button>
                           </div>
+                        </form>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <input
-                              type="text"
-                              placeholder="Event Title"
-                              value={ev.title}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, title: val } : item)));
-                              }}
-                              className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
-                            />
-
-                            <input
-                              type="date"
-                              value={ev.date}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, date: val } : item)));
-                              }}
-                              className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <input
-                              type="text"
-                              placeholder="Venue Name"
-                              value={ev.venue_name}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, venue_name: val } : item)));
-                              }}
-                              className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
-                            />
-
-                            <input
-                              type="text"
-                              placeholder="Venue Address"
-                              value={ev.venue_address}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setDemoEvents((prev) => prev.map((item, i) => (i === idx ? { ...item, venue_address: val } : item)));
-                              }}
-                              className="p-2.5 rounded-xl bg-cream border border-cream-border text-maroon text-xs"
+                        {/* Live iPhone Preview inside Admin Dashboard */}
+                        <div className="lg:col-span-1 sticky top-6">
+                          <div className="bg-cream-card p-4 rounded-3xl border border-cream-border space-y-3">
+                            <p className="text-xs font-semibold text-maroon text-center">Live Wedding Demo Preview</p>
+                            <IphoneDeviceMockup
+                              demoUrl={`/w/wedding/${DEMO_WEDDING_SLUG}`}
+                              coverPhotoUrl={demoCoverUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80'}
+                              title="Weddings by Amorah"
                             />
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Save Controls */}
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-cream-border">
-                    <button
-                      type="submit"
-                      disabled={demoIsSaving}
-                      className="px-8 py-3 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                    >
-                      <Save className="w-4 h-4 text-coral" />
-                      <span>{demoIsSaving ? 'Saving Demo Record...' : 'Save Demo Record Changes'}</span>
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </AdminErrorBoundary>
-        )}
+                )}
+              </div>
+            </AdminErrorBoundary>
+          )}
         </div>
       )}
     </div>

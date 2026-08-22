@@ -4312,6 +4312,98 @@ apiRouter.delete('/admin/demo-wedding/photo', requireAdmin, async (req, res) => 
   }
 });
 
+// GET /api/admin/demo-moments — Fetch current Moments demo record
+apiRouter.get('/admin/demo-moments', requireAdmin, async (req, res) => {
+  try {
+    let demoExp = experiencesStore.get('demo') || experiencesStore.get('exp-demo-001') || seedDemoExperience;
+    return res.json({ success: true, experience: demoExp });
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message || 'Failed to fetch demo moments experience.' });
+  }
+});
+
+// PUT /api/admin/demo-moments — Dedicated update for Moments demo record with strict server-side guardrail
+apiRouter.put('/admin/demo-moments', requireAdmin, async (req, res) => {
+  try {
+    const { id, slug, sender_name, receiver_name, occasion, slides } = req.body;
+
+    // STRICT SERVER-SIDE GUARDRAIL: REJECT ANY NON-DEMO TARGET IMMEDIATELY
+    if ((id && !isDemoIdentifier(id)) || (slug && !isDemoIdentifier(slug))) {
+      return res.status(403).json({
+        success: false,
+        message: 'FORBIDDEN: Moments demo editor is strictly restricted to the official demo experience record.',
+      });
+    }
+
+    let existingExp = experiencesStore.get('demo') || experiencesStore.get('exp-demo-001') || seedDemoExperience;
+
+    const updatedExp: Experience = {
+      ...existingExp,
+      sender_name: sender_name !== undefined ? sender_name : existingExp.sender_name,
+      receiver_name: receiver_name !== undefined ? receiver_name : existingExp.receiver_name,
+      occasion: occasion !== undefined ? occasion : existingExp.occasion,
+      slides: Array.isArray(slides) ? slides : existingExp.slides,
+    };
+
+    // Update in-memory stores
+    experiencesStore.set('demo', updatedExp);
+    experiencesStore.set('exp-demo-001', updatedExp);
+
+    // Sync seedDemoExperience object properties
+    seedDemoExperience.sender_name = updatedExp.sender_name;
+    seedDemoExperience.receiver_name = updatedExp.receiver_name;
+    seedDemoExperience.occasion = updatedExp.occasion;
+    seedDemoExperience.slides = updatedExp.slides;
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('experiences').upsert([updatedExp]);
+    }
+
+    return res.json({ success: true, experience: updatedExp });
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message || 'Failed to update demo moments experience.' });
+  }
+});
+
+// DELETE /api/admin/demo-moments/photo — Delete photo from Moments demo experience with storage cleanup
+apiRouter.delete('/admin/demo-moments/photo', requireAdmin, async (req, res) => {
+  try {
+    const { photoUrl, id, slug } = req.body;
+
+    // STRICT SERVER-SIDE GUARDRAIL: REJECT ANY NON-DEMO TARGET IMMEDIATELY
+    if ((id && !isDemoIdentifier(id)) || (slug && !isDemoIdentifier(slug))) {
+      return res.status(403).json({
+        success: false,
+        message: 'FORBIDDEN: Moments demo photo deletion is strictly restricted to the official demo experience.',
+      });
+    }
+
+    let existingExp = experiencesStore.get('demo') || experiencesStore.get('exp-demo-001') || seedDemoExperience;
+    const currentSlides = existingExp.slides || [];
+    const updatedSlides = currentSlides.filter((s) => s.url !== photoUrl);
+
+    existingExp.slides = updatedSlides;
+    experiencesStore.set('demo', existingExp);
+    experiencesStore.set('exp-demo-001', existingExp);
+    seedDemoExperience.slides = updatedSlides;
+
+    if (isSupabaseConfigured && supabase && photoUrl && photoUrl.includes('supabase.co')) {
+      try {
+        const pathMatch = photoUrl.match(/experience-images\/(.+)$/);
+        if (pathMatch && pathMatch[1]) {
+          await supabase.storage.from('experience-images').remove([pathMatch[1]]);
+        }
+      } catch (storageErr) {
+        console.warn('[Demo Moments Photo Delete] Storage cleanup warning:', storageErr);
+      }
+    }
+
+    return res.json({ success: true, experience: existingExp });
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message || 'Failed to delete demo moments photo.' });
+  }
+});
+
 // DELETE /api/admin/settings/admins/:id — delete sub-admin
 apiRouter.delete('/admin/settings/admins/:id', requireRole(['super_admin']), async (req, res) => {
   try {

@@ -1,4 +1,5 @@
 import { AdminMetrics, CreateExperiencePayload, Experience, UserRecord, CRMContact, SiteContentMap, AdminRole, AdminRecord, BlogPost, Wedding, WeddingEvent, WeddingRSVP, CreateWeddingPayload, WeddingGuest, WeddingGuestWithEvents, CoupleAccount, ThemeAssetRecord, ThemeAssetsMap, CardTemplateRecord } from '../types.js';
+import { DEMO_WEDDING_ID, DEMO_WEDDING_SLUG, DEMO_MOMENTS_ID, DEMO_MOMENTS_SLUG } from '../constants';
 
 const API_BASE = '/api';
 
@@ -675,7 +676,7 @@ export async function getAdminDemoWeddingApi(): Promise<{ success: boolean; wedd
 export async function updateAdminDemoWeddingApi(payload: Record<string, any>): Promise<{ success: boolean; wedding: Wedding; events: WeddingEvent[] }> {
   return apiFetch<{ success: boolean; wedding: Wedding; events: WeddingEvent[] }>('/admin/demo-wedding', {
     method: 'PUT',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, id: DEMO_WEDDING_ID, slug: DEMO_WEDDING_SLUG }),
   });
 }
 
@@ -685,7 +686,34 @@ export async function updateAdminDemoWeddingApi(payload: Record<string, any>): P
 export async function deleteAdminDemoPhotoApi(photoUrl: string): Promise<{ success: boolean; gallery_photos: string[] }> {
   return apiFetch<{ success: boolean; gallery_photos: string[] }>('/admin/demo-wedding/photo', {
     method: 'DELETE',
-    body: JSON.stringify({ photoUrl, id: 'wedding-demo-001', slug: 'dvds-and-dvs' }),
+    body: JSON.stringify({ photoUrl, id: DEMO_WEDDING_ID, slug: DEMO_WEDDING_SLUG }),
+  });
+}
+
+/**
+ * Fetch Demo Moments Record (Admin Demo Editor only).
+ */
+export async function getAdminDemoMomentsApi(): Promise<{ success: boolean; experience: Experience }> {
+  return apiFetch<{ success: boolean; experience: Experience }>('/admin/demo-moments');
+}
+
+/**
+ * Update Demo Moments Record (Admin Demo Editor only, with server guardrails).
+ */
+export async function updateAdminDemoMomentsApi(payload: Record<string, any>): Promise<{ success: boolean; experience: Experience }> {
+  return apiFetch<{ success: boolean; experience: Experience }>('/admin/demo-moments', {
+    method: 'PUT',
+    body: JSON.stringify({ ...payload, id: DEMO_MOMENTS_ID, slug: DEMO_MOMENTS_SLUG }),
+  });
+}
+
+/**
+ * Delete Photo from Demo Moments Record (Admin Demo Editor only).
+ */
+export async function deleteAdminDemoMomentsPhotoApi(photoUrl: string): Promise<{ success: boolean; experience: Experience }> {
+  return apiFetch<{ success: boolean; experience: Experience }>('/admin/demo-moments/photo', {
+    method: 'DELETE',
+    body: JSON.stringify({ photoUrl, id: DEMO_MOMENTS_ID, slug: DEMO_MOMENTS_SLUG }),
   });
 }
 
