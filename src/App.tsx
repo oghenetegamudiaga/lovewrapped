@@ -92,7 +92,7 @@ export default function App() {
         setCurrentPath('/preview');
       } else if (path === '/pay') {
         setCurrentPath('/pay');
-      } else if (path === '/admin') {
+      } else if (path === '/admin' || path === '/admin/demo-editor' || path.startsWith('/admin/')) {
         setCurrentPath('/admin');
       } else if (path === '/weddings') {
         setCurrentPath('/weddings');

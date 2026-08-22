@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { Component, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Shield,
   Users,
@@ -107,6 +107,58 @@ const DEFAULT_CMS_FIELDS: Array<{ key: string; label: string; section: 'hero' | 
   { key: 'pricing_paid_desc', label: 'Paid Plan Description', section: 'pricing', type: 'textarea' },
 ];
 
+// Single Source of Truth Constants for Seeded Demo Record
+export const DEMO_RECORD_ID = 'wedding-demo-001';
+export const DEMO_RECORD_SLUG = 'dvds-and-dvs';
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export class AdminErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+  };
+
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Admin Error Boundary caught error:', error, errorInfo);
+  }
+
+  public render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 rounded-3xl bg-rose-50 border border-rose-200 text-maroon space-y-4 my-6">
+          <div className="flex items-center gap-3 text-rose-700 font-serif text-lg font-bold">
+            <AlertCircle className="w-6 h-6 shrink-0 text-rose-600" />
+            <span>Admin Demo Editor Error</span>
+          </div>
+          <p className="text-xs text-mauve">
+            An unexpected error occurred while rendering the demo editor: {this.state.error?.message || 'Unknown render error'}
+          </p>
+          <button
+            onClick={() => (this as any).setState({ hasError: false, error: null })}
+            className="px-4 py-2 rounded-xl bg-maroon text-cream font-semibold text-xs transition-all shadow-sm cursor-pointer"
+          >
+            Retry Loading Editor
+          </button>
+        </div>
+      );
+    }
+
+    return (this as any).props.children;
+  }
+}
+
 export const AdminView: React.FC<AdminViewProps> = () => {
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
@@ -125,7 +177,8 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [isRootAdmin, setIsRootAdmin] = useState(false);
   const [subAdmins, setSubAdmins] = useState<AdminRecord[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users' | 'crm' | 'settings' | 'blog' | 'weddings' | 'templates' | 'demo_editor'>('metrics');
+  const initialTab = typeof window !== 'undefined' && window.location.pathname === '/admin/demo-editor' ? 'demo_editor' : 'metrics';
+  const [activeTab, setActiveTab] = useState<'metrics' | 'experiences' | 'users' | 'crm' | 'settings' | 'blog' | 'weddings' | 'templates' | 'demo_editor'>(initialTab);
   const [crmSubTab, setCrmSubTab] = useState<'contacts' | 'cms'>('contacts');
 
   // Dedicated Demo Editor State
@@ -141,6 +194,38 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   const [demoIsUploading, setDemoIsUploading] = useState(false);
   const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
   const [demoError, setDemoError] = useState<string | null>(null);
+
+  // Automatically fetch demo record data whenever demo_editor tab is active
+  useEffect(() => {
+    if (activeTab === 'demo_editor') {
+      setDemoIsLoading(true);
+      setDemoError(null);
+      getAdminDemoWeddingApi()
+        .then((res) => {
+          if (res.success && res.wedding) {
+            setDemoBrideName(res.wedding.bride_first_name || 'Sophia');
+            setDemoGroomName(res.wedding.groom_first_name || 'David');
+            setDemoCoverUrl(res.wedding.cover_photo_url || '');
+            setDemoRegistryUrl(res.wedding.registry_url || res.wedding.registry_info || '');
+            setDemoGalleryPhotos(res.wedding.gallery_photos || []);
+            if (res.events && res.events.length > 0) {
+              setDemoEvents(
+                res.events.map((e) => ({
+                  id: e.id,
+                  title: e.title,
+                  date: e.date,
+                  time: e.time || '10:00 AM - 01:00 PM',
+                  venue_name: e.venue_name,
+                  venue_address: e.venue_address || '',
+                }))
+              );
+            }
+          }
+        })
+        .catch((err) => setDemoError(err.message || 'Failed to load demo record.'))
+        .finally(() => setDemoIsLoading(false));
+    }
+  }, [activeTab]);
 
   // Admin Weddings State
   const [adminWeddings, setAdminWeddings] = useState<
@@ -948,34 +1033,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                     <span>Card Templates ({cardTemplates.length})</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setActiveTab('demo_editor');
-                      setDemoIsLoading(true);
-                      getAdminDemoWeddingApi()
-                        .then((res) => {
-                          if (res.success && res.wedding) {
-                            setDemoBrideName(res.wedding.bride_first_name || 'Sophia');
-                            setDemoGroomName(res.wedding.groom_first_name || 'David');
-                            setDemoCoverUrl(res.wedding.cover_photo_url || '');
-                            setDemoRegistryUrl(res.wedding.registry_url || res.wedding.registry_info || '');
-                            setDemoGalleryPhotos(res.wedding.gallery_photos || []);
-                            if (res.events && res.events.length > 0) {
-                              setDemoEvents(
-                                res.events.map((e) => ({
-                                  id: e.id,
-                                  title: e.title,
-                                  date: e.date,
-                                  time: e.time || '10:00 AM - 01:00 PM',
-                                  venue_name: e.venue_name,
-                                  venue_address: e.venue_address || '',
-                                }))
-                              );
-                            }
-                          }
-                        })
-                        .catch((err) => setDemoError(err.message || 'Failed to load demo record.'))
-                        .finally(() => setDemoIsLoading(false));
-                    }}
+                    onClick={() => setActiveTab('demo_editor')}
                     className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
                       activeTab === 'demo_editor' ? 'bg-coral text-white font-semibold shadow-sm' : 'bg-coral/10 text-coral hover:bg-coral/20 font-medium'
                     }`}
@@ -3220,7 +3278,8 @@ export const AdminView: React.FC<AdminViewProps> = () => {
 
           {/* Dedicated Demo Editor Tab View */}
           {activeTab === 'demo_editor' && (
-            <div className="space-y-6">
+            <AdminErrorBoundary>
+              <div className="space-y-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cream-card p-6 rounded-3xl border border-cream-border">
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/15 text-coral text-[10px] font-bold uppercase tracking-wider mb-2">
@@ -3524,7 +3583,8 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                 </form>
               )}
             </div>
-          )}
+          </AdminErrorBoundary>
+        )}
         </div>
       )}
     </div>
