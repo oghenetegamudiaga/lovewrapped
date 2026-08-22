@@ -268,6 +268,61 @@ const seedDemoExperience: Experience = {
   ],
 };
 
+// Official Demo Identifier Constant & Guardrail Helper
+export const DEMO_IDENTIFIERS = new Set(['demo', 'exp-demo-001', 'dvds-and-dvs', 'wedding-demo-001']);
+
+export function isDemoIdentifier(idOrSlug?: string | null): boolean {
+  if (!idOrSlug) return false;
+  const clean = idOrSlug.trim().toLowerCase();
+  return DEMO_IDENTIFIERS.has(clean);
+}
+
+// Seed Demo Wedding (`/w/wedding/dvds-and-dvs`)
+const seedDemoWedding: Wedding = {
+  id: 'wedding-demo-001',
+  couple_account_id: 'couple-demo-001',
+  slug: 'dvds-and-dvs',
+  bride_first_name: 'Sophia',
+  groom_first_name: 'David',
+  is_paid: true,
+  theme_id: 'classic-romance',
+  color_variant: 'burgundy-gold',
+  font_variant: 'serif-classic',
+  cover_photo_url: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80',
+  gallery_photos: [
+    'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1000&q=80',
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1000&q=80',
+    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1000&q=80',
+  ],
+  registry_url: 'https://www.amazon.com/baby-reg/demo',
+  registry_info: 'https://www.amazon.com/baby-reg/demo',
+  created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+const seedDemoEvents: WeddingEvent[] = [
+  {
+    id: 'evt-demo-1',
+    wedding_id: 'wedding-demo-001',
+    title: 'Traditional Wedding Ceremony',
+    date: '2026-11-20',
+    time: '10:00 AM - 01:00 PM',
+    venue_name: 'Eko Hotels & Suites',
+    venue_address: 'Plot 1415 Adetokunbo Ademola St, Victoria Island, Lagos',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'evt-demo-2',
+    wedding_id: 'wedding-demo-001',
+    title: 'White Wedding Reception',
+    date: '2026-11-21',
+    time: '03:00 PM - 09:00 PM',
+    venue_name: 'The Monarch Event Center',
+    venue_address: 'Lekki Peninsula II, Lagos',
+    created_at: new Date().toISOString(),
+  },
+];
+
 // Startup check for Supabase persistence
 const hasSupabaseUrl = Boolean(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL);
 const hasSupabaseKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY);
@@ -283,6 +338,12 @@ if (isSupabaseConfigured) {
 }
 
 experiencesStore.set('demo', seedDemoExperience);
+weddingsStore.set('demo', seedDemoWedding);
+weddingsStore.set('dvds-and-dvs', seedDemoWedding);
+weddingsStore.set('wedding-demo-001', seedDemoWedding);
+weddingEventsStore.set('wedding-demo-001', seedDemoEvents);
+weddingEventsStore.set('demo', seedDemoEvents);
+weddingEventsStore.set('dvds-and-dvs', seedDemoEvents);
 
 // Seed initial users
 usersStore.set('user-demo-1', {
@@ -4075,6 +4136,115 @@ apiRouter.patch('/admin/settings/admins/:id', requireRole(['super_admin']), asyn
   } catch (err: unknown) {
     console.error('Error updating sub-admin role:', err);
     res.status(500).json({ message: 'Failed to update sub-admin role.' });
+  }
+});
+
+/* ==================== DEDICATED DEMO-ONLY ADMIN EDITOR ENDPOINTS ==================== */
+
+// GET /api/admin/demo-wedding — Dedicated fetch for the demo experience record only
+apiRouter.get('/admin/demo-wedding', requireAdmin, async (_req, res) => {
+  try {
+    let demoW = weddingsStore.get('dvds-and-dvs') || weddingsStore.get('demo') || seedDemoWedding;
+    let events = weddingEventsStore.get(demoW.id) || seedDemoEvents;
+    return res.json({ success: true, wedding: demoW, events });
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message || 'Failed to fetch demo wedding.' });
+  }
+});
+
+// PUT /api/admin/demo-wedding — Dedicated update for the demo record with strict server-side guardrail
+apiRouter.put('/admin/demo-wedding', requireAdmin, async (req, res) => {
+  try {
+    const { id, slug, bride_first_name, groom_first_name, occasion, cover_photo_url, gallery_photos, registry_url, events } = req.body;
+
+    // STRICT SERVER-SIDE GUARDRAIL: REJECT ANY NON-DEMO TARGET IMMEDIATELY
+    if ((id && !isDemoIdentifier(id)) || (slug && !isDemoIdentifier(slug))) {
+      return res.status(403).json({
+        success: false,
+        message: 'FORBIDDEN: Demo editor is strictly restricted to the official demo experience record.',
+      });
+    }
+
+    let existingW = weddingsStore.get('dvds-and-dvs') || weddingsStore.get('demo') || seedDemoWedding;
+
+    const updatedW: Wedding = {
+      ...existingW,
+      bride_first_name: bride_first_name !== undefined ? bride_first_name : existingW.bride_first_name,
+      groom_first_name: groom_first_name !== undefined ? groom_first_name : existingW.groom_first_name,
+      cover_photo_url: cover_photo_url !== undefined ? cover_photo_url : existingW.cover_photo_url,
+      gallery_photos: Array.isArray(gallery_photos) ? gallery_photos : existingW.gallery_photos,
+      registry_url: registry_url !== undefined ? registry_url : existingW.registry_url,
+      registry_info: registry_url !== undefined ? registry_url : existingW.registry_info,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Update story viewer seedDemoExperience as well
+    if (bride_first_name || groom_first_name) {
+      seedDemoExperience.sender_name = groom_first_name || seedDemoExperience.sender_name;
+      seedDemoExperience.receiver_name = bride_first_name || seedDemoExperience.receiver_name;
+    }
+    if (occasion) {
+      seedDemoExperience.occasion = occasion;
+    }
+    if (cover_photo_url && seedDemoExperience.slides?.[1]) {
+      seedDemoExperience.slides[1].url = cover_photo_url;
+    }
+
+    weddingsStore.set('demo', updatedW);
+    weddingsStore.set('dvds-and-dvs', updatedW);
+    weddingsStore.set('wedding-demo-001', updatedW);
+
+    if (Array.isArray(events)) {
+      weddingEventsStore.set('wedding-demo-001', events);
+      weddingEventsStore.set('demo', events);
+      weddingEventsStore.set('dvds-and-dvs', events);
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('weddings').upsert([updatedW]);
+    }
+
+    return res.json({ success: true, wedding: updatedW, events: weddingEventsStore.get('demo') || [] });
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message || 'Failed to update demo wedding.' });
+  }
+});
+
+// DELETE /api/admin/demo-wedding/photo — Delete photo for demo experience with storage cleanup
+apiRouter.delete('/admin/demo-wedding/photo', requireAdmin, async (req, res) => {
+  try {
+    const { photoUrl, id, slug } = req.body;
+
+    // STRICT SERVER-SIDE GUARDRAIL: REJECT ANY NON-DEMO TARGET IMMEDIATELY
+    if ((id && !isDemoIdentifier(id)) || (slug && !isDemoIdentifier(slug))) {
+      return res.status(403).json({
+        success: false,
+        message: 'FORBIDDEN: Demo photo deletion is strictly restricted to the official demo experience.',
+      });
+    }
+
+    let existingW = weddingsStore.get('dvds-and-dvs') || weddingsStore.get('demo') || seedDemoWedding;
+    const currentPhotos = existingW.gallery_photos || [];
+    const updatedPhotos = currentPhotos.filter((p) => p !== photoUrl);
+
+    existingW.gallery_photos = updatedPhotos;
+    weddingsStore.set('demo', existingW);
+    weddingsStore.set('dvds-and-dvs', existingW);
+
+    if (isSupabaseConfigured && supabase && photoUrl && photoUrl.includes('supabase.co')) {
+      try {
+        const pathMatch = photoUrl.match(/experience-images\/(.+)$/) || photoUrl.match(/wedding-cover-photos\/(.+)$/);
+        if (pathMatch && pathMatch[1]) {
+          await supabase.storage.from('experience-images').remove([pathMatch[1]]);
+        }
+      } catch (storageErr) {
+        console.warn('[Demo Photo Delete] Storage cleanup warning:', storageErr);
+      }
+    }
+
+    return res.json({ success: true, gallery_photos: updatedPhotos });
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message || 'Failed to delete demo photo.' });
   }
 });
 

@@ -604,8 +604,19 @@ export async function uploadWeddingCoverPhotoApi(dataUrl: string): Promise<{ url
 export async function uploadWeddingGalleryPhotoApi(dataUrl: string): Promise<{ url: string; publicUrl: string }> {
   return apiFetch<{ url: string; publicUrl: string }>('/weddings/upload-gallery-photo', {
     method: 'POST',
-    body: JSON.stringify({ galleryPhoto: dataUrl }),
+    body: JSON.stringify({ dataUrl }),
   });
+}
+
+export async function uploadFileToStorage(file: File): Promise<string> {
+  const reader = new FileReader();
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  const res = await uploadWeddingGalleryPhotoApi(dataUrl);
+  return res.publicUrl || res.url;
 }
 
 /**
@@ -648,5 +659,32 @@ export async function updateAdminTemplateApi(id: string, updates: Partial<CardTe
 export async function deleteAdminTemplateApi(id: string): Promise<{ success: boolean; message: string }> {
   return apiFetch<{ success: boolean; message: string }>(`/admin/templates/${id}`, {
     method: 'DELETE',
+  });
+}
+
+/**
+ * Fetch Demo Wedding Record (Admin Demo Editor only).
+ */
+export async function getAdminDemoWeddingApi(): Promise<{ success: boolean; wedding: Wedding; events: WeddingEvent[] }> {
+  return apiFetch<{ success: boolean; wedding: Wedding; events: WeddingEvent[] }>('/admin/demo-wedding');
+}
+
+/**
+ * Update Demo Wedding Record (Admin Demo Editor only, with server guardrails).
+ */
+export async function updateAdminDemoWeddingApi(payload: Record<string, any>): Promise<{ success: boolean; wedding: Wedding; events: WeddingEvent[] }> {
+  return apiFetch<{ success: boolean; wedding: Wedding; events: WeddingEvent[] }>('/admin/demo-wedding', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Delete Photo from Demo Wedding Record (Admin Demo Editor only).
+ */
+export async function deleteAdminDemoPhotoApi(photoUrl: string): Promise<{ success: boolean; gallery_photos: string[] }> {
+  return apiFetch<{ success: boolean; gallery_photos: string[] }>('/admin/demo-wedding/photo', {
+    method: 'DELETE',
+    body: JSON.stringify({ photoUrl, id: 'wedding-demo-001', slug: 'dvds-and-dvs' }),
   });
 }
