@@ -46,6 +46,7 @@ import {
 } from 'recharts';
 import { AdminMetrics, Experience, UserRecord, CRMContact, CRMContactStatus, CRMContactType, AdminRole, AdminRecord, BlogPost, ThemeAssetsMap, ThemeAssetRecord, CardTemplateRecord, CardTemplateField } from '../types';
 import { DEMO_MOMENTS_ID, DEMO_MOMENTS_SLUG, DEMO_WEDDING_ID, DEMO_WEDDING_SLUG } from '../constants';
+import { WEDDING_INVITATION_PRESET_FIELDS } from '../config/templatePresets';
 import { IphoneDeviceMockup } from '../components/landing/IphoneDeviceMockup';
 import {
   getAdminMeApi,
@@ -3064,36 +3065,52 @@ export const AdminView: React.FC<AdminViewProps> = () => {
 
                       {/* Text Fields List */}
                       <div className="space-y-4 pt-4 border-t border-cream-border">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <h4 className="font-serif font-bold text-sm text-maroon">Dynamic Text Field Position Calibration</h4>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const currentFields = editingTemplate.text_fields || [];
-                              setEditingTemplate({
-                                ...editingTemplate,
-                                text_fields: [
-                                  ...currentFields,
-                                  {
-                                    field_key: `field_${Date.now()}`,
-                                    label: 'New Field',
-                                    x: 10,
-                                    y: 50,
-                                    width: 80,
-                                    min_font_size: 12,
-                                    max_font_size: 24,
-                                    color: '#000000',
-                                    align: 'center',
-                                    font_family: 'sans',
-                                  },
-                                ],
-                              });
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-cream-card hover:bg-cream-border text-maroon text-xs font-semibold flex items-center gap-1 border border-cream-border cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5 text-coral" />
-                            <span>+ Add Field</span>
-                          </button>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingTemplate({
+                                  ...editingTemplate,
+                                  text_fields: [...WEDDING_INVITATION_PRESET_FIELDS],
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-rose-900/10 hover:bg-rose-900/20 text-rose-900 text-xs font-semibold flex items-center gap-1.5 border border-rose-900/30 cursor-pointer shadow-2xs transition-colors"
+                              title="Pre-fill 9 standard wedding invitation fields (Badge, Family Line, Couple Names, Invitee Prefix/Name, Seal, Date, Venue, Footer Note)"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-rose-700" />
+                              <span>✨ Apply Wedding Invitation Preset</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentFields = editingTemplate.text_fields || [];
+                                setEditingTemplate({
+                                  ...editingTemplate,
+                                  text_fields: [
+                                    ...currentFields,
+                                    {
+                                      field_key: `field_${Date.now()}`,
+                                      label: 'New Field',
+                                      x: 10,
+                                      y: 50,
+                                      width: 80,
+                                      min_font_size: 12,
+                                      max_font_size: 24,
+                                      color: '#000000',
+                                      align: 'center',
+                                      font_family: 'sans',
+                                    },
+                                  ],
+                                });
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-cream-card hover:bg-cream-border text-maroon text-xs font-semibold flex items-center gap-1 border border-cream-border cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5 text-coral" />
+                              <span>+ Add Field</span>
+                            </button>
+                          </div>
                         </div>
 
                         {(editingTemplate.text_fields || []).map((field, idx) => (

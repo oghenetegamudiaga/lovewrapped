@@ -183,6 +183,221 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
               );
             }
 
+            if (field.field_key === 'invitation_badge') {
+              const badgeText = field.static_text || 'OFFICIAL INVITATION';
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex items-center justify-center overflow-hidden"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-3 w-full">
+                    <span className="h-[1px] w-6 sm:w-12 opacity-30 bg-current" style={{ backgroundColor: field.color || accentColor }} />
+                    <span
+                      className="inline-block px-3 py-0.5 rounded-full border text-[0.75em] font-bold tracking-[0.2em] uppercase"
+                      style={{
+                        borderColor: `${field.color || accentColor}40`,
+                        backgroundColor: `${field.color || accentColor}10`,
+                        color: field.color || accentColor,
+                      }}
+                    >
+                      {badgeText}
+                    </span>
+                    <span className="h-[1px] w-6 sm:w-12 opacity-30 bg-current" style={{ backgroundColor: field.color || accentColor }} />
+                  </div>
+                </div>
+              );
+            }
+
+            if (field.field_key === 'couple_names') {
+              const bride = brideFirstName || 'Bride';
+              const groom = groomFirstName || 'Groom';
+              const maxSz = field.max_font_size || 38;
+              const minSz = field.min_font_size || 22;
+              const longestNameLen = Math.max(bride.length, groom.length);
+              const computedSize = longestNameLen <= 8 ? maxSz : Math.max(minSz, Math.round(maxSz - (longestNameLen - 8) * 1.2));
+
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex flex-col items-center justify-center text-center overflow-hidden"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <span
+                    className={`font-bold leading-tight truncate w-full ${field.font_family === 'serif' ? serifClass : sansClass}`}
+                    style={{ color: field.color || TEMPLATE_CARD_COUPLE_NAME_COLOR, fontSize: `${computedSize}px` }}
+                  >
+                    {bride}
+                  </span>
+                  <div className="flex items-center justify-center gap-2 my-1 opacity-70">
+                    <span className="h-[1px] w-5 bg-current" style={{ backgroundColor: field.color || accentColor }} />
+                    <Heart className="w-3.5 h-3.5 fill-current" style={{ color: field.color || accentColor }} />
+                    <span className="h-[1px] w-5 bg-current" style={{ backgroundColor: field.color || accentColor }} />
+                  </div>
+                  <span
+                    className={`font-bold leading-tight truncate w-full ${field.font_family === 'serif' ? serifClass : sansClass}`}
+                    style={{ color: field.color || TEMPLATE_CARD_COUPLE_NAME_COLOR, fontSize: `${computedSize}px` }}
+                  >
+                    {groom}
+                  </span>
+                </div>
+              );
+            }
+
+            if (field.field_key === 'invitee_name') {
+              const nameVal = inviteeName || customText || 'HONORED GUEST';
+              const maxSz = field.max_font_size || 20;
+              const minSz = field.min_font_size || 14;
+              const len = nameVal.length;
+              const computedSize = len <= 12 ? maxSz : Math.max(minSz, Math.round(maxSz - (len - 12) * 0.5));
+
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex items-center justify-center overflow-hidden"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <div
+                    className="inline-block px-5 py-1.5 rounded-full border shadow-2xs backdrop-blur-xs text-center"
+                    style={{
+                      borderColor: `${field.color || accentColor}40`,
+                      backgroundColor: `${field.color || accentColor}12`,
+                      color: field.color || TEMPLATE_CARD_COUPLE_NAME_COLOR,
+                    }}
+                  >
+                    <span
+                      className={`font-semibold tracking-wide ${field.font_family === 'serif' ? serifClass : sansClass}`}
+                      style={{ fontSize: `${computedSize}px` }}
+                    >
+                      {nameVal}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+
+            if (field.field_key === 'monogram_seal') {
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex items-center justify-center overflow-hidden"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <div
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-double flex items-center justify-center font-serif text-xs sm:text-sm font-bold tracking-tighter shadow-xs"
+                    style={{
+                      borderColor: field.color || accentColor,
+                      color: field.color || accentColor,
+                      backgroundColor: `${field.color || accentColor}0D`,
+                    }}
+                  >
+                    {monogram}
+                  </div>
+                </div>
+              );
+            }
+
+            if (field.field_key === 'marriage_date_line') {
+              const prefixText = field.static_text || 'ARE GETTING MARRIED ON';
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex flex-col items-center justify-center gap-1.5 overflow-hidden text-center"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <span
+                    className="text-[0.7em] font-semibold uppercase tracking-[0.2em] opacity-85"
+                    style={{ color: field.color || TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
+                  >
+                    {prefixText}
+                  </span>
+                  <div
+                    className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full border shadow-2xs"
+                    style={{
+                      borderColor: `${field.color || accentColor}40`,
+                      backgroundColor: `${field.color || accentColor}10`,
+                      color: field.color || TEMPLATE_CARD_DETAIL_TEXT_COLOR,
+                    }}
+                  >
+                    <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: field.color || accentColor }} />
+                    <span
+                      className={`font-semibold uppercase tracking-wider text-[0.8em] ${field.font_family === 'serif' ? serifClass : sansClass}`}
+                    >
+                      {formattedDate}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+
+            if (field.field_key === 'venue') {
+              const venueVal = venueName ? `${venueName}${venueAddress ? ` • ${venueAddress}` : ''}` : 'LAGOS, NIGERIA';
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex items-center justify-center overflow-hidden"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <div
+                    className="inline-flex items-center justify-center gap-1.5 w-full text-[0.85em]"
+                    style={{ color: field.color || TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
+                  >
+                    <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: field.color || accentColor }} />
+                    <span className={`truncate max-w-full font-medium ${field.font_family === 'serif' ? serifClass : sansClass}`}>
+                      {venueVal}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+
+            if (field.field_key === 'footer_note') {
+              const noteText = field.static_text || 'FORMAL INVITATION TO FOLLOW';
+              return (
+                <div
+                  key={field.field_key}
+                  className="absolute z-10 pointer-events-none flex flex-col items-center justify-center w-full overflow-hidden"
+                  style={{
+                    left: `${field.x}%`,
+                    top: `${field.y}%`,
+                    width: `${field.width}%`,
+                  }}
+                >
+                  <span className="h-[1px] w-3/4 bg-current opacity-25 mb-2" style={{ backgroundColor: field.color || accentColor }} />
+                  <span
+                    className="text-[0.7em] font-semibold uppercase tracking-[0.25em]"
+                    style={{ color: field.color || TEMPLATE_CARD_DETAIL_TEXT_COLOR }}
+                  >
+                    {noteText}
+                  </span>
+                </div>
+              );
+            }
+
             const val = resolveFieldValue(field);
             if (!val) return null;
 
