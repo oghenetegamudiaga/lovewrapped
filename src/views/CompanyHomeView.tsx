@@ -25,20 +25,14 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
           <button
-            id="company-hero-create-wedding-button"
-            onClick={() => onNavigate('/wedding')}
+            id="company-hero-get-started-button"
+            onClick={() => {
+              document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="w-full sm:w-auto px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
           >
-            <span>Create a Wedding Invitation</span>
+            <span>Get Started</span>
             <ArrowRight className="w-5 h-5 text-coral" />
-          </button>
-
-          <button
-            id="company-hero-create-moment-button"
-            onClick={() => onNavigate('/create')}
-            className="w-full sm:w-auto px-6 py-4 rounded-full bg-cream-card hover:bg-cream-border text-maroon border border-cream-border font-medium text-base hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>Create a Moment</span>
           </button>
         </div>
       </section>

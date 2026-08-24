@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, ArrowRight, Menu, X, Sparkles, BookOpen, Layers } from 'lucide-react';
+import { Heart, ArrowRight, Menu, X, BookOpen, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
@@ -13,6 +13,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   const handleMobileNav = (path: string) => {
     setMobileMenuOpen(false);
     onNavigate(path);
+  };
+
+  const handleGetStarted = () => {
+    setMobileMenuOpen(false);
+    if (currentPath === '/') {
+      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      onNavigate('/');
+      setTimeout(() => {
+        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
   };
 
   return (
@@ -70,11 +82,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           </button>
 
           <button
-            id="nav-create-yours-button"
-            onClick={() => onNavigate('/pricing')}
+            id="nav-get-started-button"
+            onClick={handleGetStarted}
             className="group flex items-center gap-1.5 px-4.5 py-2 rounded-full bg-maroon hover:bg-maroon-light text-cream font-medium text-xs sm:text-sm shadow-md transition-all active:scale-95 border border-maroon/20 cursor-pointer"
           >
-            <span>Create Yours</span>
+            <span>Get Started</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform text-coral" />
           </button>
         </div>
@@ -145,11 +157,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
               <button
                 type="button"
-                id="mobile-nav-create"
-                onClick={() => handleMobileNav('/pricing')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-maroon text-cream font-semibold text-sm flex items-center justify-between shadow-md"
+                id="mobile-nav-get-started"
+                onClick={handleGetStarted}
+                className="w-full text-left px-4 py-3 rounded-2xl bg-maroon text-cream font-semibold text-sm flex items-center justify-between shadow-md cursor-pointer"
               >
-                <span>Create Yours</span>
+                <span>Get Started</span>
                 <Layers className="w-4 h-4 text-coral" />
               </button>
             </div>
