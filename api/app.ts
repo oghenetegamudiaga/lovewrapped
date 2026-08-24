@@ -896,7 +896,7 @@ apiRouter.post('/paystack/verify', async (req, res) => {
 
     const txData = paystackData.data;
 
-    // Only set is_paid: true if data.status === 'success' AND data.amount === 200000 (PAID_PLAN_PRICE_KOBO)
+    // Only set is_paid: true if data.status === 'success' AND data.amount === 98000 (PAID_PLAN_PRICE_KOBO)
     if (txData.status !== 'success' || txData.amount !== PAID_PLAN_PRICE_KOBO) {
       console.error(`Paystack verify failed status/amount check: status=${txData.status}, amount=${txData.amount}`);
       return res.status(400).json({
@@ -2274,11 +2274,11 @@ apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitialize
     if (isSupabaseConfigured && supabase) {
       const { error: wErr } = await supabase.from('weddings').insert(weddingRecord);
       if (wErr) {
-        console.error('Supabase weddings insert error:', wErr);
-        return res.status(500).json({ message: 'Failed to create wedding record.' });
-      }
-      for (const evRec of eventRecords) {
-        await supabase.from('wedding_events').insert(evRec);
+        console.error('Supabase weddings insert error (falling back to in-memory store):', wErr);
+      } else {
+        for (const evRec of eventRecords) {
+          await supabase.from('wedding_events').insert(evRec);
+        }
       }
     }
 

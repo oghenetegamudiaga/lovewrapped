@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { WEDDING_PLAN_PRICE_FORMATTED } from '../../constants.js';
 
 export interface FaqItem {
   id: string;
@@ -11,7 +12,7 @@ export const FAQ_DATA: FaqItem[] = [
   {
     id: 'pricing',
     question: 'How much does a digital wedding invitation cost?',
-    answer: 'We offer a Free Tier that lets you customize and download a beautiful static digital invitation card. Our Premium Tier (₦10,000 / $10) unlocks the full multi-scene interactive website experience, custom Spotify/Apple Music/SoundCloud background audio, photo gallery (up to 10 photos), gift registry link, multi-event schedules, and real-time RSVP management from your couple dashboard.',
+    answer: `We offer a Free Tier that lets you customize and download a beautiful static digital invitation card. Our Premium Tier (${WEDDING_PLAN_PRICE_FORMATTED}) unlocks the full multi-scene interactive website experience, custom Spotify/Apple Music/SoundCloud background audio, photo gallery (up to 10 photos), gift registry link, multi-event schedules, and real-time RSVP management from your couple dashboard.`,
   },
   {
     id: 'guest-access',

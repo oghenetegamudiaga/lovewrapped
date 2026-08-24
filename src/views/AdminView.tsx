@@ -1,4 +1,5 @@
 import React, { Component, useState, useEffect, useCallback, useMemo } from 'react';
+import { WEDDING_PLAN_PRICE_FORMATTED } from '../constants.js';
 import {
   Shield,
   Users,
@@ -2565,7 +2566,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                             <td className="py-4 px-6 text-mauve capitalize">{w.theme_id}</td>
                             <td className="py-4 px-6">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                Paid (₦10,000)
+                                Paid ({WEDDING_PLAN_PRICE_FORMATTED})
                               </span>
                             </td>
                             <td className="py-4 px-6 text-mauve">

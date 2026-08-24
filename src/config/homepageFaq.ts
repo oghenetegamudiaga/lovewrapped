@@ -1,3 +1,5 @@
+import { PAID_PLAN_PRICE_FORMATTED, WEDDING_PLAN_PRICE_FORMATTED } from '../constants.js';
+
 export interface HomepageFaqItem {
   id: string;
   question: string;
@@ -18,7 +20,7 @@ export const HOMEPAGE_FAQ_DATA: HomepageFaqItem[] = [
   {
     id: 'cost',
     question: 'How much does it cost?',
-    answer: 'We offer Free Tiers for creating quick digital cards and invitations. Our Paid Tiers (₦3,500 / $5 for Paid Moments, ₦10,000 / $10 for Premium Weddings) unlock full multi-scene websites, custom background music (Spotify/Apple Music/SoundCloud), voice notes, photo galleries, and real-time RSVP management.',
+    answer: `We offer Free Tiers for creating quick digital cards and invitations. Our Paid Tiers (${PAID_PLAN_PRICE_FORMATTED} for Paid Moments, ${WEDDING_PLAN_PRICE_FORMATTED} for Premium Weddings) unlock full multi-scene websites, custom background music (Spotify/Apple Music/SoundCloud), voice notes, photo galleries, and real-time RSVP management.`,
   },
   {
     id: 'photos',
