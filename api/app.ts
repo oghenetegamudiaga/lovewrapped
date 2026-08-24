@@ -33,6 +33,16 @@ app.use(
   })
 );
 
+// Canonical Domain Redirect Middleware (www -> non-www canonical host: amorah.xyz)
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  if (host.startsWith('www.amorah.xyz')) {
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    return res.redirect(301, `${protocol}://amorah.xyz${req.originalUrl}`);
+  }
+  next();
+});
+
 app.use(cookieParser());
 app.use(
   express.json({
