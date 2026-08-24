@@ -29,7 +29,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
             onClick={() => {
               document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="w-full sm:w-auto px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
+            className="w-full sm:w-auto px-5 sm:px-8 py-4 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 border border-maroon/20 cursor-pointer"
           >
             <span>Get Started</span>
             <ArrowRight className="w-5 h-5 text-coral" />
