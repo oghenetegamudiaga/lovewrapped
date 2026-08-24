@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /admin
+Disallow: /create
+Disallow: /preview
+Disallow: /pay
+Disallow: /w/
+Disallow: /weddings/mine
+Disallow: /weddings/create
+Disallow: /weddings/dashboard/
+Disallow: /weddings/login
+Disallow: /weddings/signup
+Disallow: /dev/
+
+Sitemap: https://amorah.xyz/sitemap.xml

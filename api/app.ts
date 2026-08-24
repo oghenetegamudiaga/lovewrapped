@@ -409,6 +409,64 @@ apiRouter.get('/health', (req, res) => {
   });
 });
 
+// Sitemap.xml Endpoint
+apiRouter.get('/sitemap.xml', (_req, res) => {
+  const domain = 'https://amorah.xyz';
+  const today = new Date().toISOString().split('T')[0];
+  const publicRoutes = [
+    { path: '/', priority: '1.0', changefreq: 'daily' },
+    { path: '/wedding', priority: '0.9', changefreq: 'weekly' },
+    { path: '/weddings', priority: '0.9', changefreq: 'weekly' },
+    { path: '/love-stories', priority: '0.8', changefreq: 'weekly' },
+    { path: '/pricing', priority: '0.8', changefreq: 'weekly' },
+    { path: '/blog', priority: '0.7', changefreq: 'daily' },
+    { path: '/blog/crafting-the-perfect-digital-wedding-invitation', priority: '0.6', changefreq: 'monthly' },
+  ];
+
+  const xmlEntries = publicRoutes
+    .map(
+      (r) => `  <url>
+    <loc>${domain}${r.path}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${r.changefreq}</changefreq>
+    <priority>${r.priority}</priority>
+  </url>`
+    )
+    .join('\n');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${xmlEntries}
+</urlset>
+`;
+
+  res.header('Content-Type', 'application/xml');
+  res.send(xml);
+});
+
+// Robots.txt Endpoint
+apiRouter.get('/robots.txt', (_req, res) => {
+  const robots = `User-agent: *
+Disallow: /admin/
+Disallow: /admin
+Disallow: /create
+Disallow: /preview
+Disallow: /pay
+Disallow: /w/
+Disallow: /weddings/mine
+Disallow: /weddings/create
+Disallow: /weddings/dashboard/
+Disallow: /weddings/login
+Disallow: /weddings/signup
+Disallow: /dev/
+
+Sitemap: https://amorah.xyz/sitemap.xml
+`;
+
+  res.header('Content-Type', 'text/plain');
+  res.send(robots);
+});
+
 // Lightweight Signed URL Endpoint for Direct Client-to-Supabase Storage Uploads
 apiRouter.post('/upload-url', async (req, res) => {
   try {
