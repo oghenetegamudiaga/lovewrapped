@@ -1039,8 +1039,12 @@ async function cleanupUnpaidWeddings() {
 }
 setInterval(cleanupUnpaidWeddings, 60 * 60 * 1000);
 
-// Admin Authentication & Session Management using iron-session
-const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET || 'lovewrapped-dev-secret-key-32-chars-long!!';
+// SECURITY: DO NOT add a fallback/default value here — see incident history. Missing env vars must fail loudly, never silently degrade to a guessable default.
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
+if (!SESSION_SECRET) {
+  console.error('🚨 FATAL: SESSION_SECRET is not set.');
+  throw new Error('SESSION_SECRET environment variable is required.');
+}
 
 function requireRole(allowedRoles: Array<'super_admin' | 'admin' | 'support'>) {
   return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -1376,13 +1380,18 @@ apiRouter.post('/admin/login', adminLoginLimiter, async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
+    // SECURITY: DO NOT add a fallback/default value here — see incident history. Missing env vars must fail loudly, never silently degrade to a guessable default.
+    const rootHash = process.env.ADMIN_PASSWORD_HASH;
+    if (!rootHash) {
+      console.error('🚨 FATAL: ADMIN_PASSWORD_HASH is not set.');
+      return res.status(503).json({ message: 'Admin login is not configured. Contact the system administrator.' });
+    }
+
     const cleanEmail = email.trim().toLowerCase();
     const rootEmail = (process.env.ADMIN_EMAIL || 'admin@lovewrapped.app').trim().toLowerCase();
-    const rootHash = process.env.ADMIN_PASSWORD_HASH || '$2a$10$wN481wL63QzYk1eA0N/0e.w77W.uJ4H8h/0Mv8sP0p0P0P0P0P0P0'; // fallback hash for 'admin' if not set
-    const defaultPassMatch = !process.env.ADMIN_PASSWORD_HASH && password === 'admin';
 
     if (cleanEmail === rootEmail) {
-      const passwordMatches = defaultPassMatch || (rootHash && bcrypt.compareSync(password, rootHash));
+      const passwordMatches = bcrypt.compareSync(password, rootHash);
       if (!passwordMatches) {
         return res.status(401).json({ message: 'Invalid admin email or password.' });
       }
