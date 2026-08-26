@@ -5,7 +5,6 @@ import { Experience, Slide } from '../types';
 import { SlideCard } from './SlideCard';
 import { soundSynth } from '../lib/sound';
 import { reactToExperienceApi } from '../lib/api';
-import { MusicPlayerToggle } from './MusicPlayerToggle';
 
 interface StoryViewerProps {
   experience: Experience;
@@ -302,12 +301,12 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 </h3>
               </div>
 
-              <div className="relative z-10 my-auto flex flex-col items-center justify-center space-y-6">
+              <div className="relative z-30 my-auto flex flex-col items-center justify-center space-y-6">
                 <div className="relative flex items-center justify-center">
                   {isPlayingVoice && (
                     <>
-                      <div className="absolute w-36 h-36 rounded-full bg-rose-500/20 animate-ping" />
-                      <div className="absolute w-28 h-28 rounded-full bg-pink-500/30 animate-pulse" />
+                      <div className="absolute w-36 h-36 rounded-full bg-rose-500/20 animate-ping pointer-events-none" />
+                      <div className="absolute w-28 h-28 rounded-full bg-pink-500/30 animate-pulse pointer-events-none" />
                     </>
                   )}
 
@@ -317,7 +316,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                       e.stopPropagation();
                       toggleVoicePlayback();
                     }}
-                    className="relative z-20 w-20 h-20 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 text-white flex items-center justify-center shadow-xl shadow-rose-900/60 border-2 border-white/30 hover:scale-105 active:scale-95 transition-all"
+                    className="relative z-30 w-20 h-20 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 text-white flex items-center justify-center shadow-xl shadow-rose-900/60 border-2 border-white/30 hover:scale-105 active:scale-95 transition-all"
                     title={isPlayingVoice ? 'Pause voice message' : 'Play voice message'}
                   >
                     {isPlayingVoice ? (
@@ -557,13 +556,6 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
         </div>
       )}
 
-      {/* Floating Background Music Player */}
-      <MusicPlayerToggle
-        musicTrackId={experience.music_track || 'iyawo-mi'}
-        musicSourceType={experience.music_source_type}
-        musicExternalId={experience.music_external_id}
-        musicExternalMeta={experience.music_external_meta}
-      />
     </div>
   );
 };
