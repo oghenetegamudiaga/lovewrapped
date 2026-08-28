@@ -6,7 +6,6 @@ const TODAY = new Date().toISOString().split('T')[0];
 
 export const PUBLIC_ROUTES = [
   { path: '/', priority: '1.0', changefreq: 'daily' },
-  { path: '/wedding', priority: '0.9', changefreq: 'weekly' },
   { path: '/weddings', priority: '0.9', changefreq: 'weekly' },
   { path: '/love-stories', priority: '0.8', changefreq: 'weekly' },
   { path: '/pricing', priority: '0.8', changefreq: 'weekly' },
