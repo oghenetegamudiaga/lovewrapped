@@ -114,6 +114,19 @@ export default function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
+  // Dynamically update canonical link tag for route changes
+  useEffect(() => {
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      document.head.appendChild(link);
+    }
+    const cleanPath = currentPath.startsWith('/') ? currentPath : `/${currentPath}`;
+    const canonicalUrl = `https://amorah.xyz${cleanPath === '/' ? '/' : cleanPath}`;
+    link.setAttribute('href', canonicalUrl);
+  }, [currentPath]);
+
   // Safe navigation helper that syncs window history
   const navigate = (path: string) => {
     if (window.location.pathname + window.location.search !== path) {
