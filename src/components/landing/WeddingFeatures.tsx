@@ -59,7 +59,7 @@ export const WeddingFeatures: React.FC = () => {
             Crafted for Your Special Day
           </h2>
           <p className="text-mauve text-base leading-relaxed">
-            Everything you need to invite, excite, and seamlessly manage your wedding guests — thoughtfully designed without clutter.
+            Everything you need to invite, excite, and seamlessly manage your wedding guests, thoughtfully designed without clutter.
           </p>
         </div>
 

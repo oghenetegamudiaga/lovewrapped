@@ -151,7 +151,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
 
         // Update SEO Meta Tags
         if (data) {
-          document.title = `${data.title} — Weddings by Amorah Blog`;
+          document.title = `${data.title} | Weddings by Amorah Blog`;
           const metaDesc = document.querySelector('meta[name="description"]');
           if (metaDesc) {
             metaDesc.setAttribute('content', data.excerpt);
@@ -171,7 +171,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
 
     return () => {
       // Reset title on unmount
-      document.title = 'Amorah — Turn your love into an experience';
+      document.title = 'Amorah: Turn your love into an experience';
     };
   }, [slug]);
 

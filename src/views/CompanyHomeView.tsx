@@ -20,7 +20,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
         </h1>
 
         <p className="text-lg sm:text-xl text-mauve max-w-2xl mb-10 font-normal leading-relaxed">
-          Amorah creates interactive digital stories and scene-based invitations for life's most meaningful occasions — from anniversaries and romantic surprises to weddings.
+          Amorah creates interactive digital stories and scene-based invitations for life's most meaningful occasions, from anniversaries and romantic surprises to weddings.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">

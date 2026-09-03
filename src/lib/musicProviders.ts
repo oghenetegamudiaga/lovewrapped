@@ -226,7 +226,7 @@ export async function validateMusicUrlRegistry(rawUrl: string): Promise<MusicVal
   if (/(?:youtube\.com|youtu\.be)/i.test(trimmed)) {
     return {
       valid: false,
-      message: "YouTube links aren't supported — please use a Spotify, Apple Music, or SoundCloud link instead.",
+      message: "YouTube links aren't supported. Please use a Spotify, Apple Music, or SoundCloud link instead.",
     };
   }
 

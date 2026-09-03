@@ -137,7 +137,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                 <b className="block text-2xl font-serif font-bold text-coral mb-4 opacity-90">02</b>
                 <h3 className="font-serif font-bold text-xl text-maroon mb-3">Make it yours</h3>
                 <p className="text-sm text-mauve leading-relaxed font-normal">
-                  We shape your words into a beautiful story—ready for your personal touch.
+                  We shape your words into a beautiful story, ready for your personal touch.
                 </p>
               </div>
             </article>

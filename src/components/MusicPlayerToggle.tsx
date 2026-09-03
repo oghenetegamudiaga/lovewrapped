@@ -12,7 +12,7 @@ export interface CuratedTrackInfo {
 export const CURATED_MUSIC_TRACKS: Record<string, CuratedTrackInfo> = {
   'iyawo-mi': {
     id: 'iyawo-mi',
-    name: 'Iyawo Mi — Timi Dakolo',
+    name: 'Iyawo Mi by Timi Dakolo',
     genre: 'Afro-Romantic Serenade',
     url: '/audio/iyawo-mi.mp3',
   },

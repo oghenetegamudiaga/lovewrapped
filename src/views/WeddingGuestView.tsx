@@ -38,7 +38,7 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, guestS
 
         if (res.wedding) {
           const guestPrefix = res.guest ? `Invitation for ${res.guest.name} | ` : '';
-          document.title = `${guestPrefix}${res.wedding.couple_names} — Wedding Invitation | Amorah`;
+          document.title = `${guestPrefix}${res.wedding.couple_names}: Wedding Invitation | Amorah`;
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Wedding invitation not found.';
