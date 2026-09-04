@@ -1,4 +1,5 @@
 import React from 'react';
+import { ScrollReveal } from '../common/ScrollReveal';
 
 export interface FeatureItem {
   id: string;
@@ -51,37 +52,36 @@ export const WeddingFeatures: React.FC = () => {
     <section className="py-20 px-4 sm:px-6 bg-[#FFFEFE] border-y border-cream-border/60">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-16 max-w-2xl mx-auto">
+        <ScrollReveal delay={0} className="text-center mb-16 max-w-2xl mx-auto">
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
             Crafted for Your Special Day
           </h2>
           <p className="text-mauve text-base leading-relaxed">
             Everything you need to invite, excite, and seamlessly manage your wedding guests, thoughtfully designed without clutter.
           </p>
-        </div>
+        </ScrollReveal>
 
         {/* Editorial Text-Led 6-Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-          {FEATURES_DATA.map((feature) => (
-            <div
-              key={feature.id}
-              className="bg-white border border-cream-border/80 p-8 rounded-3xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4 pb-3 border-b border-cream-border/60">
-                  <span className="font-serif text-sm font-semibold text-coral tracking-widest">
-                    {feature.number}
-                  </span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-coral/40 group-hover:bg-coral transition-colors" />
+          {FEATURES_DATA.map((feature, idx) => (
+            <ScrollReveal key={feature.id} delay={80 + idx * 80} className="h-full">
+              <div className="bg-white border border-cream-border/80 p-8 rounded-3xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between group h-full">
+                <div>
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-cream-border/60">
+                    <span className="font-serif text-sm font-semibold text-coral tracking-widest">
+                      {feature.number}
+                    </span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-coral/40 group-hover:bg-coral transition-colors" />
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-maroon mb-3 leading-snug">
+                    {feature.title}
+                  </h3>
+                  <p className="text-mauve text-sm leading-relaxed font-normal">
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 className="font-serif text-xl font-bold text-maroon mb-3 leading-snug">
-                  {feature.title}
-                </h3>
-                <p className="text-mauve text-sm leading-relaxed font-normal">
-                  {feature.description}
-                </p>
               </div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>

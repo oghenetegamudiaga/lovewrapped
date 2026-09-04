@@ -6,7 +6,7 @@ interface HeroCarouselProps {
 
 export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
   return (
-    <section className="relative bg-[#280514] text-white overflow-hidden min-h-[75vh] sm:min-h-[82vh] flex items-center justify-center px-4 sm:px-6 py-20 sm:py-28 select-none">
+    <section className="relative bg-[#3A0D22] text-white overflow-hidden min-h-[75vh] sm:min-h-[82vh] flex items-center justify-center px-4 sm:px-6 py-20 sm:py-28 select-none">
       {/* 1. Birthday Cake Sticker (Top-Left) */}
       <div className="absolute top-10 sm:top-14 left-4 sm:left-10 md:left-20 lg:left-32 z-10 animate-sticker-float-1 transition-transform duration-300 hover:scale-115 hover:-rotate-12 cursor-pointer">
         <img

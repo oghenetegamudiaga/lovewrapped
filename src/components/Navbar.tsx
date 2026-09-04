@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#FCF2E9] text-maroon border-b border-cream-border/80 transition-all shadow-xs">
+    <header className="sticky top-0 z-50 bg-[#3A0D22] text-white border-b-0 transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
         {/* Brand Logo */}
         <button
@@ -51,7 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           <img
             src="/logo.png"
             alt="Amorah"
-            className="h-8 sm:h-9 w-auto object-contain group-hover:opacity-90 transition-opacity"
+            className="h-8 sm:h-9 w-auto object-contain brightness-200 group-hover:opacity-90 transition-opacity"
           />
         </button>
 
@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
               currentPath.startsWith('/weddings')
                 ? 'text-coral font-semibold'
-                : 'text-maroon/80 hover:text-maroon'
+                : 'text-white/80 hover:text-white'
             }`}
           >
             Weddings
@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
               currentPath === '/love-stories'
                 ? 'text-coral font-semibold'
-                : 'text-maroon/80 hover:text-maroon'
+                : 'text-white/80 hover:text-white'
             }`}
           >
             Moments
@@ -87,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
               currentPath.startsWith('/blog')
                 ? 'text-coral font-semibold'
-                : 'text-maroon/80 hover:text-maroon'
+                : 'text-white/80 hover:text-white'
             }`}
           >
             Blog
@@ -110,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             id="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="p-2 rounded-xl text-maroon hover:text-coral bg-maroon/5 border border-maroon/10 focus:outline-none cursor-pointer"
+            className="p-2 rounded-xl text-white hover:text-coral bg-white/10 border border-white/10 focus:outline-none cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -125,14 +125,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="sm:hidden bg-[#FCF2E9] border-b border-cream-border text-maroon overflow-hidden"
+            className="sm:hidden bg-[#3A0D22] border-b border-white/10 text-white overflow-hidden"
           >
             <div className="px-4 py-6 flex flex-col gap-3">
               <button
                 type="button"
                 id="mobile-nav-weddings"
                 onClick={() => handleMobileNav('/weddings')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-white/60 border border-cream-border text-maroon font-medium text-sm"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-sm"
               >
                 <span>Weddings</span>
               </button>
@@ -141,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 type="button"
                 id="mobile-nav-love-stories"
                 onClick={() => handleMobileNav('/love-stories')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-white/60 border border-cream-border text-maroon font-medium text-sm"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-sm"
               >
                 <span>Moments</span>
               </button>
@@ -150,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 type="button"
                 id="mobile-nav-blog"
                 onClick={() => handleMobileNav('/blog')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-white/60 border border-cream-border text-maroon font-medium text-sm"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-sm"
               >
                 <span>Blog</span>
               </button>

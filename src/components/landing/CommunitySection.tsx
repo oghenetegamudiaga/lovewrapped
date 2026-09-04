@@ -1,12 +1,13 @@
 import React from 'react';
 import { Instagram, Mail, MessageSquare } from 'lucide-react';
+import { ScrollReveal } from '../common/ScrollReveal';
 
 export const CommunitySection: React.FC = () => {
   return (
     <section id="community" className="py-20 sm:py-28 px-4 sm:px-6 bg-[#FFFEFE] border-b border-cream-border/60 scroll-mt-12">
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
         {/* Left Copy Column */}
-        <div className="w-full lg:w-1/2 flex flex-col items-start text-left">
+        <ScrollReveal delay={0} className="w-full lg:w-1/2 flex flex-col items-start text-left">
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon mb-6 tracking-tight leading-tight">
             Join Our Thriving Community
           </h2>
@@ -48,10 +49,10 @@ export const CommunitySection: React.FC = () => {
               <span>WhatsApp</span>
             </a>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Right Image Column with Speech Bubble */}
-        <div className="w-full lg:w-1/2 flex justify-center relative">
+        <ScrollReveal delay={120} className="w-full lg:w-1/2 flex justify-center relative">
           <div className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-cream-card">
             <img
               src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80"
@@ -65,7 +66,7 @@ export const CommunitySection: React.FC = () => {
               <span>Amorah 💖</span>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   );

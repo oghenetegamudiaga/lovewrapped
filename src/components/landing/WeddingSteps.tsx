@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { ScrollReveal } from '../common/ScrollReveal';
 
 export interface StepItem {
   number: string;
@@ -48,19 +49,19 @@ export const WeddingSteps: React.FC<WeddingStepsProps> = ({ onActionClick }) => 
   return (
     <section className="py-20 px-4 sm:px-6 max-w-6xl mx-auto w-full">
       {/* Header */}
-      <div className="text-center mb-16 max-w-2xl mx-auto">
+      <ScrollReveal delay={0} className="text-center mb-16 max-w-2xl mx-auto">
         <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
           How It Works
         </h2>
         <p className="text-mauve text-base leading-relaxed">
           Creating your unforgettable digital wedding invitation is fast, intuitive, and stress-free.
         </p>
-      </div>
+      </ScrollReveal>
 
       {/* 2-Column Container: Couple Photo Left, Steps Right */}
       <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
         {/* Left Column: Couple Photo */}
-        <div className="w-full lg:w-1/2 relative">
+        <ScrollReveal delay={100} className="w-full lg:w-1/2 relative">
           <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden shadow-2xl border-4 border-cream-card">
             <img
               src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1000&q=80"
@@ -77,32 +78,33 @@ export const WeddingSteps: React.FC<WeddingStepsProps> = ({ onActionClick }) => 
               </p>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Right Column: Steps List */}
         <div className="w-full lg:w-1/2 flex flex-col justify-center space-y-6">
-          {STEPS_DATA.map((step) => (
-            <div
-              key={step.number}
-              className="flex items-start gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-white hover:bg-[#FFFEFE] border border-cream-border/60 transition-all group"
-            >
-              <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-maroon text-cream font-serif font-bold text-sm sm:text-base shrink-0 group-hover:bg-coral transition-colors shadow-xs">
-                {step.number}
+          {STEPS_DATA.map((step, idx) => (
+            <ScrollReveal key={step.number} delay={120 + idx * 70}>
+              <div
+                className="flex items-start gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-white hover:bg-[#FFFEFE] border border-cream-border/60 transition-all group"
+              >
+                <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-maroon text-cream font-serif font-bold text-sm sm:text-base shrink-0 group-hover:bg-coral transition-colors shadow-xs">
+                  {step.number}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-serif text-base sm:text-lg font-bold text-maroon mb-1">
+                    {step.title}
+                  </h3>
+                  <p className="text-mauve text-xs sm:text-sm leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-serif text-base sm:text-lg font-bold text-maroon mb-1">
-                  {step.title}
-                </h3>
-                <p className="text-mauve text-xs sm:text-sm leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
-            </div>
+            </ScrollReveal>
           ))}
 
           {/* Quick CTA button */}
           {onActionClick && (
-            <div className="pt-4">
+            <ScrollReveal delay={550} className="pt-4">
               <button
                 type="button"
                 onClick={onActionClick}
@@ -111,7 +113,7 @@ export const WeddingSteps: React.FC<WeddingStepsProps> = ({ onActionClick }) => 
                 <span>Start Building Yours Now</span>
                 <ArrowRight className="w-4 h-4 text-coral" />
               </button>
-            </div>
+            </ScrollReveal>
           )}
         </div>
       </div>
