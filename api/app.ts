@@ -1307,8 +1307,8 @@ apiRouter.post('/weddings/validate-music-link', validateMusicLimiter, async (req
   }
 });
 
-// GET /api/weddings/me
-apiRouter.get('/weddings/me', requireCoupleAuth, (req, res) => {
+// GET /api/weddings/me & GET /api/auth/me
+const handleMeAuth = (req: any, res: any) => {
   const session = (req as any).coupleSession || {};
   res.json({
     authenticated: true,
@@ -1317,7 +1317,30 @@ apiRouter.get('/weddings/me', requireCoupleAuth, (req, res) => {
       email: session.email,
       full_name: session.full_name || null,
     },
+    user: {
+      id: session.id,
+      email: session.email,
+      full_name: session.full_name || null,
+    },
   });
+};
+
+apiRouter.get('/weddings/me', requireCoupleAuth, handleMeAuth);
+apiRouter.get('/auth/me', requireCoupleAuth, handleMeAuth);
+apiRouter.post('/auth/signup', weddingsAuthLimiter, (req, res, next) => {
+  // Delegate to weddings/signup handler
+  const layer = (apiRouter as any).stack.find((s: any) => s.route?.path === '/weddings/signup' && s.route?.methods?.post);
+  if (layer) return layer.handle(req, res, next);
+  return res.status(500).json({ message: 'Signup endpoint unmapped' });
+});
+apiRouter.post('/auth/login', weddingsAuthLimiter, (req, res, next) => {
+  const layer = (apiRouter as any).stack.find((s: any) => s.route?.path === '/weddings/login' && s.route?.methods?.post);
+  if (layer) return layer.handle(req, res, next);
+  return res.status(500).json({ message: 'Login endpoint unmapped' });
+});
+apiRouter.post('/auth/logout', (req, res) => {
+  res.clearCookie('couple_session', { path: '/' });
+  res.json({ success: true, message: 'Logged out successfully.' });
 });
 
 // GET /api/weddings/mine — List non-sensitive metadata for weddings owned by logged-in couple (requireCoupleAuth)

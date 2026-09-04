@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { CoupleAccount } from '../types.js';
 import { getCoupleMyWeddingsApi } from '../lib/api.js';
+import { getPostAuthRedirect, validateRedirectTarget, buildAuthUrl } from '../lib/authIntent.js';
 
 interface WeddingsLoginViewProps {
   onNavigate: (path: string) => void;
@@ -13,6 +14,9 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const queryParams = new URLSearchParams(window.location.search);
+  const rawRedirect = queryParams.get('redirect');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,17 +51,21 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
         onLoginSuccess(data.couple);
       }
 
-      // Smart post-login redirection logic based on user's weddings portfolio count
+      // Resume explicit intended destination if present
+      if (rawRedirect) {
+        const validated = validateRedirectTarget(rawRedirect, '');
+        if (validated && !validated.includes('/login') && !validated.includes('/signup')) {
+          onNavigate(validated);
+          return;
+        }
+      }
+
+      // Smart fallback based on portfolio if no explicit intent
       try {
         const mineRes = await getCoupleMyWeddingsApi();
         const list = mineRes.weddings || [];
-        if (list.length === 0) {
-          onNavigate('/weddings/create');
-        } else if (list.length === 1) {
-          onNavigate(`/weddings/dashboard/${list[0].id}`);
-        } else {
-          onNavigate('/weddings/mine');
-        }
+        const destination = getPostAuthRedirect(null, list.length, list[0]?.id);
+        onNavigate(destination);
       } catch (err) {
         onNavigate('/weddings/create');
       }
@@ -157,7 +165,7 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
           <button
             type="button"
             id="weddings-goto-signup-button"
-            onClick={() => onNavigate('/weddings/signup')}
+            onClick={() => onNavigate(buildAuthUrl(rawRedirect || '/weddings/create', true))}
             className="font-semibold text-maroon hover:text-coral transition-colors cursor-pointer"
           >
             Create an account

@@ -98,10 +98,10 @@ export default function App() {
         setCurrentPath('/weddings');
       } else if (path === '/weddings/create') {
         setCurrentPath('/weddings/create');
-      } else if (path === '/weddings/signup') {
-        setCurrentPath('/weddings/signup');
-      } else if (path === '/weddings/login') {
-        setCurrentPath('/weddings/login');
+      } else if (path === '/weddings/signup' || path === '/signup') {
+        setCurrentPath('/signup');
+      } else if (path === '/weddings/login' || path === '/login') {
+        setCurrentPath('/login');
       } else if (path === '/weddings/mine') {
         setCurrentPath('/weddings/mine');
       } else {
@@ -274,14 +274,14 @@ export default function App() {
           )
         )}
 
-        {currentPath === '/weddings/signup' && (
+        {(currentPath === '/weddings/signup' || currentPath === '/signup') && (
           <WeddingsSignupView
             onNavigate={navigate}
             onSignupSuccess={(couple) => setCurrentCouple(couple)}
           />
         )}
 
-        {currentPath === '/weddings/login' && (
+        {(currentPath === '/weddings/login' || currentPath === '/login') && (
           <WeddingsLoginView
             onNavigate={navigate}
             onLoginSuccess={(couple) => setCurrentCouple(couple)}
