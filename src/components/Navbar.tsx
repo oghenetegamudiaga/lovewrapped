@@ -82,14 +82,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           </button>
 
           <button
-            id="nav-community-button"
-            onClick={handleCommunityClick}
-            className="text-xs sm:text-sm font-medium text-white/80 hover:text-white transition-colors cursor-pointer"
+            id="nav-blog-button"
+            onClick={() => onNavigate('/blog')}
+            className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
+              currentPath.startsWith('/blog')
+                ? 'text-coral font-semibold'
+                : 'text-white/80 hover:text-white'
+            }`}
           >
-            Our Community
+            Blog
           </button>
 
-          {/* Outline Pill Button matching Frame_7.png */}
+          {/* Outline Pill Button matching AMORAH_NEW_HERO.png */}
           <button
             id="nav-get-started-button"
             onClick={handleGetStarted}
@@ -144,11 +148,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
               <button
                 type="button"
-                id="mobile-nav-community"
-                onClick={handleCommunityClick}
+                id="mobile-nav-blog"
+                onClick={() => handleMobileNav('/blog')}
                 className="w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-sm"
               >
-                <span>Our Community</span>
+                <span>Blog</span>
               </button>
 
               <button

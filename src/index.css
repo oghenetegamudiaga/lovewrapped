@@ -146,3 +146,31 @@
   background-color: #df6d73;
   box-shadow: 0 0 6px rgba(223, 109, 115, 0.5);
 }
+
+/* Ambient Floating Animations for Hero Sticker Icons */
+@keyframes sticker-float-1 {
+  0%, 100% { transform: translateY(0px) rotate(var(--sticker-rotate, 0deg)); }
+  50% { transform: translateY(-7px) rotate(var(--sticker-rotate, 0deg)); }
+}
+
+@keyframes sticker-float-2 {
+  0%, 100% { transform: translateY(0px) rotate(var(--sticker-rotate, 0deg)); }
+  50% { transform: translateY(7px) rotate(var(--sticker-rotate, 0deg)); }
+}
+
+.animate-sticker-float-1 {
+  will-change: transform;
+  animation: sticker-float-1 4.5s ease-in-out infinite;
+}
+
+.animate-sticker-float-2 {
+  will-change: transform;
+  animation: sticker-float-2 5.2s ease-in-out 0.8s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sticker-float-1,
+  .animate-sticker-float-2 {
+    animation: none !important;
+  }
+}
