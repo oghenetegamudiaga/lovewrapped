@@ -59,7 +59,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
       {/* Centered Content Block */}
       <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center text-center space-y-6">
         {/* Serif Headline with Accent-Colored Second Line & Contrast Shadow */}
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.12] [text-shadow:_0_2px_12px_rgba(0,0,0,0.6)]">
+        <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.12] [text-shadow:_0_2px_12px_rgba(0,0,0,0.6)]">
           <span>{slide.line1}</span>
           <br className="hidden sm:inline" />
           <em className="italic font-normal text-[#df6d73] block sm:inline">

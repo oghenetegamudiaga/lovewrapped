@@ -31,9 +31,9 @@
     --color-surface: #ffffff;
     --color-primary: #3a0d22;
     --color-accent: #df6d73;
-    --font-sans: 'DM Sans', sans-serif;
-    --font-serif: 'Playfair Display', Georgia, serif;
-    --font-heading: 'Attena', 'Playfair Display', Georgia, serif;
+    --font-sans: 'Rethink Sans', sans-serif;
+    --font-serif: 'Rethink Sans', sans-serif;
+    --font-heading: 'Rethink Sans', sans-serif;
   }
 
   body {
@@ -43,14 +43,19 @@
     overflow-x: hidden;
   }
 
-  /* Site-wide Attena typography applied specifically to h1 and h2 tags with Playfair Display fallback */
+  /* Sitewide headings render in Rethink Sans */
   h1, h2 {
     font-family: var(--font-heading);
   }
 
-  /* h3 and .font-serif utility class continue using Playfair Display */
+  /* h3 and .font-serif utility class render in Rethink Sans */
   h3, .font-serif {
     font-family: var(--font-serif);
+  }
+
+  /* Preserved Hero H1 font exception */
+  .hero-title {
+    font-family: 'Attena', 'Playfair Display', Georgia, serif !important;
   }
 }
 
