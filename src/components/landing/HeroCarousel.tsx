@@ -13,7 +13,8 @@ const HERO_SLIDES = [
     subtext: 'Scene-based digital wedding invitations and interactive RSVP experiences that your guests will want to replay.',
     ctaText: 'Get Started For Free',
     ctaPath: '/weddings/create',
-    bgImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2000&q=80',
+    bgImage: '/images/image_8.png',
+    objectPosition: 'object-center',
   },
   {
     id: 'moments',
@@ -22,7 +23,8 @@ const HERO_SLIDES = [
     subtext: "Amorah creates interactive digital stories and scene-based invitations for life's most meaningful occasions.",
     ctaText: 'Get Started For Free',
     ctaPath: '/pricing',
-    bgImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=2000&q=80',
+    bgImage: '/images/hero-moments.jpg',
+    objectPosition: 'object-[center_25%]',
   },
 ];
 
@@ -39,25 +41,25 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
   const slide = HERO_SLIDES[currentSlide];
 
   return (
-    <section className="relative bg-maroon text-white overflow-hidden min-h-[80vh] sm:min-h-[85vh] flex items-center justify-center px-4 sm:px-6 py-24 sm:py-32">
-      {/* Full-Bleed Background Image with Dark Plum Overlay Tint */}
+    <section className="relative bg-[#3a0d22] text-white overflow-hidden min-h-[80vh] sm:min-h-[85vh] flex items-center justify-center px-4 sm:px-6 py-24 sm:py-32">
+      {/* Full-Bleed Background Image with Visible Photo & Lighter Dark Plum Overlay Tint */}
       <div className="absolute inset-0 z-0">
         <img
           key={slide.id}
           src={slide.bgImage}
           alt={slide.line1}
-          className="w-full h-full object-cover object-center scale-105 transition-all duration-1000 ease-out"
+          className={`w-full h-full object-cover ${slide.objectPosition} transition-all duration-1000 ease-out`}
           loading="eager"
         />
-        {/* Exact Dark Plum Overlay Tint matching Frame_7.png */}
-        <div className="absolute inset-0 bg-[#3a0d22]/78 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#3a0d22]/85 via-[#3a0d22]/70 to-[#3a0d22]/90" />
+        {/* Lighter Overlay Tint so photos are clearly recognizable while keeping copy 100% legible */}
+        <div className="absolute inset-0 bg-[#3a0d22]/45" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#3a0d22]/60 via-[#3a0d22]/35 to-[#3a0d22]/65" />
       </div>
 
       {/* Centered Content Block */}
       <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center text-center space-y-6">
-        {/* Serif Headline with Accent-Colored Second Line */}
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.12]">
+        {/* Serif Headline with Accent-Colored Second Line & Contrast Shadow */}
+        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.12] [text-shadow:_0_2px_12px_rgba(0,0,0,0.6)]">
           <span>{slide.line1}</span>
           <br className="hidden sm:inline" />
           <em className="italic font-normal text-[#df6d73] block sm:inline">
@@ -65,8 +67,8 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
           </em>
         </h1>
 
-        {/* Subtext */}
-        <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl mx-auto font-normal leading-relaxed">
+        {/* Subtext with High Contrast Drop Shadow */}
+        <p className="text-base sm:text-lg md:text-xl text-white max-w-2xl mx-auto font-normal leading-relaxed [text-shadow:_0_1px_8px_rgba(0,0,0,0.6)]">
           {slide.subtext}
         </p>
 
