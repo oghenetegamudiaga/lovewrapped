@@ -18,37 +18,12 @@ export const AboutUsSection: React.FC = () => {
 
         {/* Right Photo Collage Column */}
         <ScrollReveal delay={120} className="w-full lg:w-1/2 flex justify-center">
-          <div className="relative w-full max-w-md aspect-square">
-            {/* Main Center Photo */}
-            <div className="absolute top-4 left-4 right-12 bottom-12 rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-cream-card">
-              <img
-                src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80"
-                alt="Couple Embracing"
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Overlapping Top Right Photo */}
-            <div className="absolute top-0 right-0 w-36 sm:w-44 h-36 sm:h-44 rounded-2xl overflow-hidden shadow-lg border-4 border-white transform rotate-3 bg-cream-card">
-              <img
-                src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=500&q=80"
-                alt="Wedding Moment"
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Overlapping Bottom Left Photo */}
-            <div className="absolute bottom-0 left-0 w-40 sm:w-48 h-40 sm:h-48 rounded-2xl overflow-hidden shadow-lg border-4 border-white transform -rotate-3 bg-cream-card">
-              <img
-                src="https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=500&q=80"
-                alt="Holding Hands"
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          </div>
+          <img
+            src="/images/about-us-collage.png"
+            alt="Amorah Stories Photo Collage"
+            className="w-full max-w-lg h-auto object-contain drop-shadow-md"
+            loading="lazy"
+          />
         </ScrollReveal>
       </div>
     </section>
