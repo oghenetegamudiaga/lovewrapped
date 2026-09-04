@@ -6,6 +6,11 @@ import {
   buildAuthUrl,
   DEFAULT_AUTH_FALLBACK,
 } from '../src/lib/authIntent.js';
+import {
+  getEntryPointPath,
+  ENTRY_POINT_ROUTING_TABLE,
+  EntryPointKey,
+} from '../src/config/entryPointRouting.js';
 
 describe('Unified Auth Intent & Security Validator', () => {
   describe('validateRedirectTarget (Open-Redirect Security Check)', () => {
@@ -107,6 +112,65 @@ describe('Unified Auth Intent & Security Validator', () => {
         buildAuthUrl('https://evil.com'),
         `/login?redirect=${encodeURIComponent(DEFAULT_AUTH_FALLBACK)}`
       );
+    });
+  });
+
+  describe('Entry-Point Routing Table (Exact Specification Verification)', () => {
+    it('verifies Nav "Weddings" entry point', () => {
+      assert.equal(getEntryPointPath('NAV_WEDDINGS', false), '/weddings');
+      assert.equal(getEntryPointPath('NAV_WEDDINGS', true), '/weddings');
+    });
+
+    it('verifies Nav "Moments" entry point', () => {
+      assert.equal(getEntryPointPath('NAV_MOMENTS', false), '/love-stories');
+      assert.equal(getEntryPointPath('NAV_MOMENTS', true), '/love-stories');
+    });
+
+    it('verifies Nav "Get Started" Pill entry point', () => {
+      assert.equal(getEntryPointPath('NAV_GET_STARTED', false), '/login?redirect=%2Fhub');
+      assert.equal(getEntryPointPath('NAV_GET_STARTED', true), '/hub');
+    });
+
+    it('verifies Hero CTA (Weddings Slide) entry point', () => {
+      assert.equal(getEntryPointPath('HERO_WEDDINGS', false), '/login?redirect=%2Fweddings%2Fcreate');
+      assert.equal(getEntryPointPath('HERO_WEDDINGS', true), '/weddings/create');
+    });
+
+    it('verifies Hero CTA (Moments Slide) entry point', () => {
+      assert.equal(getEntryPointPath('HERO_MOMENTS', false), '/login?redirect=%2Fpricing');
+      assert.equal(getEntryPointPath('HERO_MOMENTS', true), '/pricing');
+    });
+
+    it('verifies Product Card "Create Now" (Weddings) entry point', () => {
+      assert.equal(getEntryPointPath('PRODUCT_CARD_WEDDINGS', false), '/login?redirect=%2Fweddings%2Fcreate');
+      assert.equal(getEntryPointPath('PRODUCT_CARD_WEDDINGS', true), '/weddings/create');
+    });
+
+    it('verifies Product Card "Create Now" (Moments) entry point', () => {
+      assert.equal(getEntryPointPath('PRODUCT_CARD_MOMENTS', false), '/login?redirect=%2Fpricing');
+      assert.equal(getEntryPointPath('PRODUCT_CARD_MOMENTS', true), '/pricing');
+    });
+
+    it('verifies Final CTA Section "Get Started" entry point', () => {
+      assert.equal(getEntryPointPath('FINAL_CTA', false), '/login?redirect=%2Fhub');
+      assert.equal(getEntryPointPath('FINAL_CTA', true), '/hub');
+    });
+
+    it('ensures every table entry key is mapped in ENTRY_POINT_ROUTING_TABLE', () => {
+      const keys: EntryPointKey[] = [
+        'NAV_WEDDINGS',
+        'NAV_MOMENTS',
+        'NAV_GET_STARTED',
+        'HERO_WEDDINGS',
+        'HERO_MOMENTS',
+        'PRODUCT_CARD_WEDDINGS',
+        'PRODUCT_CARD_MOMENTS',
+        'FINAL_CTA',
+      ];
+
+      keys.forEach((key) => {
+        assert.ok(ENTRY_POINT_ROUTING_TABLE[key], `Missing entry for key ${key}`);
+      });
     });
   });
 });

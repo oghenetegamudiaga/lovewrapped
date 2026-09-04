@@ -23,6 +23,7 @@ const ALLOWED_ROUTE_PREFIXES = [
   '/pay',
   '/love-stories',
   '/blog',
+  '/hub',
   '/w/',
 ];
 

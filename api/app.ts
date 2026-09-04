@@ -1343,6 +1343,39 @@ apiRouter.post('/auth/logout', (req, res) => {
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 
+// POST /api/auth/validate-redirect — Server-side open-redirect target validator
+apiRouter.post('/auth/validate-redirect', (req, res) => {
+  const { target } = req.body || {};
+  if (!target || typeof target !== 'string') {
+    return res.json({ valid: false, target: '/weddings/mine' });
+  }
+
+  const trimmed = target.trim();
+  if (!trimmed || /[\r\n\0\x00-\x1F\x7F]/.test(trimmed)) {
+    return res.json({ valid: false, target: '/weddings/mine' });
+  }
+
+  if (trimmed.startsWith('//') || trimmed.startsWith('/\\') || trimmed.startsWith('\\\\') || /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
+    return res.json({ valid: false, target: '/weddings/mine' });
+  }
+
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
+    return res.json({ valid: false, target: '/weddings/mine' });
+  }
+
+  const allowedPrefixes = ['/', '/weddings', '/create', '/pricing', '/preview', '/pay', '/love-stories', '/blog', '/hub', '/login', '/signup'];
+  try {
+    const parsed = new URL(trimmed, 'https://amorah.local');
+    const isAllowed = allowedPrefixes.some((prefix) => prefix === '/' ? parsed.pathname === '/' : parsed.pathname === prefix || parsed.pathname.startsWith(prefix + '/'));
+    if (!isAllowed) {
+      return res.json({ valid: false, target: '/weddings/mine' });
+    }
+    return res.json({ valid: true, target: parsed.pathname + parsed.search + parsed.hash });
+  } catch (err) {
+    return res.json({ valid: false, target: '/weddings/mine' });
+  }
+});
+
 // GET /api/weddings/mine — List non-sensitive metadata for weddings owned by logged-in couple (requireCoupleAuth)
 apiRouter.get('/weddings/mine', requireCoupleAuth, async (req, res) => {
   try {

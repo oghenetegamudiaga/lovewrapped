@@ -6,22 +6,26 @@ import { CommunitySection } from '../components/landing/CommunitySection';
 import { Testimonials } from '../components/landing/Testimonials';
 import { HomepageFaq } from '../components/landing/HomepageFaq';
 import { FinalCtaSection } from '../components/landing/FinalCtaSection';
+import { CoupleAccount } from '../types.js';
 
 interface CompanyHomeViewProps {
   onNavigate: (path: string) => void;
+  currentCouple?: CoupleAccount | null;
 }
 
-export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) => {
+export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate, currentCouple }) => {
+  const isAuthenticated = !!currentCouple;
+
   return (
     <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans selection:bg-coral selection:text-white">
       {/* 1. Two-Slide Hero Carousel */}
-      <HeroCarousel onNavigate={onNavigate} />
+      <HeroCarousel onNavigate={onNavigate} isAuthenticated={isAuthenticated} />
 
       {/* 2. About Us Brand Story Section */}
       <AboutUsSection />
 
       {/* 3. Explore Our Products (Exactly 2 Cards: Moments & Weddings by Amorah) */}
-      <ProductCardsSection onNavigate={onNavigate} />
+      <ProductCardsSection onNavigate={onNavigate} isAuthenticated={isAuthenticated} />
 
       {/* 4. Our Community Section */}
       <CommunitySection />
@@ -35,7 +39,7 @@ export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) 
       </div>
 
       {/* 7. Final Self-Serve Offer CTA Section */}
-      <FinalCtaSection onNavigate={onNavigate} />
+      <FinalCtaSection onNavigate={onNavigate} isAuthenticated={isAuthenticated} />
     </div>
   );
 };

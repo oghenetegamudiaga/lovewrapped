@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { CoupleAccount } from '../types.js';
+import { getEntryPointPath } from '../config/entryPointRouting.js';
 
 interface NavbarProps {
   currentPath: string;
   onNavigate: (path: string) => void;
+  currentCouple?: CoupleAccount | null;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, currentCouple }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleMobileNav = (path: string) => {
@@ -17,14 +20,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
   const handleGetStarted = () => {
     setMobileMenuOpen(false);
-    if (currentPath === '/') {
-      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      onNavigate('/');
-      setTimeout(() => {
-        document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
+    const target = getEntryPointPath('NAV_GET_STARTED', !!currentCouple);
+    onNavigate(target);
   };
 
   const handleCommunityClick = () => {
@@ -99,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             onClick={handleGetStarted}
             className="px-5 py-2 rounded-full border border-coral text-coral hover:bg-coral hover:text-white font-medium text-xs sm:text-sm transition-all active:scale-95 cursor-pointer"
           >
-            <span>Get Started</span>
+            <span>{currentCouple ? 'My Experiences' : 'Get Started'}</span>
           </button>
         </div>
 
@@ -161,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
                 onClick={handleGetStarted}
                 className="w-full text-center px-4 py-3 rounded-2xl border border-coral text-coral hover:bg-coral hover:text-white font-semibold text-sm cursor-pointer transition-colors"
               >
-                <span>Get Started</span>
+                <span>{currentCouple ? 'My Experiences' : 'Get Started'}</span>
               </button>
             </div>
           </motion.div>

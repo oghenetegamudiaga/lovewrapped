@@ -18,6 +18,7 @@ import { WeddingsMineView } from './views/WeddingsMineView';
 import { WeddingGuestView } from './views/WeddingGuestView';
 import { BlogIndexView } from './views/BlogIndexView';
 import { BlogPostView } from './views/BlogPostView';
+import { ProductHubView } from './views/ProductHubView';
 import { WeddingInvitationViewer } from './components/WeddingInvitationViewer';
 import { Experience, PlanTier, CoupleAccount } from './types';
 import { DEFAULT_PAYMENT_REF } from './constants.js';
@@ -104,6 +105,8 @@ export default function App() {
         setCurrentPath('/login');
       } else if (path === '/weddings/mine') {
         setCurrentPath('/weddings/mine');
+      } else if (path === '/hub') {
+        setCurrentPath('/hub');
       } else {
         setCurrentPath('/');
       }
@@ -195,11 +198,11 @@ export default function App() {
     <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans antialiased">
       {/* Hide standard navbar on fullscreen recipient viewers */}
       {!isFullscreenView && (
-        <Navbar currentPath={currentPath} onNavigate={navigate} />
+        <Navbar currentPath={currentPath} onNavigate={navigate} currentCouple={currentCouple} />
       )}
 
       <main className="flex-1">
-        {currentPath === '/' && <CompanyHomeView onNavigate={navigate} />}
+        {currentPath === '/' && <CompanyHomeView onNavigate={navigate} currentCouple={currentCouple} />}
 
         {currentPath === '/love-stories' && <LandingView onNavigate={navigate} />}
 
@@ -286,6 +289,14 @@ export default function App() {
             onNavigate={navigate}
             onLoginSuccess={(couple) => setCurrentCouple(couple)}
           />
+        )}
+
+        {currentPath === '/hub' && (
+          currentCouple ? (
+            <ProductHubView currentCouple={currentCouple} onNavigate={navigate} />
+          ) : (
+            <WeddingsLoginView onNavigate={navigate} onLoginSuccess={(couple) => { setCurrentCouple(couple); navigate('/hub'); }} />
+          )
         )}
 
         {currentPath === '/blog' && (

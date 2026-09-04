@@ -1,12 +1,14 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ScrollReveal } from '../common/ScrollReveal';
+import { getEntryPointPath } from '../../config/entryPointRouting.js';
 
 interface ProductCardsSectionProps {
   onNavigate: (path: string) => void;
+  isAuthenticated?: boolean;
 }
 
-export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavigate }) => {
+export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavigate, isAuthenticated = false }) => {
   return (
     <section id="products" className="py-20 sm:py-28 px-4 sm:px-6 bg-[#FFFEFE] border-b border-cream-border/60 scroll-mt-12">
       <div className="max-w-5xl mx-auto text-center">
@@ -48,7 +50,7 @@ export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavi
                 <button
                   type="button"
                   id="product-card-moments-cta"
-                  onClick={() => onNavigate('/pricing')}
+                  onClick={() => onNavigate(getEntryPointPath('PRODUCT_CARD_MOMENTS', isAuthenticated))}
                   className="text-[#df6d73] hover:text-[#c85b61] font-semibold text-base sm:text-lg inline-flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer"
                 >
                   <span>Create Now</span>
@@ -84,7 +86,7 @@ export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavi
                 <button
                   type="button"
                   id="product-card-weddings-cta"
-                  onClick={() => onNavigate('/weddings/create')}
+                  onClick={() => onNavigate(getEntryPointPath('PRODUCT_CARD_WEDDINGS', isAuthenticated))}
                   className="text-[#df6d73] hover:text-[#c85b61] font-semibold text-base sm:text-lg inline-flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer"
                 >
                   <span>Create Now</span>

@@ -1,11 +1,13 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { getEntryPointPath } from '../../config/entryPointRouting.js';
 
 interface FinalCtaSectionProps {
   onNavigate: (path: string) => void;
+  isAuthenticated?: boolean;
 }
 
-export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({ onNavigate }) => {
+export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({ onNavigate, isAuthenticated = false }) => {
   return (
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-[#FFFEFE]">
       <div className="max-w-5xl mx-auto">
@@ -32,7 +34,7 @@ export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({ onNavigate }) 
             <button
               type="button"
               id="final-cta-get-started-button"
-              onClick={() => onNavigate('/pricing')}
+              onClick={() => onNavigate(getEntryPointPath('FINAL_CTA', isAuthenticated))}
               className="px-9 py-4 rounded-full bg-coral hover:bg-coral-hover text-white font-semibold text-base shadow-lg hover:scale-[1.02] active:scale-95 transition-all inline-flex items-center gap-2.5 cursor-pointer"
             >
               <span>Get Started</span>

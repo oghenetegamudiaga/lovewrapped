@@ -1,10 +1,12 @@
 import React from 'react';
+import { getEntryPointPath } from '../../config/entryPointRouting.js';
 
 interface HeroCarouselProps {
   onNavigate: (path: string) => void;
+  isAuthenticated?: boolean;
 }
 
-export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
+export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate, isAuthenticated = false }) => {
   return (
     <section className="relative bg-[#3A0D22] text-white overflow-hidden min-h-screen flex items-center justify-center px-4 sm:px-6 py-20 sm:py-28 select-none">
       {/* 1. Birthday Cake Sticker (Top-Left) */}
@@ -68,7 +70,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
           <button
             type="button"
             id="hero-get-started-button"
-            onClick={() => onNavigate('/pricing')}
+            onClick={() => onNavigate(getEntryPointPath('HERO_WEDDINGS', isAuthenticated))}
             className="px-8 py-4 rounded-full bg-[#df6d73] hover:bg-[#c85b61] text-white font-semibold text-base sm:text-lg shadow-xl hover:scale-[1.03] active:scale-95 transition-all cursor-pointer border border-white/10"
           >
             <span>Get Started For Free</span>
