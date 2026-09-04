@@ -6,10 +6,7 @@ export const Testimonials: React.FC = () => {
     <section className="py-20 px-4 sm:px-6 bg-[#FFFEFE] border-b border-cream-border/60">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
-        <div className="text-center mb-16 max-w-2xl mx-auto">
-          <span className="text-xs uppercase font-sans font-semibold tracking-widest text-coral mb-2 block">
-            Love from Couples & Creators
-          </span>
+        <div className="text-center mb-14 max-w-2xl mx-auto">
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-maroon tracking-tight mb-4">
             Loved by Couples Worldwide
           </h2>

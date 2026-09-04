@@ -17,7 +17,7 @@ export interface ProductShowcaseProps {
 }
 
 export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
-  eyebrow = 'PRODUCT LINE',
+  eyebrow,
   title,
   description,
   bullets,

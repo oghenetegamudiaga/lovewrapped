@@ -10,10 +10,7 @@ export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavi
     <section id="products" className="py-20 sm:py-28 px-4 sm:px-6 bg-[#FFFEFE] border-b border-cream-border/60 scroll-mt-12">
       <div className="max-w-5xl mx-auto text-center">
         {/* Section Header */}
-        <div className="mb-16">
-          <span className="eyebrow-pill mb-3 inline-flex">
-            <span>OUR PRODUCTS</span>
-          </span>
+        <div className="mb-14">
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight">
             Explore Our Products
           </h2>

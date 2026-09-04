@@ -52,9 +52,6 @@ export const WeddingFeatures: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16 max-w-2xl mx-auto">
-          <span className="text-xs uppercase font-sans font-semibold tracking-widest text-coral mb-2 block">
-            Designed for Modern Couples
-          </span>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
             Crafted for Your Special Day
           </h2>

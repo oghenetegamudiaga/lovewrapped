@@ -49,9 +49,6 @@ export const WeddingSteps: React.FC<WeddingStepsProps> = ({ onActionClick }) => 
     <section className="py-20 px-4 sm:px-6 max-w-6xl mx-auto w-full">
       {/* Header */}
       <div className="text-center mb-16 max-w-2xl mx-auto">
-        <span className="text-xs uppercase font-sans font-semibold tracking-widest text-coral mb-2 block">
-          Simple 5-Minute Flow
-        </span>
         <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">
           How It Works
         </h2>

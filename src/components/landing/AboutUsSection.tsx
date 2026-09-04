@@ -6,10 +6,6 @@ export const AboutUsSection: React.FC = () => {
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
         {/* Left Copy Column */}
         <div className="w-full lg:w-1/2 flex flex-col items-start text-left">
-          <span className="eyebrow-pill mb-4">
-            <span>ABOUT US</span>
-          </span>
-
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon mb-6 tracking-tight leading-tight">
             Where Emotions Keep Replayed
           </h2>
