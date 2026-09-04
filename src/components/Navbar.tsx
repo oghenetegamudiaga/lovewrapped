@@ -27,6 +27,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
     }
   };
 
+  const handleCommunityClick = () => {
+    setMobileMenuOpen(false);
+    if (currentPath === '/') {
+      document.getElementById('community')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      onNavigate('/');
+      setTimeout(() => {
+        document.getElementById('community')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-[#FFFEFE]/90 backdrop-blur-md border-b border-cream-border transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -46,18 +58,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
         {/* Desktop Links & CTA */}
         <div className="hidden sm:flex items-center gap-4">
           <button
-            id="nav-love-stories-button"
-            onClick={() => onNavigate('/love-stories')}
-            className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-              currentPath === '/love-stories'
-                ? 'bg-cream-card text-maroon border border-cream-border font-semibold'
-                : 'text-mauve hover:text-maroon hover:bg-cream-card'
-            }`}
-          >
-            Moments
-          </button>
-
-          <button
             id="nav-weddings-button"
             onClick={() => onNavigate('/weddings')}
             className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
@@ -70,15 +70,23 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           </button>
 
           <button
-            id="nav-blog-button"
-            onClick={() => onNavigate('/blog')}
+            id="nav-love-stories-button"
+            onClick={() => onNavigate('/love-stories')}
             className={`text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-              currentPath.startsWith('/blog')
+              currentPath === '/love-stories'
                 ? 'bg-cream-card text-maroon border border-cream-border font-semibold'
                 : 'text-mauve hover:text-maroon hover:bg-cream-card'
             }`}
           >
-            Blog
+            Moments
+          </button>
+
+          <button
+            id="nav-community-button"
+            onClick={handleCommunityClick}
+            className="text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-full transition-all cursor-pointer text-mauve hover:text-maroon hover:bg-cream-card"
+          >
+            Our Community
           </button>
 
           <button
@@ -113,17 +121,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="sm:hidden bg-cream border-b border-cream-border overflow-hidden"
+            className="sm:hidden bg-[#FFFEFE] border-b border-cream-border overflow-hidden"
           >
             <div className="px-4 py-6 flex flex-col gap-3">
               <button
                 type="button"
-                id="mobile-nav-home"
-                onClick={() => handleMobileNav('/')}
+                id="mobile-nav-weddings"
+                onClick={() => handleMobileNav('/weddings')}
                 className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
               >
-                <span>Company Home</span>
-                <Heart className="w-4 h-4 text-coral" />
+                <span>Weddings</span>
               </button>
 
               <button
@@ -138,21 +145,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
 
               <button
                 type="button"
-                id="mobile-nav-weddings"
-                onClick={() => handleMobileNav('/weddings')}
+                id="mobile-nav-community"
+                onClick={handleCommunityClick}
                 className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
               >
-                <span>Weddings by Amorah</span>
-              </button>
-
-              <button
-                type="button"
-                id="mobile-nav-blog"
-                onClick={() => handleMobileNav('/blog')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-medium text-sm flex items-center justify-between"
-              >
-                <span>The Amorah Journal (Blog)</span>
-                <BookOpen className="w-4 h-4 text-coral" />
+                <span>Our Community</span>
               </button>
 
               <button
