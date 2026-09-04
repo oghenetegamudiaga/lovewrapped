@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Heart, Sparkles } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { ScrollReveal } from '../common/ScrollReveal';
 
 interface ProductCardsSectionProps {
@@ -11,8 +11,11 @@ export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavi
     <section id="products" className="py-20 sm:py-28 px-4 sm:px-6 bg-[#FFFEFE] border-b border-cream-border/60 scroll-mt-12">
       <div className="max-w-5xl mx-auto text-center">
         {/* Section Header */}
-        <ScrollReveal delay={0} className="mb-14">
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight">
+        <ScrollReveal delay={0} className="mb-12 sm:mb-16 flex flex-col items-center">
+          <span className="text-sm sm:text-base font-medium text-[#df6d73] mb-2 tracking-normal">
+            Our Products
+          </span>
+          <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-[#3A0D22] tracking-tight">
             Explore Our Products
           </h2>
         </ScrollReveal>
@@ -21,63 +24,71 @@ export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavi
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-4xl mx-auto">
           {/* Product Card 1: Moments */}
           <ScrollReveal delay={100} className="h-full">
-            <div className="bg-white border border-cream-border p-8 sm:p-10 rounded-3xl shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between text-left group border-t-4 border-t-coral/60 h-full">
+            <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 md:p-12 rounded-[28px] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left group h-full">
               <div>
-                {/* Icon Badge */}
-                <div className="w-14 h-14 rounded-2xl bg-coral/10 text-coral flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Heart className="w-7 h-7 fill-coral/20" />
+                {/* Uploaded Envelope Icon */}
+                <div className="mb-8">
+                  <img
+                    src="/icons/moments-card-icon.png"
+                    alt="Moments Envelope Icon"
+                    className="w-12 h-12 sm:w-14 sm:h-14 object-contain group-hover:scale-105 transition-transform"
+                  />
                 </div>
 
-                <h3 className="font-serif text-2xl font-bold text-maroon mb-3">
+                <h3 className="font-sans text-2xl sm:text-3xl font-semibold text-[#1A1A1A] mb-4 tracking-tight">
                   Moments
                 </h3>
 
-                <p className="text-mauve text-sm sm:text-base leading-relaxed mb-6 font-normal">
-                  Personalized digital cards for anniversaries, birthdays, proposals, and romantic surprises. A few memories, a few honest words, one beautiful story they'll want to replay.
+                <p className="text-[#555555] text-sm sm:text-base leading-relaxed mb-8 font-normal">
+                  Personalized interactive digital cards for anniversaries, birthdays, proposals, and romantic surprises. A few memories, a few honest words, one beautiful story they’ll want to replay.
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-cream-border/60">
+              <div>
                 <button
                   type="button"
                   id="product-card-moments-cta"
                   onClick={() => onNavigate('/pricing')}
-                  className="text-coral font-semibold text-sm sm:text-base inline-flex items-center gap-2 group-hover:gap-3 transition-all cursor-pointer"
+                  className="text-[#df6d73] hover:text-[#c85b61] font-semibold text-base sm:text-lg inline-flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer"
                 >
-                  <span>Create Yours</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Create Now</span>
+                  <ChevronRight className="w-5 h-5 text-[#df6d73]" />
                 </button>
               </div>
             </div>
           </ScrollReveal>
 
-          {/* Product Card 2: Weddings by Amorah */}
+          {/* Product Card 2: Weddings RSVP */}
           <ScrollReveal delay={200} className="h-full">
-            <div className="bg-white border border-cream-border p-8 sm:p-10 rounded-3xl shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between text-left group border-t-4 border-t-maroon h-full">
+            <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 md:p-12 rounded-[28px] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left group h-full">
               <div>
-                {/* Icon Badge */}
-                <div className="w-14 h-14 rounded-2xl bg-maroon/10 text-maroon flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <Sparkles className="w-7 h-7 text-maroon" />
+                {/* Uploaded Rings Icon */}
+                <div className="mb-8">
+                  <img
+                    src="/icons/weddings-rsvp-icon.png"
+                    alt="Weddings RSVP Rings Icon"
+                    className="w-12 h-12 sm:w-14 sm:h-14 object-contain group-hover:scale-105 transition-transform"
+                  />
                 </div>
 
-                <h3 className="font-serif text-2xl font-bold text-maroon mb-3">
-                  Weddings by Amorah
+                <h3 className="font-sans text-2xl sm:text-3xl font-semibold text-[#1A1A1A] mb-4 tracking-tight">
+                  Weddings RSVP
                 </h3>
 
-                <p className="text-mauve text-sm sm:text-base leading-relaxed mb-6 font-normal">
+                <p className="text-[#555555] text-sm sm:text-base leading-relaxed mb-8 font-normal">
                   Cinematic digital wedding invitations, multi-event schedules, and real-time RSVP management. Designed to give your guests an unforgettable preview of your wedding day.
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-cream-border/60">
+              <div>
                 <button
                   type="button"
                   id="product-card-weddings-cta"
                   onClick={() => onNavigate('/weddings/create')}
-                  className="text-maroon font-semibold text-sm sm:text-base inline-flex items-center gap-2 group-hover:gap-3 transition-all cursor-pointer"
+                  className="text-[#df6d73] hover:text-[#c85b61] font-semibold text-base sm:text-lg inline-flex items-center gap-1 group-hover:gap-2 transition-all cursor-pointer"
                 >
-                  <span>Create Yours</span>
-                  <ArrowRight className="w-4 h-4 text-coral" />
+                  <span>Create Now</span>
+                  <ChevronRight className="w-5 h-5 text-[#df6d73]" />
                 </button>
               </div>
             </div>
