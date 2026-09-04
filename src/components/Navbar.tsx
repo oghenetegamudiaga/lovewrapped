@@ -51,7 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           <img
             src="/logo.png"
             alt="Amorah"
-            className="h-8 sm:h-9 w-auto object-contain brightness-200 group-hover:opacity-90 transition-opacity"
+            className="h-8 sm:h-9 w-auto object-contain group-hover:opacity-90 transition-opacity"
           />
         </button>
 
