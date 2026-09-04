@@ -3,6 +3,7 @@ import { Heart, Lock, Mail, User, ArrowRight, AlertCircle } from 'lucide-react';
 import { CoupleAccount } from '../types.js';
 import { getCoupleMyWeddingsApi } from '../lib/api.js';
 import { getPostAuthRedirect, validateRedirectTarget, buildAuthUrl } from '../lib/authIntent.js';
+import { AUTH_COPY } from '../config/authCopy.js';
 
 interface WeddingsSignupViewProps {
   onNavigate: (path: string) => void;
@@ -92,10 +93,10 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
             <Heart className="w-6 h-6 fill-coral" />
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
-            Weddings by Amorah
+            {AUTH_COPY.signup.heading}
           </h1>
           <p className="text-xs text-mauve mt-1">
-            Create your couple account to begin building your digital invitation.
+            {AUTH_COPY.signup.subtext}
           </p>
         </div>
 
@@ -111,7 +112,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="block text-xs font-semibold text-maroon mb-1.5" htmlFor="signup-fullname">
-              Full Name / Couple Names (Optional)
+              {AUTH_COPY.signup.fullNameLabel}
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-mauve/60">
@@ -122,7 +123,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Alex & Sam"
+                placeholder={AUTH_COPY.signup.fullNamePlaceholder}
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
             </div>
@@ -130,7 +131,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
 
           <div>
             <label className="block text-xs font-semibold text-maroon mb-1.5" htmlFor="signup-email">
-              Email Address <span className="text-coral">*</span>
+              {AUTH_COPY.signup.emailLabel} <span className="text-coral">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-mauve/60">
@@ -142,7 +143,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="couple@example.com"
+                placeholder={AUTH_COPY.signup.emailPlaceholder}
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
             </div>
@@ -150,7 +151,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
 
           <div>
             <label className="block text-xs font-semibold text-maroon mb-1.5" htmlFor="signup-password">
-              Password <span className="text-coral">*</span>
+              {AUTH_COPY.signup.passwordLabel} <span className="text-coral">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-mauve/60">
@@ -163,7 +164,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
+                placeholder={AUTH_COPY.signup.passwordPlaceholder}
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
             </div>
@@ -176,10 +177,10 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
             className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-maroon hover:bg-maroon-light text-cream font-semibold text-sm shadow-md hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isLoading ? (
-              <span>Creating account...</span>
+              <span>{AUTH_COPY.signup.submittingText}</span>
             ) : (
               <>
-                <span>Create Account</span>
+                <span>{AUTH_COPY.signup.submitButtonText}</span>
                 <ArrowRight className="w-4 h-4 text-coral" />
               </>
             )}
@@ -188,14 +189,14 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
 
         {/* Login Switch */}
         <div className="mt-6 pt-6 border-t border-cream-border text-center text-xs text-mauve">
-          <span>Already have a couple account? </span>
+          <span>{AUTH_COPY.signup.footerPrompt} </span>
           <button
             type="button"
             id="weddings-goto-login-button"
             onClick={() => onNavigate(buildAuthUrl(rawRedirect || '/weddings/create', false))}
             className="font-semibold text-maroon hover:text-coral transition-colors cursor-pointer"
           >
-            Sign in here
+            {AUTH_COPY.signup.footerLinkText}
           </button>
         </div>
       </div>

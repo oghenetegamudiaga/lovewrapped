@@ -3,6 +3,7 @@ import { Heart, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { CoupleAccount } from '../types.js';
 import { getCoupleMyWeddingsApi } from '../lib/api.js';
 import { getPostAuthRedirect, validateRedirectTarget, buildAuthUrl } from '../lib/authIntent.js';
+import { AUTH_COPY } from '../config/authCopy.js';
 
 interface WeddingsLoginViewProps {
   onNavigate: (path: string) => void;
@@ -85,10 +86,10 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
             <Heart className="w-6 h-6 fill-coral" />
           </div>
           <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
-            Couple Sign In
+            {AUTH_COPY.login.heading}
           </h1>
           <p className="text-xs text-mauve mt-1">
-            Access your Weddings by Amorah account.
+            {AUTH_COPY.login.subtext}
           </p>
         </div>
 
@@ -104,7 +105,7 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="block text-xs font-semibold text-maroon mb-1.5" htmlFor="login-email">
-              Email Address <span className="text-coral">*</span>
+              {AUTH_COPY.login.emailLabel} <span className="text-coral">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-mauve/60">
@@ -116,7 +117,7 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="couple@example.com"
+                placeholder={AUTH_COPY.login.emailPlaceholder}
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
             </div>
@@ -124,7 +125,7 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
 
           <div>
             <label className="block text-xs font-semibold text-maroon mb-1.5" htmlFor="login-password">
-              Password <span className="text-coral">*</span>
+              {AUTH_COPY.login.passwordLabel} <span className="text-coral">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-mauve/60">
@@ -136,7 +137,7 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={AUTH_COPY.login.passwordPlaceholder}
                 className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
             </div>
@@ -149,10 +150,10 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
             className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-maroon hover:bg-maroon-light text-cream font-semibold text-sm shadow-md hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isLoading ? (
-              <span>Signing in...</span>
+              <span>{AUTH_COPY.login.submittingText}</span>
             ) : (
               <>
-                <span>Sign In</span>
+                <span>{AUTH_COPY.login.submitButtonText}</span>
                 <ArrowRight className="w-4 h-4 text-coral" />
               </>
             )}
@@ -161,14 +162,14 @@ export const WeddingsLoginView: React.FC<WeddingsLoginViewProps> = ({ onNavigate
 
         {/* Signup Switch */}
         <div className="mt-6 pt-6 border-t border-cream-border text-center text-xs text-mauve">
-          <span>Don't have a couple account yet? </span>
+          <span>{AUTH_COPY.login.footerPrompt} </span>
           <button
             type="button"
             id="weddings-goto-signup-button"
             onClick={() => onNavigate(buildAuthUrl(rawRedirect || '/weddings/create', true))}
             className="font-semibold text-maroon hover:text-coral transition-colors cursor-pointer"
           >
-            Create an account
+            {AUTH_COPY.login.footerLinkText}
           </button>
         </div>
       </div>

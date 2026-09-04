@@ -8,6 +8,7 @@ import { WeddingFeatures } from '../components/landing/WeddingFeatures';
 import { WeddingSteps } from '../components/landing/WeddingSteps';
 import { WeddingFaq } from '../components/landing/WeddingFaq';
 import { IphoneDeviceMockup } from '../components/landing/IphoneDeviceMockup';
+import { AUTH_COPY } from '../config/authCopy';
 
 interface WeddingsLandingViewProps {
   onNavigate: (path: string) => void;
@@ -152,7 +153,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
             </button>
           </div>
 
-          {/* De-emphasized Couple Sign In Text Link */}
+          {/* De-emphasized Sign In Text Link */}
           {!couple && (
             <p className="text-xs text-mauve font-medium">
               Already have an account?{' '}
@@ -162,7 +163,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
                 onClick={() => onNavigate('/weddings/login')}
                 className="font-semibold text-maroon hover:text-coral underline underline-offset-4 transition-colors cursor-pointer"
               >
-                Couple Sign In
+                {AUTH_COPY.login.heading}
               </button>
             </p>
           )}
@@ -170,7 +171,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
 
         <p className="text-xs text-mauve/80 font-medium tracking-wide flex items-center gap-2 mb-12">
           <ShieldCheck className="w-4 h-4 text-coral inline" />
-          <span>Private couple accounts • Instant setup • Built for Nigerian & Global Weddings</span>
+          <span>Private accounts • Instant setup • Built for Nigerian & Global Weddings</span>
         </p>
 
         {/* INTERACTIVE PHONE MOCKUP IN HERO */}
