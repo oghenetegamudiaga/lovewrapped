@@ -909,8 +909,8 @@ export const AdminView: React.FC<AdminViewProps> = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-[85vh] bg-cream text-maroon py-12 px-4 flex items-center justify-center font-sans">
-        <div className="glass-card p-8 rounded-3xl border border-cream-border max-w-sm w-full shadow-md text-center space-y-6">
+      <div className="min-h-[85vh] bg-[#FFFEFE] text-maroon py-12 px-4 flex items-center justify-center font-sans">
+        <div className="glass-card p-8 rounded-3xl border border-cream-border max-w-sm w-full shadow-md text-center space-y-6 bg-white">
           <div className="flex justify-center mb-2">
             <img src="/logo.png" alt="Amorah" className="h-8 w-auto object-contain" />
           </div>
@@ -971,7 +971,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream text-maroon py-10 px-4 sm:px-6 font-sans">
+    <div className="min-h-screen bg-[#FFFEFE] text-maroon py-10 px-4 sm:px-6 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-cream-border">

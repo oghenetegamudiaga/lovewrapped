@@ -28,7 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur-md border-b border-cream-border transition-all">
+    <header className="sticky top-0 z-50 bg-[#FFFEFE]/90 backdrop-blur-md border-b border-cream-border transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Brand */}
         <button

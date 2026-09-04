@@ -391,10 +391,10 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-cream text-maroon font-sans py-10 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#FFFEFE] text-maroon font-sans py-10 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header Bar */}
-        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-cream-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
               {wedding.bride_first_name && wedding.groom_first_name

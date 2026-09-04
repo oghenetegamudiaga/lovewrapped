@@ -62,7 +62,7 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-cream text-maroon py-12 px-4 sm:px-6 font-sans">
+    <div className="min-h-screen bg-[#FFFEFE] text-maroon py-12 px-4 sm:px-6 font-sans">
       <div className="max-w-4xl mx-auto">
         {/* Step Indicator Header */}
         <div className="text-center max-w-lg mx-auto mb-8">

@@ -64,7 +64,7 @@ export const WeddingsMineView: React.FC<WeddingsMineViewProps> = ({ onNavigate, 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-6 text-center font-sans">
+      <div className="min-h-screen bg-[#FFFEFE] flex flex-col items-center justify-center p-6 text-center font-sans">
         <RefreshCw className="w-8 h-8 text-coral animate-spin mb-3" />
         <p className="text-xs font-semibold text-mauve">Loading your weddings...</p>
       </div>
@@ -72,10 +72,10 @@ export const WeddingsMineView: React.FC<WeddingsMineViewProps> = ({ onNavigate, 
   }
 
   return (
-    <div className="min-h-screen bg-cream text-maroon font-sans py-12 px-4 sm:px-6 flex flex-col items-center">
+    <div className="min-h-screen bg-[#FFFEFE] text-maroon font-sans py-12 px-4 sm:px-6 flex flex-col items-center">
       <div className="max-w-4xl w-full space-y-8">
         {/* Header Bar */}
-        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-cream-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
               {couple?.full_name ? `Welcome, ${couple.full_name}` : 'Your Wedding Invitations'}

@@ -200,7 +200,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] bg-cream text-maroon">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] bg-[#FFFEFE] text-maroon">
         <div className="w-8 h-8 border-3 border-coral border-t-transparent rounded-full animate-spin mb-3" />
         <p className="text-sm font-medium text-mauve">Loading post...</p>
       </div>
@@ -209,7 +209,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
 
   if (error || !post) {
     return (
-      <div className="min-h-[70vh] bg-cream text-maroon flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div className="min-h-[70vh] bg-[#FFFEFE] text-maroon flex flex-col items-center justify-center px-4 py-16 text-center">
         <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-4">
           <AlertCircle className="w-6 h-6" />
         </div>
@@ -227,12 +227,12 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
   }
 
   return (
-    <article className="min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white pb-24">
+    <article className="min-h-screen bg-[#FFFEFE] text-maroon font-sans selection:bg-coral selection:text-white pb-24">
       {/* Top Bar / Back button */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-6 flex items-center justify-between">
         <button
           onClick={() => onNavigate('/blog')}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-mauve hover:text-maroon px-3.5 py-2 rounded-full bg-cream-card border border-cream-border transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-mauve hover:text-maroon px-3.5 py-2 rounded-full bg-white border border-cream-border transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Journal</span>
@@ -240,7 +240,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
 
         <button
           onClick={handleShare}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-maroon hover:text-coral px-3.5 py-2 rounded-full bg-cream-card border border-cream-border transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-maroon hover:text-coral px-3.5 py-2 rounded-full bg-white border border-cream-border transition-colors cursor-pointer"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Share2 className="w-3.5 h-3.5" />}
           <span>{copied ? 'Link Copied!' : 'Share Article'}</span>
@@ -272,7 +272,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
       {/* Featured Cover Image */}
       {post.cover_image_url && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 mb-12">
-          <div className="rounded-3xl overflow-hidden shadow-md max-h-[480px] bg-cream-card">
+          <div className="rounded-3xl overflow-hidden shadow-md max-h-[480px] bg-white">
             <img
               src={post.cover_image_url}
               alt={post.title}
@@ -283,7 +283,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
       )}
 
       {/* Main Post Body */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 bg-cream-card/40 border border-cream-border/60 p-6 sm:p-10 rounded-3xl shadow-xs">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 bg-white border border-cream-border/60 p-6 sm:p-10 rounded-3xl shadow-xs">
         {renderSafeMarkdown(post.content)}
       </main>
 

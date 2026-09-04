@@ -49,7 +49,7 @@ export const WeddingFaq: React.FC = () => {
   };
 
   return (
-    <section className="py-20 px-4 sm:px-6 bg-cream-card/40 border-t border-cream-border/60">
+    <section className="py-20 px-4 sm:px-6 bg-[#FFFEFE] border-t border-cream-border/60">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
@@ -71,7 +71,7 @@ export const WeddingFaq: React.FC = () => {
             return (
               <div
                 key={item.id}
-                className="bg-cream border border-cream-border rounded-2xl overflow-hidden transition-all shadow-xs"
+                className="bg-white border border-cream-border rounded-2xl overflow-hidden transition-all shadow-xs"
               >
                 <button
                   type="button"

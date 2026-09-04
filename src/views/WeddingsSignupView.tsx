@@ -76,8 +76,8 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
   };
 
   return (
-    <div className="flex flex-col min-h-[80vh] bg-cream text-maroon font-sans items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-cream-card border border-cream-border p-8 rounded-3xl shadow-lg relative overflow-hidden">
+    <div className="flex flex-col min-h-[80vh] bg-[#FFFEFE] text-maroon font-sans items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md bg-white border border-cream-border p-8 rounded-3xl shadow-lg relative overflow-hidden">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-coral/10 text-coral mb-3">

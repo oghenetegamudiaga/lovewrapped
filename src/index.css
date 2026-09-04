@@ -10,9 +10,10 @@
 }
 
 @theme {
-  --color-cream: #fdf2ea;
-  --color-cream-card: #f7e6db;
-  --color-cream-border: #e8cfc0;
+  --color-background: #FFFEFE;
+  --color-cream: #FFFEFE;
+  --color-cream-card: #ffffff;
+  --color-cream-border: #f0e6e0;
   --color-maroon: #3a0d22;
   --color-maroon-dark: #2b0818;
   --color-maroon-light: #4a102b;
@@ -26,6 +27,10 @@
 
 @layer base {
   :root {
+    --color-background: #FFFEFE;
+    --color-surface: #ffffff;
+    --color-primary: #3a0d22;
+    --color-accent: #df6d73;
     --font-sans: 'DM Sans', sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;
     --font-heading: 'Attena', 'Playfair Display', Georgia, serif;
@@ -33,7 +38,7 @@
 
   body {
     font-family: var(--font-sans);
-    background-color: #fdf2ea;
+    background-color: #FFFEFE;
     color: #3a0d22;
     overflow-x: hidden;
   }
@@ -51,11 +56,12 @@
 
 /* Custom LoveWrapped Theme Utilities */
 .bg-theme-cream {
-  background-color: #fdf2ea;
+  background-color: #FFFEFE;
 }
 
 .bg-theme-card {
-  background-color: #f7e6db;
+  background-color: #ffffff;
+  border: 1px solid #f0e6e0;
 }
 
 .bg-theme-maroon {

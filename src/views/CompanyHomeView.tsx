@@ -11,7 +11,7 @@ interface CompanyHomeViewProps {
 
 export const CompanyHomeView: React.FC<CompanyHomeViewProps> = ({ onNavigate }) => {
   return (
-    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
+    <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Hero Section */}
       <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6 max-w-4xl">

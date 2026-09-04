@@ -28,7 +28,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   imageAlt,
   customPreview,
   imagePosition = 'right',
-  bgColor = 'bg-cream',
+  bgColor = 'bg-[#FFFEFE]',
 }) => {
   const isImageLeft = imagePosition === 'left';
 

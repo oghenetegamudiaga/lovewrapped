@@ -87,7 +87,7 @@ export const PayView: React.FC<PayViewProps> = ({
   const amountText = PAID_PLAN_PRICE_FORMATTED;
 
   return (
-    <div className="min-h-[85vh] bg-cream text-maroon py-12 px-4 sm:px-6 flex items-center justify-center font-sans">
+    <div className="min-h-[85vh] bg-[#FFFEFE] text-maroon py-12 px-4 sm:px-6 flex items-center justify-center font-sans">
       <div className="max-w-md mx-auto w-full">
         {!isPaidSuccess ? (
           /* Payment Verification Box */

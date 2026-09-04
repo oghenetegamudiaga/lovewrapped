@@ -525,7 +525,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-cream text-maroon py-12 px-4 sm:px-6 font-sans">
+    <div className="min-h-screen bg-[#FFFEFE] text-maroon py-12 px-4 sm:px-6 font-sans">
       <div className="max-w-5xl mx-auto">
         {/* Step Header */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-10 pb-6 border-b border-cream-border text-center">

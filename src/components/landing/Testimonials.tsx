@@ -3,7 +3,7 @@ import { TESTIMONIALS_DATA } from '../../config/testimonials';
 
 export const Testimonials: React.FC = () => {
   return (
-    <section className="py-20 px-4 sm:px-6 bg-cream-card/40 border-b border-cream-border/60">
+    <section className="py-20 px-4 sm:px-6 bg-[#FFFEFE] border-b border-cream-border/60">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16 max-w-2xl mx-auto">
@@ -23,7 +23,7 @@ export const Testimonials: React.FC = () => {
           {TESTIMONIALS_DATA.map((item) => (
             <div
               key={item.id}
-              className="bg-cream border border-cream-border p-6 rounded-3xl shadow-xs flex flex-col justify-between"
+              className="bg-white border border-cream-border p-6 rounded-3xl shadow-xs flex flex-col justify-between"
             >
               <div>
                 {/* Clean Star Rating Display */}

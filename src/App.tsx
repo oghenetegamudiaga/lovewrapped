@@ -192,7 +192,7 @@ export default function App() {
   const isFullscreenView = currentPath.startsWith('/w/') || currentPath === '/dev/wedding-spike';
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans antialiased">
+    <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans antialiased">
       {/* Hide standard navbar on fullscreen recipient viewers */}
       {!isFullscreenView && (
         <Navbar currentPath={currentPath} onNavigate={navigate} />

@@ -87,7 +87,7 @@ export const WeddingSteps: React.FC<WeddingStepsProps> = ({ onActionClick }) => 
           {STEPS_DATA.map((step) => (
             <div
               key={step.number}
-              className="flex items-start gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-cream-card/50 hover:bg-cream-card border border-cream-border/60 transition-all group"
+              className="flex items-start gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-white hover:bg-[#FFFEFE] border border-cream-border/60 transition-all group"
             >
               <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-maroon text-cream font-serif font-bold text-sm sm:text-base shrink-0 group-hover:bg-coral transition-colors shadow-xs">
                 {step.number}

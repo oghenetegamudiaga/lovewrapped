@@ -339,7 +339,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   };
 
   return (
-    <div className="min-h-screen bg-cream text-maroon font-sans py-12 px-4 sm:px-6 flex flex-col items-center">
+    <div className="min-h-screen bg-[#FFFEFE] text-maroon font-sans py-12 px-4 sm:px-6 flex flex-col items-center">
       <div className="max-w-2xl w-full">
         {/* STEP 0: TIER CHOICE SELECTION */}
         {selectedTier === null && (

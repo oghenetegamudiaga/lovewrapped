@@ -12,7 +12,7 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
   const { getContent } = useSiteContent();
 
   return (
-    <div className="min-h-[85vh] bg-cream text-maroon py-16 px-4 sm:px-6 flex flex-col justify-center">
+    <div className="min-h-[85vh] bg-[#FFFEFE] text-maroon py-16 px-4 sm:px-6 flex flex-col justify-center">
       <div className="max-w-5xl mx-auto w-full">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
@@ -61,7 +61,7 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
           <button
             id="tier-paid-button"
             onClick={() => onSelectPlan('paid')}
-            className="p-8 rounded-3xl bg-cream-card text-left flex flex-col justify-between group relative border-2 border-coral shadow-md transform hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-coral"
+            className="p-8 rounded-3xl bg-white text-left flex flex-col justify-between group relative border-2 border-coral shadow-md transform hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-coral"
           >
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-coral text-cream text-[10px] font-bold uppercase tracking-widest px-3.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
               <Heart className="w-3 h-3 fill-cream text-cream" />

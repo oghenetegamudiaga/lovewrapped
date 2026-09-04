@@ -83,7 +83,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
+    <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Logged-In Welcome Banner */}
       {!isAuthLoading && couple && (
         <div className="bg-maroon text-cream py-3 px-4 shadow-md">

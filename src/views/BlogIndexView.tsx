@@ -42,7 +42,7 @@ export const BlogIndexView: React.FC<BlogIndexViewProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
+    <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Header Banner */}
       <section className="pt-12 pb-16 md:pt-16 md:pb-20 px-4 sm:px-6 max-w-6xl mx-auto w-full text-center">
         <h1 className="font-serif text-4xl sm:text-5xl font-bold tracking-tight text-maroon leading-tight mb-4">
@@ -67,7 +67,7 @@ export const BlogIndexView: React.FC<BlogIndexViewProps> = ({ onNavigate }) => {
             <p>{error}</p>
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-20 bg-cream-card border border-cream-border rounded-3xl max-w-xl mx-auto p-8">
+          <div className="text-center py-20 bg-white border border-cream-border rounded-3xl max-w-xl mx-auto p-8">
             <BookOpen className="w-10 h-10 text-coral mx-auto mb-3" />
             <h3 className="font-serif text-2xl font-bold text-maroon mb-2">No Stories Published Yet</h3>
             <p className="text-mauve text-sm">Check back soon for new articles and wedding advice!</p>
@@ -78,7 +78,7 @@ export const BlogIndexView: React.FC<BlogIndexViewProps> = ({ onNavigate }) => {
               <article
                 key={post.id}
                 onClick={() => onNavigate(`/blog/${post.slug}`)}
-                className="group bg-cream-card border border-cream-border rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1"
+                className="group bg-white border border-cream-border rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1"
               >
                 {/* Cover Image */}
                 <div className="h-48 sm:h-52 w-full bg-cream-border relative overflow-hidden">

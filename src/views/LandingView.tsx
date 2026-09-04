@@ -11,7 +11,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
   const { getContent } = useSiteContent();
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream text-maroon font-sans selection:bg-coral selection:text-white">
+    <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 px-4 sm:px-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         {/* Left Copy Column */}
@@ -110,7 +110,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 md:py-28 px-4 sm:px-6 bg-cream-card border-y border-cream-border" id="how-it-works">
+      <section className="py-20 md:py-28 px-4 sm:px-6 bg-[#FFFEFE] border-y border-cream-border" id="how-it-works">
         <div className="max-w-5xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-maroon tracking-tight mb-4">

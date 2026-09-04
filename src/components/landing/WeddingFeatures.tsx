@@ -48,7 +48,7 @@ export const FEATURES_DATA: FeatureItem[] = [
 
 export const WeddingFeatures: React.FC = () => {
   return (
-    <section className="py-20 px-4 sm:px-6 bg-cream-card/60 border-y border-cream-border/60">
+    <section className="py-20 px-4 sm:px-6 bg-[#FFFEFE] border-y border-cream-border/60">
       <div className="max-w-6xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-16 max-w-2xl mx-auto">
@@ -68,7 +68,7 @@ export const WeddingFeatures: React.FC = () => {
           {FEATURES_DATA.map((feature) => (
             <div
               key={feature.id}
-              className="bg-cream border border-cream-border/80 p-8 rounded-3xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+              className="bg-white border border-cream-border/80 p-8 rounded-3xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
             >
               <div>
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-cream-border/60">
