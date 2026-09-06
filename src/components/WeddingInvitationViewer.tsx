@@ -450,8 +450,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
       case 'schedule':
         return (
           <div key="schedule" id="details-section" className={`space-y-4 ${sansClass}`}>
-            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass}`} style={{ color: secondaryColor }}>
-              <Calendar className="w-4 h-4" style={{ color: accentColor }} /> Event Schedule & Locations
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass} text-maroon`}>
+              <Calendar className="w-4 h-4 text-coral" /> Event Schedule & Locations
             </h3>
 
             {activeEvents.map((ev, idx) => {
@@ -469,36 +469,35 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               return (
                 <div
                   key={ev.id || idx}
-                  className="p-4 sm:p-5 rounded-2xl border space-y-4 text-xs"
-                  style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}40` }}
+                  className="p-4 sm:p-5 rounded-2xl bg-white border border-cream-border space-y-4 text-xs text-maroon"
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: accentColor }}>
+                      <span className="text-[10px] font-bold uppercase tracking-wider block text-coral">
                         Event #{idx + 1}
                       </span>
-                      <h4 className={`text-base font-bold mt-0.5 ${serifClass}`} style={{ color: secondaryColor }}>
+                      <h4 className={`text-base font-bold mt-0.5 ${serifClass} text-maroon`}>
                         {ev.title}
                       </h4>
                     </div>
                   </div>
 
-                  <div className="space-y-2 opacity-90">
+                  <div className="space-y-2 text-mauve">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 shrink-0" style={{ color: accentColor }} />
-                      <span>{formattedDT.fullString}</span>
+                      <Clock className="w-4 h-4 shrink-0 text-coral" />
+                      <span className="text-maroon font-medium">{formattedDT.fullString}</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 shrink-0 mt-0.5" style={{ color: accentColor }} />
+                      <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-coral" />
                       <div>
-                        <p className="font-semibold" style={{ color: secondaryColor }}>{ev.venue_name}</p>
-                        {ev.venue_address && <p className="text-[11px] opacity-75">{ev.venue_address}</p>}
+                        <p className="font-semibold text-maroon">{ev.venue_name}</p>
+                        {ev.venue_address && <p className="text-[11px] text-mauve">{ev.venue_address}</p>}
                       </div>
                     </div>
                   </div>
 
                   {/* GOOGLE MAPS EMBED IFRAME */}
-                  <div className="rounded-2xl overflow-hidden border border-white/10" style={{ backgroundColor: activeTheme.bgColor }}>
+                  <div className="rounded-2xl overflow-hidden border border-cream-border bg-cream-card">
                     <iframe
                       title={`Map location for ${ev.venue_name}`}
                       width="100%"
@@ -511,24 +510,22 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   </div>
 
                   {/* ADD TO CALENDAR BUTTONS */}
-                  <div className="pt-2 border-t border-white/10 flex flex-wrap items-center gap-2 text-[11px]">
-                    <span className="font-semibold" style={{ color: accentColor }}>Add to Calendar:</span>
+                  <div className="pt-2 border-t border-cream-border flex flex-wrap items-center gap-2 text-[11px]">
+                    <span className="font-semibold text-maroon">Add to Calendar:</span>
                     <a
                       href={googleCalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1.5 rounded-xl border hover:opacity-90 flex items-center gap-1 transition-all"
-                      style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40`, color: accentColor }}
+                      className="px-3 py-1.5 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold flex items-center gap-1 transition-all"
                     >
-                      <ExternalLink className="w-3 h-3" /> Google Calendar
+                      <ExternalLink className="w-3 h-3 text-coral" /> Google Calendar
                     </a>
                     <button
                       type="button"
                       onClick={() => downloadIcsFile(ev, coupleNames)}
-                      className="px-3 py-1.5 rounded-xl border hover:opacity-90 flex items-center gap-1 transition-all cursor-pointer"
-                      style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}40`, color: accentColor }}
+                      className="px-3 py-1.5 rounded-xl border border-cream-border bg-cream-card hover:bg-cream-border text-maroon font-semibold flex items-center gap-1 transition-all cursor-pointer"
                     >
-                      <Download className="w-3 h-3" /> Apple / Outlook (.ics)
+                      <Download className="w-3 h-3 text-coral" /> Apple / Outlook (.ics)
                     </button>
                   </div>
                 </div>
@@ -541,13 +538,10 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         if (!loveStory) return null;
         return (
           <div key="love_story" className={`space-y-2 ${sansClass}`}>
-            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass}`} style={{ color: secondaryColor }}>
-              <Heart className="w-4 h-4 fill-current" style={{ color: accentColor }} /> Our Story
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass} text-maroon`}>
+              <Heart className="w-4 h-4 text-coral fill-coral" /> Our Story
             </h3>
-            <p
-              className="text-xs opacity-90 leading-relaxed italic p-4 rounded-2xl border"
-              style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}30` }}
-            >
+            <p className="text-xs text-mauve leading-relaxed italic p-4 rounded-2xl bg-white border border-cream-border">
               "{loveStory}"
             </p>
           </div>
@@ -557,13 +551,10 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
         if (!registryInfo) return null;
         return (
           <div key="registry" id="registry-section" className={`space-y-2 ${sansClass}`}>
-            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass}`} style={{ color: secondaryColor }}>
-              <Gift className="w-4 h-4" style={{ color: accentColor }} /> Gift Registry & Wishlist
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${serifClass} text-maroon`}>
+              <Gift className="w-4 h-4 text-coral" /> Gift Registry & Wishlist
             </h3>
-            <div
-              className="p-4 rounded-2xl border text-xs opacity-90 leading-relaxed whitespace-pre-line"
-              style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}30` }}
-            >
+            <div className="p-4 rounded-2xl bg-white border border-cream-border text-xs text-mauve leading-relaxed whitespace-pre-line">
               {registryInfo}
             </div>
           </div>
@@ -572,12 +563,12 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
       case 'gallery':
         const galleryPhotos = wedding?.gallery_photos || [];
         return (
-          <div key="gallery" id="gallery-section" className={`space-y-4 pt-4 border-t border-white/10 ${sansClass}`}>
+          <div key="gallery" id="gallery-section" className={`space-y-4 pt-4 border-t border-cream-border ${sansClass}`}>
             <div className="text-center space-y-1">
-              <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+              <h3 className={`text-xl font-bold ${serifClass} text-maroon`}>
                 Pre-Wedding Gallery
               </h3>
-              <p className="text-xs opacity-75">
+              <p className="text-xs text-mauve">
                 Moments & memories from our journey together.
               </p>
             </div>
@@ -588,22 +579,21 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   <div
                     key={idx}
                     onClick={() => setLightboxPhoto(photoUrl)}
-                    className="relative aspect-square rounded-2xl overflow-hidden border cursor-pointer group"
-                    style={{ borderColor: `${accentColor}40` }}
+                    className="relative aspect-square rounded-2xl overflow-hidden border border-cream-border cursor-pointer group bg-cream-card"
                   >
                     <img
                       src={photoUrl}
                       alt={`Pre-wedding photo ${idx + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Image className="w-5 h-5 text-white" />
+                    <div className="absolute inset-0 bg-maroon/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Image className="w-5 h-5 text-cream" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-6 rounded-2xl border text-center opacity-75" style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}30` }}>
+              <div className="p-6 rounded-2xl bg-white border border-cream-border text-center text-mauve">
                 <p className="text-xs italic">Pre-wedding photos coming soon!</p>
               </div>
             )}
@@ -1116,37 +1106,23 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             ) : activeView === 'details' ? (
               /* View 2: Screen 3 (Dedicated Template Detail & Scroll Screen) */
               <motion.div
-                key="template-details-screen"
+                key="details-screen"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4 }}
-                className="relative flex-1 overflow-y-auto text-white flex flex-col min-h-0 h-full w-full select-none"
-                style={{ backgroundColor: activeTheme.bgColor }}
+                className="relative flex-1 overflow-y-auto text-maroon bg-[#FFFEFE] flex flex-col min-h-0 h-full w-full select-none"
               >
-                {/* 100% Template-Themed Background ONLY — NO COUPLE PHOTO */}
-                <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none z-0 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
-                  <filter id="detail-paper-noise">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-                    <feColorMatrix type="saturate" values="0" />
-                  </filter>
-                  <rect width="100%" height="100%" filter="url(#detail-paper-noise)" />
-                </svg>
-
                 {/* Sticky Navigation Bar with Back to Cover Button */}
-                <div
-                  className="sticky top-0 z-30 px-4 py-3 border-b backdrop-blur-md flex items-center justify-between shadow-md shrink-0"
-                  style={{ backgroundColor: `${activeTheme.cardBgColor}F0`, borderColor: `${accentColor}30` }}
-                >
+                <div className="sticky top-0 z-30 px-4 py-3 border-b border-cream-border bg-[#FFFEFE]/95 backdrop-blur-md flex items-center justify-between shadow-xs shrink-0">
                   <button
                     type="button"
                     onClick={() => setActiveView('photo_hero')}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer hover:opacity-80 active:scale-95"
-                    style={{ backgroundColor: `${activeTheme.bgColor}99`, borderColor: `${accentColor}40`, color: secondaryColor }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-cream-border bg-cream-card hover:bg-cream-border text-maroon text-xs font-semibold transition-all cursor-pointer active:scale-95"
                   >
                     <span>← Photo Cover</span>
                   </button>
-                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>
+                  <span className="text-xs font-bold uppercase tracking-wider text-maroon font-serif">
                     {coupleNames}
                   </span>
                 </div>
@@ -1154,61 +1130,58 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 {/* Scrollable Detail Content (Padded Stack) */}
                 <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
                   {/* Couple Context Header */}
-                  <div className="text-center space-y-1 pb-4 border-b border-white/10">
-                    <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: accentColor }}>
+                  <div className="text-center space-y-1 pb-4 border-b border-cream-border">
+                    <p className="text-[10px] uppercase tracking-widest font-semibold text-coral">
                       Celebration of {coupleNames}
                     </p>
-                    <h2 className={`text-3xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                    <h2 className={`text-3xl font-bold ${serifClass} text-maroon`}>
                       {coupleNames}
                     </h2>
                     {guest && (
-                      <p className="text-xs font-semibold uppercase tracking-widest pt-1" style={{ color: accentColor }}>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-dustyRose pt-1">
                         Warm Welcome, {guest.name}
                       </p>
                     )}
                   </div>
 
                   {/* LIVE COUNTDOWN TIMER BANNER */}
-                  <div
-                    className="p-4 rounded-2xl border space-y-2 text-center"
-                    style={{ backgroundColor: `${activeTheme.bgColor}F2`, borderColor: `${accentColor}40` }}
-                  >
+                  <div className="p-5 rounded-3xl bg-cream-card border border-cream-border space-y-3 text-center">
                     {isPastAllEvents ? (
                       <div className="space-y-1 py-1">
-                        <Heart className="w-5 h-5 mx-auto fill-current" style={{ color: accentColor }} />
-                        <p className={`font-bold text-sm ${serifClass}`} style={{ color: secondaryColor }}>
+                        <Heart className="w-5 h-5 mx-auto text-coral fill-coral" />
+                        <p className={`font-bold text-sm ${serifClass} text-maroon`}>
                           Thank you for celebrating with us!
                         </p>
-                        <p className="text-[10px] opacity-60">
+                        <p className="text-[10px] text-mauve">
                           Our wedding events have concluded. We are forever grateful for your love and support.
                         </p>
                       </div>
                     ) : timeLeft ? (
-                      <div className="space-y-2">
-                        <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-1" style={{ color: accentColor }}>
-                          <Clock className="w-3 h-3" /> Countdown To {targetEventTitle || 'Special Day'}
+                      <div className="space-y-3">
+                        <p className="text-[10px] uppercase tracking-widest font-semibold flex items-center justify-center gap-1 text-coral">
+                          <Clock className="w-3.5 h-3.5 text-coral" /> Countdown To {targetEventTitle || 'Special Day'}
                         </p>
-                        <div className="grid grid-cols-4 gap-2 font-mono text-center">
-                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.days}</span>
-                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Days</span>
+                        <div className="grid grid-cols-4 gap-2 font-sans text-center">
+                          <div className="p-2.5 rounded-2xl bg-white border border-cream-border">
+                            <span className="block text-xl font-serif font-bold text-maroon">{timeLeft.days}</span>
+                            <span className="text-[9px] uppercase font-semibold text-mauve">Days</span>
                           </div>
-                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.hours}</span>
-                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Hours</span>
+                          <div className="p-2.5 rounded-2xl bg-white border border-cream-border">
+                            <span className="block text-xl font-serif font-bold text-maroon">{timeLeft.hours}</span>
+                            <span className="text-[9px] uppercase font-semibold text-mauve">Hours</span>
                           </div>
-                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.minutes}</span>
-                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Mins</span>
+                          <div className="p-2.5 rounded-2xl bg-white border border-cream-border">
+                            <span className="block text-xl font-serif font-bold text-maroon">{timeLeft.minutes}</span>
+                            <span className="text-[9px] uppercase font-semibold text-mauve">Mins</span>
                           </div>
-                          <div className="p-2 rounded-xl border" style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}30` }}>
-                            <span className="block text-xl font-bold" style={{ color: secondaryColor }}>{timeLeft.seconds}</span>
-                            <span className="text-[9px] uppercase" style={{ color: accentColor }}>Secs</span>
+                          <div className="p-2.5 rounded-2xl bg-white border border-cream-border">
+                            <span className="block text-xl font-serif font-bold text-maroon">{timeLeft.seconds}</span>
+                            <span className="text-[9px] uppercase font-semibold text-mauve">Secs</span>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs" style={{ color: accentColor }}>Calculating event countdown...</p>
+                      <p className="text-xs text-mauve">Calculating event countdown...</p>
                     )}
                   </div>
 
@@ -1218,17 +1191,16 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   </div>
 
                   {/* Footer Replay */}
-                  <div className="pt-6 border-t border-white/10 flex items-center justify-between text-xs">
+                  <div className="pt-6 border-t border-cream-border flex items-center justify-between text-xs">
                     <button
                       onClick={handleReplay}
-                      className="px-4 py-2 rounded-full font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-                      style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                      className="px-5 py-2.5 rounded-full bg-maroon hover:bg-maroon-light text-cream font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
+                      <RefreshCw className="w-3.5 h-3.5 text-coral" />
                       <span>Replay Invitation</span>
                     </button>
 
-                    <span className="text-[10px] opacity-50">
+                    <span className="text-[10px] text-mauve">
                       Weddings by Amorah
                     </span>
                   </div>
@@ -1370,44 +1342,43 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 z-50 bg-maroon/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="relative max-w-md w-full rounded-3xl p-6 shadow-2xl border space-y-5 my-auto"
-              style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}40` }}
+              className="relative max-w-md w-full rounded-3xl p-6 sm:p-8 bg-[#FFFEFE] border border-cream-border shadow-2xl space-y-5 my-auto text-maroon"
             >
               <button
                 type="button"
                 onClick={() => setIsRsvpModalOpen(false)}
-                className="absolute top-4 right-4 p-2 text-white/60 hover:text-white rounded-full bg-white/10 transition-all"
+                className="absolute top-4 right-4 p-2 text-mauve hover:text-maroon rounded-full bg-cream-card hover:bg-cream-border transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
 
               <div className="text-center space-y-1 pr-6">
-                <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: accentColor }}>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-coral">
                   Official Response
                 </span>
-                <h3 className={`text-xl font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                <h3 className={`text-xl sm:text-2xl font-bold ${serifClass} text-maroon`}>
                   RSVP for {coupleNames}
                 </h3>
                 {guest && (
-                  <p className="text-xs opacity-70">Personalized link for {guest.name}</p>
+                  <p className="text-xs text-mauve">Personalized link for {guest.name}</p>
                 )}
               </div>
 
               {rsvpSuccess ? (
                 <div className="text-center py-6 space-y-4">
-                  <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    <Check className="w-6 h-6" />
+                  <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-xs">
+                    <Check className="w-7 h-7" />
                   </div>
-                  <h4 className={`text-lg font-bold ${serifClass}`} style={{ color: secondaryColor }}>
+                  <h4 className={`text-xl font-bold ${serifClass} text-maroon`}>
                     RSVP Submitted Successfully!
                   </h4>
-                  <p className="text-xs opacity-80 max-w-xs mx-auto">
+                  <p className="text-xs text-mauve max-w-xs mx-auto leading-relaxed">
                     Thank you! The couple has been notified of your response. We look forward to celebrating together.
                   </p>
                   <button
@@ -1416,24 +1387,23 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       setIsRsvpModalOpen(false);
                       setActiveView('card_download');
                     }}
-                    className="w-full py-3 px-6 rounded-full font-bold text-xs shadow-xl transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-                    style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                    className="w-full py-3.5 px-6 rounded-full bg-maroon hover:bg-maroon-light text-cream font-bold text-xs shadow-md hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4 text-coral" />
                     <span>Download Your Invitation</span>
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleRsvpSubmit} className="space-y-4 text-xs">
                   {rsvpError && (
-                    <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                       <span>{rsvpError}</span>
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-[11px] uppercase font-semibold mb-1 opacity-80" style={{ color: secondaryColor }}>
+                    <label className="block text-[11px] uppercase font-bold text-maroon mb-1 tracking-wider">
                       Your Full Name
                     </label>
                     <input
@@ -1442,32 +1412,32 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
                       placeholder="e.g. Temiloluwa Akindele"
-                      className="w-full px-3.5 py-2.5 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-cream-border bg-cream-field text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/50 transition-all"
                     />
                   </div>
 
                   {/* Attendance Selector per event */}
                   <div className="space-y-3 pt-1">
-                    <label className="block text-[11px] uppercase font-semibold opacity-80" style={{ color: secondaryColor }}>
+                    <label className="block text-[11px] uppercase font-bold text-maroon tracking-wider">
                       Event Attendance
                     </label>
                     {activeEvents.map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-3 rounded-xl border bg-white/5 border-white/15 space-y-2"
+                        className="p-3.5 rounded-2xl border border-cream-border bg-cream-card space-y-2.5"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-white">{ev.title}</span>
-                          <span className="text-[10px] opacity-60">{ev.date}</span>
+                          <span className="font-semibold text-maroon text-xs">{ev.title}</span>
+                          <span className="text-[10px] text-mauve font-medium">{ev.date}</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div className="grid grid-cols-2 gap-2 pt-0.5">
                           <button
                             type="button"
                             onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: true }))}
-                            className={`py-2 rounded-lg font-semibold text-xs border transition-all ${
+                            className={`py-2 rounded-xl font-semibold text-xs border transition-all flex items-center justify-center gap-1 ${
                               eventAttendance[ev.id] !== false
-                                ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300'
-                                : 'bg-white/5 border-white/10 opacity-60'
+                                ? 'bg-emerald-100 border-emerald-400 text-emerald-800 shadow-xs'
+                                : 'bg-white border-cream-border text-mauve hover:text-maroon hover:bg-cream/50'
                             }`}
                           >
                             Joyfully Accepts
@@ -1475,10 +1445,10 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                           <button
                             type="button"
                             onClick={() => setEventAttendance((prev) => ({ ...prev, [ev.id]: false }))}
-                            className={`py-2 rounded-lg font-semibold text-xs border transition-all ${
+                            className={`py-2 rounded-xl font-semibold text-xs border transition-all flex items-center justify-center gap-1 ${
                               eventAttendance[ev.id] === false
-                                ? 'bg-rose-500/25 border-rose-400 text-rose-300'
-                                : 'bg-white/5 border-white/10 opacity-60'
+                                ? 'bg-rose-100 border-rose-400 text-rose-800 shadow-xs'
+                                : 'bg-white border-cream-border text-mauve hover:text-maroon hover:bg-cream/50'
                             }`}
                           >
                             Regretfully Declines
@@ -1495,9 +1465,9 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                         type="checkbox"
                         checked={hasPlusOne}
                         onChange={(e) => setHasPlusOne(e.target.checked)}
-                        className="rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-0"
+                        className="rounded border-cream-border text-coral focus:ring-0 accent-coral"
                       />
-                      <span className="text-[11px] font-semibold opacity-90" style={{ color: secondaryColor }}>
+                      <span className="text-[11px] font-semibold text-maroon">
                         Attending with a Plus-One Guest
                       </span>
                     </label>
@@ -1507,14 +1477,14 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                         value={plusOneName}
                         onChange={(e) => setPlusOneName(e.target.value)}
                         placeholder="Plus-one guest name"
-                        className="w-full px-3.5 py-2 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-cream-border bg-cream-field text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/50 transition-all"
                       />
                     )}
                   </div>
 
                   {/* Dietary Requirements */}
                   <div>
-                    <label className="block text-[11px] uppercase font-semibold mb-1 opacity-80" style={{ color: secondaryColor }}>
+                    <label className="block text-[11px] uppercase font-bold text-maroon mb-1 tracking-wider">
                       Dietary Requirements / Allergies (Optional)
                     </label>
                     <input
@@ -1522,13 +1492,13 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       value={dietaryNotes}
                       onChange={(e) => setDietaryNotes(e.target.value)}
                       placeholder="e.g. Vegetarian, Halal, Nut Allergy"
-                      className="w-full px-3.5 py-2 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-cream-border bg-cream-field text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/50 transition-all"
                     />
                   </div>
 
                   {/* Note to Couple */}
                   <div>
-                    <label className="block text-[11px] uppercase font-semibold mb-1 opacity-80" style={{ color: secondaryColor }}>
+                    <label className="block text-[11px] uppercase font-bold text-maroon mb-1 tracking-wider">
                       Warm Wishes to Couple (Optional)
                     </label>
                     <textarea
@@ -1536,21 +1506,20 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="Leave a sweet note for the couple..."
-                      className="w-full px-3.5 py-2 rounded-xl border bg-white/5 border-white/15 focus:outline-none focus:border-emerald-400 transition-all text-white placeholder-white/40 resize-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-cream-border bg-cream-field text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/50 transition-all resize-none"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={rsvpSubmitting}
-                    className="w-full py-3 rounded-full font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50 mt-2"
-                    style={{ backgroundColor: accentColor, color: activeTheme.bgColor }}
+                    className="w-full py-3.5 px-6 rounded-full bg-maroon hover:bg-maroon-light text-cream font-bold text-xs shadow-md hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
                   >
                     {rsvpSubmitting ? (
                       <span>Submitting Response...</span>
                     ) : (
                       <>
-                        <Send className="w-3.5 h-3.5" />
+                        <Send className="w-3.5 h-3.5 text-coral" />
                         <span>Confirm & Submit RSVP</span>
                       </>
                     )}

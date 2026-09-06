@@ -111,6 +111,15 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // Scroll position reset to top on every wizard step or tier change
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (typeof document !== 'undefined') {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [selectedTier, step, freeStep]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdShareUrl, setCreatedShareUrl] = useState<string | null>(null);
