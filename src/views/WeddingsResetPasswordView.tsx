@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ArrowRight, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
+import { Lock, ArrowRight, CheckCircle2, AlertCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 interface WeddingsResetPasswordViewProps {
   onNavigate: (path: string) => void;
@@ -12,6 +12,8 @@ export const WeddingsResetPasswordView: React.FC<WeddingsResetPasswordViewProps>
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -128,14 +130,22 @@ export const WeddingsResetPasswordView: React.FC<WeddingsResetPasswordViewProps>
                     <KeyRound className="w-4 h-4" />
                   </div>
                   <input
-                    type="password"
+                    type={showNewPassword ? 'text' : 'password'}
                     required
                     minLength={8}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="At least 8 characters"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-cream-border bg-white text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-cream-border bg-white text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-mauve/60 hover:text-maroon focus:outline-none transition-colors cursor-pointer"
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -148,14 +158,22 @@ export const WeddingsResetPasswordView: React.FC<WeddingsResetPasswordViewProps>
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     required
                     minLength={8}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-cream-border bg-white text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-cream-border bg-white text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-mauve/60 hover:text-maroon focus:outline-none transition-colors cursor-pointer"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Lock, Mail, User, ArrowRight, AlertCircle } from 'lucide-react';
+import { Heart, Lock, Mail, User, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { CoupleAccount } from '../types.js';
 import { getCoupleMyWeddingsApi } from '../lib/api.js';
 import { getPostAuthRedirect, validateRedirectTarget, buildAuthUrl } from '../lib/authIntent.js';
@@ -14,6 +14,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -159,14 +160,22 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
               </div>
               <input
                 id="signup-password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={AUTH_COPY.signup.passwordPlaceholder}
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
+                className="w-full pl-10 pr-10 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-mauve/60 hover:text-maroon focus:outline-none transition-colors cursor-pointer"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 

@@ -1340,12 +1340,57 @@ apiRouter.post('/weddings/forgot-password', weddingsAuthLimiter, async (req, res
 
     // Always return generic response to prevent account enumeration
     if (!account) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return res.json(GENERIC_RESPONSE);
+    }
+
+    // Per-email rate limiting checks (3 tokens per hour limit & 60s cooldown between consecutive requests)
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const sixtySecondsAgo = new Date(now.getTime() - 60 * 1000);
+
+    let tokensInLastHour = 0;
+    let createdInLast60s = false;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: recentTokens } = await supabase
+        .from('password_reset_tokens')
+        .select('created_at')
+        .eq('couple_account_id', account.id)
+        .gte('created_at', oneHourAgo.toISOString());
+
+      if (recentTokens) {
+        tokensInLastHour = recentTokens.length;
+        createdInLast60s = recentTokens.some((t) => new Date(t.created_at) >= sixtySecondsAgo);
+      }
+    }
+
+    let inMemTokensInLastHour = 0;
+    let inMemCreatedInLast60s = false;
+    for (const t of passwordResetTokensStore.values()) {
+      if (t.couple_account_id === account.id) {
+        const createdAt = new Date(t.created_at);
+        if (createdAt >= oneHourAgo) {
+          inMemTokensInLastHour++;
+        }
+        if (createdAt >= sixtySecondsAgo) {
+          inMemCreatedInLast60s = true;
+        }
+      }
+    }
+
+    const totalTokensInLastHour = Math.max(tokensInLastHour, inMemTokensInLastHour);
+    const hasTokenInLast60s = createdInLast60s || inMemCreatedInLast60s;
+
+    if (totalTokensInLastHour >= 3 || hasTokenInLast60s) {
+      // Per-email rate limit hit: skip token generation and email dispatch.
+      // Small artificial delay to mitigate timing side-channels
+      await new Promise((resolve) => setTimeout(resolve, 100));
       return res.json(GENERIC_RESPONSE);
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-    const now = new Date();
     const expiresAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString(); // 1 hour
     const tokenId = crypto.randomUUID();
 
