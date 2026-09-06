@@ -422,12 +422,20 @@ ALTER TABLE public.weddings ADD CONSTRAINT weddings_music_source_type_check CHEC
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS music_external_id TEXT;
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS music_external_meta JSONB;
 
+-- ==================== Migration: Password Reset Tokens Table ====================
+-- Run this block in Supabase SQL Editor to support password reset tokens for couple accounts.
 
+CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  couple_account_id UUID NOT NULL REFERENCES public.couple_accounts(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token_hash ON public.password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_couple_account_id ON public.password_reset_tokens(couple_account_id);
 
-
-
-
-
-
-
+-- Enable Row Level Security (RLS) to lock down public access (Server / Service Role access only)
+ALTER TABLE public.password_reset_tokens ENABLE ROW LEVEL SECURITY;

@@ -11,6 +11,7 @@ import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED, WEDDING_PLAN_PRICE_KOBO, WEDDING_PLAN_PRICE_NGN, WEDDING_PLAN_PRICE_FORMATTED } from '../src/constants.js';
 import { validateMusicUrlRegistry } from '../src/lib/musicProviders.js';
+import { sendPasswordResetEmail } from './lib/email.js';
 
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -110,11 +111,21 @@ interface CoupleAccountInternal {
   created_at: string;
 }
 
+interface PasswordResetTokenInternal {
+  id: string;
+  couple_account_id: string;
+  token_hash: string;
+  expires_at: string;
+  used: boolean;
+  created_at: string;
+}
+
 const experiencesStore: Map<string, Experience> = new Map();
 const usersStore: Map<string, UserRecord> = new Map();
 const crmContactsStore: Map<string, CRMContact> = new Map();
 const adminsStore: Map<string, AdminRecordInternal> = new Map();
 const coupleAccountsStore: Map<string, CoupleAccountInternal> = new Map();
+const passwordResetTokensStore: Map<string, PasswordResetTokenInternal> = new Map();
 const blogPostsStore: Map<string, BlogPost> = new Map();
 const weddingsStore: Map<string, Wedding> = new Map();
 const weddingEventsStore: Map<string, WeddingEvent[]> = new Map();
@@ -1294,6 +1305,174 @@ apiRouter.post('/weddings/login', weddingsAuthLimiter, async (req, res) => {
 apiRouter.post('/weddings/logout', (req, res) => {
   res.clearCookie('couple_session', { path: '/' });
   res.json({ success: true, message: 'Logged out successfully.' });
+});
+
+// POST /api/weddings/forgot-password
+apiRouter.post('/weddings/forgot-password', weddingsAuthLimiter, async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ message: 'A valid email address is required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Constant generic response message to prevent account enumeration
+    const GENERIC_RESPONSE = {
+      success: true,
+      message: 'If an account exists with that email, a reset link has been sent.',
+    };
+
+    let account: CoupleAccountInternal | null = null;
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.from('couple_accounts').select('*').eq('email', cleanEmail).single();
+      if (data) account = data;
+    }
+
+    if (!account) {
+      for (const acc of coupleAccountsStore.values()) {
+        if (acc.email.toLowerCase() === cleanEmail) {
+          account = acc;
+          break;
+        }
+      }
+    }
+
+    // Always return generic response to prevent account enumeration
+    if (!account) {
+      return res.json(GENERIC_RESPONSE);
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString(); // 1 hour
+    const tokenId = crypto.randomUUID();
+
+    const resetRecord: PasswordResetTokenInternal = {
+      id: tokenId,
+      couple_account_id: account.id,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+      used: false,
+      created_at: now.toISOString(),
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { error: insertErr } = await supabase.from('password_reset_tokens').insert({
+        id: resetRecord.id,
+        couple_account_id: resetRecord.couple_account_id,
+        token_hash: resetRecord.token_hash,
+        expires_at: resetRecord.expires_at,
+        used: resetRecord.used,
+        created_at: resetRecord.created_at,
+      });
+
+      if (insertErr) {
+        console.error('Supabase password_reset_tokens insert error:', insertErr);
+      }
+    }
+
+    passwordResetTokensStore.set(tokenId, resetRecord);
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.headers.host || 'amorah.xyz';
+    const baseUrl = `${protocol}://${host}`;
+    const resetUrl = `${baseUrl}/weddings/reset-password?token=${rawToken}`;
+
+    await sendPasswordResetEmail({
+      toEmail: cleanEmail,
+      resetUrl,
+    });
+
+    return res.json(GENERIC_RESPONSE);
+  } catch (err: unknown) {
+    console.error('Forgot password error:', err);
+    return res.status(500).json({ message: 'Failed to process password reset request.' });
+  }
+});
+
+// POST /api/weddings/reset-password
+apiRouter.post('/weddings/reset-password', weddingsAuthLimiter, async (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+
+    if (!token || typeof token !== 'string' || !token.trim()) {
+      return res.status(400).json({ message: 'Reset token is required.' });
+    }
+
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
+    }
+
+    const rawToken = token.trim();
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const nowIso = new Date().toISOString();
+
+    let targetToken: PasswordResetTokenInternal | null = null;
+
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase
+        .from('password_reset_tokens')
+        .select('*')
+        .eq('token_hash', tokenHash)
+        .eq('used', false)
+        .gt('expires_at', nowIso)
+        .single();
+
+      if (data) targetToken = data;
+    }
+
+    if (!targetToken) {
+      for (const t of passwordResetTokensStore.values()) {
+        if (t.token_hash === tokenHash && !t.used && new Date(t.expires_at) > new Date()) {
+          targetToken = t;
+          break;
+        }
+      }
+    }
+
+    if (!targetToken) {
+      return res.status(400).json({ message: 'Invalid or expired password reset token.' });
+    }
+
+    const newPasswordHash = bcrypt.hashSync(newPassword, 10);
+
+    if (isSupabaseConfigured && supabase) {
+      const { error: updateAccErr } = await supabase
+        .from('couple_accounts')
+        .update({ password_hash: newPasswordHash })
+        .eq('id', targetToken.couple_account_id);
+
+      if (updateAccErr) {
+        console.error('Supabase couple_accounts password update error:', updateAccErr);
+        return res.status(500).json({ message: 'Failed to update password. Please try again.' });
+      }
+
+      await supabase
+        .from('password_reset_tokens')
+        .update({ used: true })
+        .eq('id', targetToken.id);
+    }
+
+    for (const acc of coupleAccountsStore.values()) {
+      if (acc.id === targetToken.couple_account_id) {
+        acc.password_hash = newPasswordHash;
+        break;
+      }
+    }
+
+    targetToken.used = true;
+    passwordResetTokensStore.set(targetToken.id, targetToken);
+
+    return res.json({
+      success: true,
+      message: 'Password successfully reset. You can now log in with your new password.',
+    });
+  } catch (err: unknown) {
+    console.error('Reset password error:', err);
+    return res.status(500).json({ message: 'Failed to reset password. Please try again.' });
+  }
 });
 
 // POST /api/weddings/validate-music-link — Validate & extract Spotify / Apple Music / SoundCloud metadata

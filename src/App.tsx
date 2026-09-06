@@ -13,6 +13,7 @@ import { WeddingsLandingView } from './views/WeddingsLandingView';
 import { WeddingsCreateView } from './views/WeddingsCreateView';
 import { WeddingsSignupView } from './views/WeddingsSignupView';
 import { WeddingsLoginView } from './views/WeddingsLoginView';
+import { WeddingsResetPasswordView } from './views/WeddingsResetPasswordView';
 import { WeddingsDashboardView } from './views/WeddingsDashboardView';
 import { WeddingsMineView } from './views/WeddingsMineView';
 import { WeddingGuestView } from './views/WeddingGuestView';
@@ -103,6 +104,8 @@ export default function App() {
         setCurrentPath('/signup');
       } else if (path === '/weddings/login' || path === '/login') {
         setCurrentPath('/login');
+      } else if (path === '/weddings/reset-password' || path === '/reset-password') {
+        setCurrentPath('/weddings/reset-password');
       } else if (path === '/weddings/mine') {
         setCurrentPath('/weddings/mine');
       } else if (path === '/hub') {
@@ -288,6 +291,12 @@ export default function App() {
           <WeddingsLoginView
             onNavigate={navigate}
             onLoginSuccess={(couple) => setCurrentCouple(couple)}
+          />
+        )}
+
+        {(currentPath === '/weddings/reset-password' || currentPath === '/reset-password') && (
+          <WeddingsResetPasswordView
+            onNavigate={navigate}
           />
         )}
 
