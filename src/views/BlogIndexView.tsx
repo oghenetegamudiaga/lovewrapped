@@ -45,7 +45,7 @@ export const BlogIndexView: React.FC<BlogIndexViewProps> = ({ onNavigate }) => {
     <div className="flex flex-col min-h-screen bg-[#FFFEFE] text-maroon font-sans selection:bg-coral selection:text-white">
       {/* Header Banner */}
       <section className="pt-12 pb-16 md:pt-16 md:pb-20 px-4 sm:px-6 max-w-6xl mx-auto w-full text-center">
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold tracking-tight text-maroon leading-tight mb-4">
+        <h1 className="hero-title text-4xl sm:text-5xl font-bold tracking-tight text-maroon leading-tight mb-4">
           Love, Stories & Wedding Guidance
         </h1>
 

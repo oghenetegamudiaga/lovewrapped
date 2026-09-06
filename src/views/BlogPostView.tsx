@@ -260,7 +260,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
           </span>
         </div>
 
-        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-maroon leading-tight mb-6">
+        <h1 className="hero-title text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-maroon leading-tight mb-6">
           {post.title}
         </h1>
 

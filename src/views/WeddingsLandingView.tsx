@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Sparkles, Calendar, CheckCircle2, ArrowRight, ShieldCheck, UserCheck, Layers, LogOut, User, Play, Smartphone } from 'lucide-react';
+import { Heart, Sparkles, Calendar, CheckCircle2, ArrowRight, UserCheck, Layers, LogOut, User, Play, Smartphone } from 'lucide-react';
 import { getCoupleMeApi, getCoupleMyWeddingsApi, logoutCoupleApi } from '../lib/api';
 import { CoupleAccount } from '../types';
 import { WeddingInvitationViewer } from '../components/WeddingInvitationViewer';
@@ -8,7 +8,6 @@ import { WeddingFeatures } from '../components/landing/WeddingFeatures';
 import { WeddingSteps } from '../components/landing/WeddingSteps';
 import { WeddingFaq } from '../components/landing/WeddingFaq';
 import { IphoneDeviceMockup } from '../components/landing/IphoneDeviceMockup';
-import { AUTH_COPY } from '../config/authCopy';
 
 interface WeddingsLandingViewProps {
   onNavigate: (path: string) => void;
@@ -120,7 +119,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
 
       {/* Hero Section */}
       <section className="relative pt-12 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 max-w-6xl mx-auto w-full flex flex-col items-center text-center">
-        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6 max-w-4xl">
+        <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6 max-w-4xl">
           Digital Wedding Invitations<br />
           <em className="italic font-normal text-coral">as unforgettable as your love story.</em>
         </h1>
@@ -152,27 +151,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
               <span>See a Sample</span>
             </button>
           </div>
-
-          {/* De-emphasized Sign In Text Link */}
-          {!couple && (
-            <p className="text-xs text-mauve font-medium">
-              Already have an account?{' '}
-              <button
-                type="button"
-                id="weddings-hero-login-link"
-                onClick={() => onNavigate('/weddings/login')}
-                className="font-semibold text-maroon hover:text-coral underline underline-offset-4 transition-colors cursor-pointer"
-              >
-                {AUTH_COPY.login.heading}
-              </button>
-            </p>
-          )}
         </div>
-
-        <p className="text-xs text-mauve/80 font-medium tracking-wide flex items-center gap-2 mb-12">
-          <ShieldCheck className="w-4 h-4 text-coral inline" />
-          <span>Private accounts • Instant setup • Built for Nigerian & Global Weddings</span>
-        </p>
 
         {/* INTERACTIVE PHONE MOCKUP IN HERO */}
         <div id="phone-mockup-section" className="pt-4 w-full">

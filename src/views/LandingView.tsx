@@ -16,7 +16,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 px-4 sm:px-6 max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
         {/* Left Copy Column */}
         <div className="lg:col-span-7 flex flex-col items-center text-center z-10">
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6">
+          <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-maroon leading-[1.12] mb-6">
             {getContent('hero_title_prefix', 'Turn your love into')}<br />
             <em className="italic font-normal text-coral">
               {getContent('hero_title_highlight', 'an experience.')}
