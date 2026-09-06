@@ -48,7 +48,7 @@ export const IphoneDeviceMockup: React.FC<IphoneDeviceMockupProps> = ({
   return (
     <div ref={containerRef} className={`relative w-full max-w-[310px] sm:max-w-[350px] mx-auto ${className}`}>
       {/* iPhone 17 Chassis */}
-      <div className="relative mx-auto rounded-[48px] border-[9px] sm:border-[11px] border-[#1F050C] bg-[#1F050C] shadow-2xl p-1.5 phone-card-shadow transition-transform hover:scale-[1.01]">
+      <div className="relative mx-auto rounded-[48px] border-[9px] sm:border-[11px] border-[#1F050C] bg-[#1F050C] p-1.5 phone-card-shadow transition-transform hover:scale-[1.01]">
         {/* Dynamic Island Pill */}
         <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-24 h-4 bg-[#1F050C] rounded-full z-40 flex items-center justify-center pointer-events-none">
           <div className="w-8 h-1 rounded-full bg-white/20" />

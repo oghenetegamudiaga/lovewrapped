@@ -910,7 +910,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-[85vh] bg-[#FFFEFE] text-maroon py-12 px-4 flex items-center justify-center font-sans">
-        <div className="glass-card p-8 rounded-3xl border border-cream-border max-w-sm w-full shadow-md text-center space-y-6 bg-white">
+        <div className="glass-card p-8 rounded-3xl border border-cream-border max-w-sm w-full text-center space-y-6 bg-white">
           <div className="flex justify-center mb-2">
             <img src="/logo.png" alt="Amorah" className="h-8 w-auto object-contain" />
           </div>
@@ -1776,7 +1776,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
           <div className="space-y-8">
             {/* Sub-Admin Management Section (super_admin only) */}
             {adminRole === 'super_admin' && (
-              <div className="bg-cream-card rounded-2xl p-6 border border-cream-border shadow-sm space-y-6">
+              <div className="bg-cream-card rounded-2xl p-6 border border-cream-border space-y-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="font-serif font-bold text-xl text-maroon flex items-center gap-2">
@@ -1926,7 +1926,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
             )}
 
             {/* Change Password Section */}
-            <div className="bg-cream-card rounded-2xl p-6 border border-cream-border shadow-sm space-y-6">
+            <div className="bg-cream-card rounded-2xl p-6 border border-cream-border space-y-6">
               <div>
                 <h2 className="font-serif font-bold text-xl text-maroon flex items-center gap-2">
                   <Key className="w-5 h-5 text-coral" />
@@ -2217,7 +2217,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
               )}
 
               {/* Blog Table */}
-              <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden shadow-xs">
+              <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -2534,7 +2534,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
               </div>
 
               {/* Weddings Table */}
-              <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden shadow-xs">
+              <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>

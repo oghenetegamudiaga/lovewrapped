@@ -469,7 +469,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               return (
                 <div
                   key={ev.id || idx}
-                  className="p-4 sm:p-5 rounded-2xl border space-y-4 text-xs shadow-md"
+                  className="p-4 sm:p-5 rounded-2xl border space-y-4 text-xs"
                   style={{ backgroundColor: activeTheme.bgColor, borderColor: `${accentColor}40` }}
                 >
                   <div className="flex items-start justify-between">
@@ -588,7 +588,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   <div
                     key={idx}
                     onClick={() => setLightboxPhoto(photoUrl)}
-                    className="relative aspect-square rounded-2xl overflow-hidden border cursor-pointer group shadow-md"
+                    className="relative aspect-square rounded-2xl overflow-hidden border cursor-pointer group"
                     style={{ borderColor: `${accentColor}40` }}
                   >
                     <img
@@ -1170,7 +1170,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
                   {/* LIVE COUNTDOWN TIMER BANNER */}
                   <div
-                    className="p-4 rounded-2xl border space-y-2 text-center shadow-lg"
+                    className="p-4 rounded-2xl border space-y-2 text-center"
                     style={{ backgroundColor: `${activeTheme.bgColor}F2`, borderColor: `${accentColor}40` }}
                   >
                     {isPastAllEvents ? (

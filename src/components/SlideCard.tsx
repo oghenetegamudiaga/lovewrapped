@@ -28,7 +28,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
 
         {/* Foreground Main Image */}
         <div className="relative z-10 w-full h-full max-h-[82%] p-4 flex items-center justify-center">
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 max-w-full max-h-full">
+          <div className="relative rounded-2xl overflow-hidden border-2 border-white/20 max-w-full max-h-full">
             <img
               src={slide.url}
               alt={slide.caption || 'Memory'}

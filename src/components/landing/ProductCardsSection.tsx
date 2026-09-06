@@ -26,7 +26,7 @@ export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavi
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-4xl mx-auto">
           {/* Product Card 1: Moments */}
           <ScrollReveal delay={100} className="h-full">
-            <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 md:p-12 rounded-[28px] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left group h-full">
+            <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 md:p-12 rounded-[28px] transition-all duration-300 flex flex-col justify-between text-left group h-full">
               <div>
                 {/* Uploaded Envelope Icon */}
                 <div className="mb-8">
@@ -62,7 +62,7 @@ export const ProductCardsSection: React.FC<ProductCardsSectionProps> = ({ onNavi
 
           {/* Product Card 2: Weddings RSVP */}
           <ScrollReveal delay={200} className="h-full">
-            <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 md:p-12 rounded-[28px] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between text-left group h-full">
+            <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 md:p-12 rounded-[28px] transition-all duration-300 flex flex-col justify-between text-left group h-full">
               <div>
                 {/* Uploaded Rings Icon */}
                 <div className="mb-8">

@@ -31,7 +31,7 @@ export const CommunitySection: React.FC = () => {
 
         {/* Right Image Column */}
         <ScrollReveal delay={120} className="w-full lg:w-1/2 flex justify-center relative">
-          <div className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-cream-card">
+          <div className="relative w-full max-w-md rounded-3xl overflow-hidden border-4 border-white border-cream-border bg-cream-card">
             <img
               src="/images/community-member.png"
               alt="Community Member Enjoying Story"

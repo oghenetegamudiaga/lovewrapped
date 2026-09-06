@@ -145,7 +145,7 @@ export const StaticInviteCard: React.FC<StaticInviteCardProps> = ({
       className={`relative w-full max-w-[540px] mx-auto overflow-hidden transition-all select-none flex flex-col justify-between items-center text-center aspect-[4/5] min-h-[640px] ${
         isCustomTemplateActive
           ? 'p-0 border-0 rounded-none shadow-none'
-          : 'rounded-3xl p-8 sm:p-10 shadow-2xl border-4 border-double border-opacity-40'
+          : 'rounded-3xl p-8 sm:p-10 border-4 border-double border-opacity-40'
       } ${className}`}
     >
       {/* Custom Card Template Backdrop (If present) */}

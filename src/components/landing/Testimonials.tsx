@@ -20,7 +20,7 @@ export const Testimonials: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {TESTIMONIALS_DATA.map((item, idx) => (
             <ScrollReveal key={item.id} delay={100 + idx * 80} className="h-full">
-              <div className="bg-white border border-cream-border p-6 rounded-3xl shadow-xs flex flex-col justify-between h-full">
+              <div className="bg-white border border-cream-border p-6 rounded-3xl flex flex-col justify-between h-full">
                 <div>
                   {/* Clean Star Rating Display */}
                   <div className="flex items-center gap-1 mb-4 text-amber-500 text-xs">

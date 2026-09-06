@@ -11,7 +11,7 @@ export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({ onNavigate, is
   return (
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-[#FFFEFE]">
       <div className="max-w-5xl mx-auto">
-        <div className="relative rounded-3xl bg-maroon text-cream p-8 sm:p-16 overflow-hidden shadow-2xl text-center">
+        <div className="relative rounded-3xl bg-maroon text-cream p-8 sm:p-16 overflow-hidden border border-cream-border/20 text-center">
           {/* Background Overlay Image */}
           <div className="absolute inset-0 z-0 opacity-15">
             <img

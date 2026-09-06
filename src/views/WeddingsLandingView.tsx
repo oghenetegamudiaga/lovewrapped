@@ -174,7 +174,7 @@ export const WeddingsLandingView: React.FC<WeddingsLandingViewProps> = ({ onNavi
 
       {/* CTA Footer Section */}
       <section className="py-20 px-4 text-center max-w-4xl mx-auto">
-        <div className="p-8 sm:p-12 rounded-3xl bg-maroon text-cream shadow-xl relative overflow-hidden">
+        <div className="p-8 sm:p-12 rounded-3xl bg-maroon text-cream border border-cream-border/20 relative overflow-hidden">
           <div className="relative z-10">
             <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-4 text-cream">
               Ready to create your wedding story?

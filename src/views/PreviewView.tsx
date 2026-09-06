@@ -84,7 +84,7 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
         </div>
 
         {/* Action Controls Footer Bar */}
-        <div className="max-w-md mx-auto glass-card p-6 rounded-3xl border border-cream-border shadow-md flex flex-col gap-3">
+        <div className="max-w-md mx-auto glass-card p-6 rounded-3xl border border-cream-border flex flex-col gap-3">
           {experience.tier !== 'free' && !experience.creator_email && (
             <div className="text-left mb-2">
               <label className="block text-xs font-medium text-mauve mb-1">

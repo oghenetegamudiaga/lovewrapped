@@ -75,7 +75,7 @@ export const WeddingsMineView: React.FC<WeddingsMineViewProps> = ({ onNavigate, 
     <div className="min-h-screen bg-[#FFFEFE] text-maroon font-sans py-12 px-4 sm:px-6 flex flex-col items-center">
       <div className="max-w-4xl w-full space-y-8">
         {/* Header Bar */}
-        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
               {couple?.full_name ? `Welcome, ${couple.full_name}` : 'Your Wedding Invitations'}
@@ -132,7 +132,7 @@ export const WeddingsMineView: React.FC<WeddingsMineViewProps> = ({ onNavigate, 
             {weddings.map((w) => (
               <div
                 key={w.id}
-                className="glass-card p-6 rounded-3xl border border-cream-border bg-cream-card shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+                className="glass-card p-6 rounded-3xl border border-cream-border bg-cream-card transition-all space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

@@ -65,7 +65,7 @@ export const WeddingGuestView: React.FC<WeddingGuestViewProps> = ({ slug, guestS
   if (error || !wedding) {
     return (
       <div className="min-h-screen bg-[#2A0812] flex flex-col items-center justify-center p-6 text-center text-[#FDFBF7]">
-        <div className="p-8 rounded-3xl bg-[#3B0E1B] border border-[#D4AF37]/30 max-w-md w-full shadow-2xl space-y-4">
+        <div className="p-8 rounded-3xl bg-[#3B0E1B] border border-[#D4AF37]/30 max-w-md w-full space-y-4">
           <AlertCircle className="w-10 h-10 text-coral mx-auto" />
           <h2 className="font-serif text-2xl font-bold text-[#F4E3B2]">Invitation Not Found</h2>
           <p className="text-xs text-[#FDFBF7]/70 font-sans">{error || 'This wedding invitation link is invalid or payment is pending.'}</p>

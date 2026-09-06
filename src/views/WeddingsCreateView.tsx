@@ -360,7 +360,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                   setSelectedTier('free');
                   setFreeStep(1);
                 }}
-                className="p-6 rounded-3xl border-2 border-cream-border bg-cream-card hover:border-maroon transition-all cursor-pointer shadow-sm hover:shadow-md flex flex-col justify-between group"
+                className="p-6 rounded-3xl border-2 border-cream-border bg-cream-card hover:border-maroon transition-all cursor-pointer flex flex-col justify-between group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
@@ -404,7 +404,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                   setSelectedTier('premium');
                   setStep(1);
                 }}
-                className="p-6 rounded-3xl border-2 border-coral/50 bg-cream-card hover:border-coral transition-all cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between relative overflow-hidden group"
+                className="p-6 rounded-3xl border-2 border-coral/50 bg-cream-card hover:border-coral transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 bg-coral text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
                   Recommended
@@ -481,7 +481,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
               </div>
             )}
 
-            <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-xl bg-cream-card">
+            <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border bg-cream-card">
               {/* FREE STEP 1: Select between exactly 2 themes */}
               {freeStep === 1 && (
                 <div className="space-y-6">
@@ -500,7 +500,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                           onClick={() => setFreeThemeId(t.id)}
                           className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                             freeThemeId === t.id
-                              ? 'border-maroon bg-cream/90 shadow-md scale-[1.01]'
+                              ? 'border-maroon bg-cream/90 scale-[1.01]'
                               : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                           }`}
                         >
@@ -728,7 +728,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
             )}
 
             {/* Builder Form Card */}
-            <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-xl bg-cream-card">
+            <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border bg-cream-card">
               {/* STEP 1: Theme & Visual Variant Selection */}
               {step === 1 && (
                 <div className="space-y-6">
@@ -747,7 +747,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                           onClick={() => setThemeId(t.id)}
                           className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                             themeId === t.id
-                              ? 'border-maroon bg-cream/90 shadow-md scale-[1.01]'
+                              ? 'border-maroon bg-cream/90 scale-[1.01]'
                               : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                           }`}
                         >
@@ -789,7 +789,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                           onClick={() => setColorVariant(c.id)}
                           className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
                             colorVariant === c.id
-                              ? 'border-maroon bg-cream/90 shadow-sm font-bold'
+                              ? 'border-maroon bg-cream/90 font-bold'
                               : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                           }`}
                         >
@@ -813,7 +813,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                           onClick={() => setFontVariant(f.id)}
                           className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                             fontVariant === f.id
-                              ? 'border-maroon bg-cream/90 shadow-sm'
+                              ? 'border-maroon bg-cream/90'
                               : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                           }`}
                         >
@@ -1048,7 +1048,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                             onClick={() => setMusicTrack(track.id)}
                             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                               musicTrack === track.id
-                                ? 'border-maroon bg-cream/90 shadow-sm font-bold'
+                                ? 'border-maroon bg-cream/90 font-bold'
                                 : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                             }`}
                           >
@@ -1106,7 +1106,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                             </div>
 
                             {/* Embedded Live Preview */}
-                            <div className="rounded-xl overflow-hidden border border-cream-border bg-black/90 shadow-md">
+                            <div className="rounded-xl overflow-hidden border border-cream-border bg-black/90">
                               {validatedMusicPlatform === 'spotify' && musicExternalId && (
                                 <iframe
                                   src={`https://open.spotify.com/embed/track/${musicExternalId}?utm_source=generator&theme=0`}

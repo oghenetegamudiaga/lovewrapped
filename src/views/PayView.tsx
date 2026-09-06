@@ -91,7 +91,7 @@ export const PayView: React.FC<PayViewProps> = ({
       <div className="max-w-md mx-auto w-full">
         {!isPaidSuccess ? (
           /* Payment Verification Box */
-          <div className="glass-card rounded-3xl border border-cream-border shadow-md overflow-hidden">
+          <div className="glass-card rounded-3xl border border-cream-border overflow-hidden">
             {/* Paystack Header Banner */}
             <div className="bg-cream-card text-maroon p-6 text-center border-b border-cream-border">
               <div className="flex items-center justify-center gap-1.5 text-xs text-dustyRose uppercase tracking-widest font-medium mb-2">
@@ -140,8 +140,8 @@ export const PayView: React.FC<PayViewProps> = ({
           </div>
         ) : (
           /* Payment Success & Link Activation Box */
-          <div className="glass-card rounded-3xl border border-cream-border shadow-md p-6 sm:p-8 text-center space-y-6">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center mx-auto shadow-sm">
+          <div className="glass-card rounded-3xl border border-cream-border p-6 sm:p-8 text-center space-y-6">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-9 h-9" />
             </div>
 

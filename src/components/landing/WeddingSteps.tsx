@@ -62,7 +62,7 @@ export const WeddingSteps: React.FC<WeddingStepsProps> = ({ onActionClick }) => 
       <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
         {/* Left Column: Couple Photo */}
         <ScrollReveal delay={100} className="w-full lg:w-1/2 relative">
-          <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden shadow-2xl border-4 border-cream-card">
+          <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden border-4 border-cream-card border-cream-border">
             <img
               src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1000&q=80"
               alt="Happy Bride and Groom Celebrating"
@@ -87,7 +87,7 @@ export const WeddingSteps: React.FC<WeddingStepsProps> = ({ onActionClick }) => 
               <div
                 className="flex items-start gap-4 sm:gap-6 p-4 sm:p-5 rounded-2xl bg-white hover:bg-[#FFFEFE] border border-cream-border/60 transition-all group"
               >
-                <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-maroon text-cream font-serif font-bold text-sm sm:text-base shrink-0 group-hover:bg-coral transition-colors shadow-xs">
+                <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-maroon text-cream font-serif font-bold text-sm sm:text-base shrink-0 group-hover:bg-coral transition-colors">
                   {step.number}
                 </div>
                 <div className="flex-1">

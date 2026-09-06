@@ -98,12 +98,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           </div>
 
           {/* Floating Pills */}
-          <div className="absolute top-12 -left-4 sm:-left-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-maroon shadow-md border border-cream-border flex items-center gap-1.5 animate-bounce-slow">
+          <div className="absolute top-12 -left-4 sm:-left-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-maroon border border-cream-border flex items-center gap-1.5 animate-bounce-slow">
             <span>made with love</span>
             <Heart className="w-3.5 h-3.5 text-coral fill-coral" />
           </div>
 
-          <div className="absolute bottom-16 -right-4 sm:-right-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-maroon shadow-md border border-cream-border">
+          <div className="absolute bottom-16 -right-4 sm:-right-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-maroon border border-cream-border">
             your story, your way
           </div>
         </div>
@@ -199,8 +199,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           </div>
 
           {/* Paid Premium Tier */}
-          <div className="p-8 rounded-3xl bg-cream-card text-left flex flex-col justify-between relative border-2 border-coral shadow-md">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-coral text-cream text-[10px] font-bold uppercase tracking-widest px-3.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
+          <div className="p-8 rounded-3xl bg-cream-card text-left flex flex-col justify-between relative border-2 border-coral">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-coral text-cream text-[10px] font-bold uppercase tracking-widest px-3.5 py-0.5 rounded-full flex items-center gap-1">
               <Heart className="w-3 h-3 fill-cream text-cream" />
               <span>Most Loved</span>
             </div>

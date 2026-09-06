@@ -82,7 +82,7 @@ export const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             {customPreview ? (
               customPreview
             ) : (
-              <div className="relative mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-cream-card bg-[#1F050C] max-w-md lg:max-w-none w-full">
+              <div className="relative mx-auto rounded-3xl overflow-hidden border-4 border-cream-card border-cream-border bg-[#1F050C] max-w-md lg:max-w-none w-full">
                 {imageSrc && (
                   <img
                     src={imageSrc}

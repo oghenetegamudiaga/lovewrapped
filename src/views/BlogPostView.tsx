@@ -272,7 +272,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
       {/* Featured Cover Image */}
       {post.cover_image_url && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 mb-12">
-          <div className="rounded-3xl overflow-hidden shadow-md max-h-[480px] bg-white">
+          <div className="rounded-3xl overflow-hidden border border-cream-border max-h-[480px] bg-white">
             <img
               src={post.cover_image_url}
               alt={post.title}
@@ -283,13 +283,13 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ slug, onNavigate }) 
       )}
 
       {/* Main Post Body */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 bg-white border border-cream-border/60 p-6 sm:p-10 rounded-3xl shadow-xs">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 bg-white border border-cream-border/60 p-6 sm:p-10 rounded-3xl">
         {renderSafeMarkdown(post.content)}
       </main>
 
       {/* Footer CTA */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-16 text-center">
-        <div className="p-8 rounded-3xl bg-maroon text-cream shadow-lg">
+        <div className="p-8 rounded-3xl bg-maroon text-cream border border-cream-border/20">
           <Heart className="w-8 h-8 text-coral mx-auto mb-3 fill-coral" />
           <h3 className="font-serif text-2xl font-bold mb-2">Ready to create your invitation?</h3>
           <p className="text-cream/80 text-sm max-w-md mx-auto mb-6">

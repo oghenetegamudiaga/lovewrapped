@@ -76,7 +76,7 @@ export const WeddingsResetPasswordView: React.FC<WeddingsResetPasswordViewProps>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white py-8 px-6 shadow-xl border border-cream-border rounded-3xl sm:px-10">
+        <div className="bg-white py-8 px-6 border border-cream-border rounded-3xl sm:px-10">
           {!token ? (
             <div className="text-center py-4 space-y-4">
               <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto">

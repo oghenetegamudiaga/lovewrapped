@@ -78,7 +78,7 @@ export const BlogIndexView: React.FC<BlogIndexViewProps> = ({ onNavigate }) => {
               <article
                 key={post.id}
                 onClick={() => onNavigate(`/blog/${post.slug}`)}
-                className="group bg-white border border-cream-border rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1"
+                className="group bg-white border border-cream-border rounded-3xl overflow-hidden transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1"
               >
                 {/* Cover Image */}
                 <div className="h-48 sm:h-52 w-full bg-cream-border relative overflow-hidden">

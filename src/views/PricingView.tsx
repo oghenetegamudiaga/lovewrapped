@@ -61,9 +61,9 @@ export const PricingView: React.FC<PricingViewProps> = ({ onSelectPlan }) => {
           <button
             id="tier-paid-button"
             onClick={() => onSelectPlan('paid')}
-            className="p-8 rounded-3xl bg-white text-left flex flex-col justify-between group relative border-2 border-coral shadow-md transform hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-coral"
+            className="p-8 rounded-3xl bg-white text-left flex flex-col justify-between group relative border-2 border-coral transform hover:-translate-y-1 transition-all focus:outline-none focus:ring-2 focus:ring-coral"
           >
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-coral text-cream text-[10px] font-bold uppercase tracking-widest px-3.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-coral text-cream text-[10px] font-bold uppercase tracking-widest px-3.5 py-0.5 rounded-full flex items-center gap-1">
               <Heart className="w-3 h-3 fill-cream text-cream" />
               <span>Most Loved</span>
             </div>

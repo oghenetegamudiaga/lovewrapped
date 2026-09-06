@@ -69,7 +69,7 @@ export const WeddingFaq: React.FC = () => {
             return (
               <ScrollReveal key={item.id} delay={80 + idx * 60}>
                 <div
-                  className="bg-white border border-cream-border rounded-2xl overflow-hidden transition-all shadow-xs"
+                  className="bg-white border border-cream-border rounded-2xl overflow-hidden transition-all"
                 >
                   <button
                     type="button"

@@ -30,7 +30,7 @@ export const ProductHubView: React.FC<ProductHubViewProps> = ({ currentCouple, o
         {/* Product Cards Choice Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-3xl mx-auto text-left">
           {/* Card 1: Moments */}
-          <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group border-t-4 border-t-coral">
+          <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 rounded-3xl transition-all duration-300 flex flex-col justify-between group border-t-4 border-t-coral">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-coral/10 text-coral flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Heart className="w-6 h-6 fill-coral" />
@@ -59,7 +59,7 @@ export const ProductHubView: React.FC<ProductHubViewProps> = ({ currentCouple, o
           </div>
 
           {/* Card 2: Weddings by Amorah */}
-          <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between group border-t-4 border-t-[#3A0D22]">
+          <div className="bg-white border border-[#EFE5EB] p-8 sm:p-10 rounded-3xl transition-all duration-300 flex flex-col justify-between group border-t-4 border-t-[#3A0D22]">
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-[#3A0D22]/10 text-[#3A0D22] flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6 text-[#3A0D22]" />

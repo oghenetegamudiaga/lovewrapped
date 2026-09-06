@@ -142,7 +142,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
   if (error || !wedding) {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-6 text-center">
-        <div className="p-8 rounded-3xl bg-cream-card border border-cream-border max-w-md w-full shadow-lg">
+        <div className="p-8 rounded-3xl bg-cream-card border border-cream-border max-w-md w-full">
           <Shield className="w-10 h-10 text-coral mx-auto mb-3" />
           <h2 className="font-serif text-xl font-bold text-maroon mb-2">Dashboard Access</h2>
           <p className="text-xs text-mauve mb-6">{error || 'Wedding invitation not found.'}</p>
@@ -394,7 +394,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
     <div className="min-h-screen bg-[#FFFEFE] text-maroon font-sans py-10 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header Bar */}
-        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border shadow-md bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="glass-card p-6 sm:p-8 rounded-3xl border border-cream-border bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-maroon">
               {wedding.bride_first_name && wedding.groom_first_name
@@ -476,7 +476,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         onClick={() => setEditThemeId(t.id)}
                         className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                           editThemeId === t.id
-                            ? 'border-maroon bg-cream/90 font-bold shadow-xs'
+                            ? 'border-maroon bg-cream/90 font-bold'
                             : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                         }`}
                       >
@@ -503,7 +503,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         onClick={() => setEditColorVariant(c.id)}
                         className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
                           editColorVariant === c.id
-                            ? 'border-maroon bg-cream/90 shadow-xs font-bold'
+                            ? 'border-maroon bg-cream/90 font-bold'
                             : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                         }`}
                       >
@@ -527,7 +527,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         onClick={() => setEditFontVariant(f.id)}
                         className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                           editFontVariant === f.id
-                            ? 'border-maroon bg-cream/90 shadow-xs'
+                            ? 'border-maroon bg-cream/90'
                             : 'border-cream-border bg-cream/40 hover:bg-cream/70'
                         }`}
                       >
@@ -918,7 +918,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
               </div>
             </div>
 
-            <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden shadow-xs">
+            <div className="bg-cream-card rounded-3xl border border-cream-border overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>

@@ -65,7 +65,7 @@ export const WeddingFeatures: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
           {FEATURES_DATA.map((feature, idx) => (
             <ScrollReveal key={feature.id} delay={80 + idx * 80} className="h-full">
-              <div className="bg-white border border-cream-border/80 p-8 rounded-3xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between group h-full">
+              <div className="bg-white border border-cream-border/80 p-8 rounded-3xl transition-all flex flex-col justify-between group h-full">
                 <div>
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-cream-border/60">
                     <span className="font-serif text-sm font-semibold text-coral tracking-widest">
