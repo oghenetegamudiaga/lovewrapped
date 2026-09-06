@@ -2332,7 +2332,13 @@ apiRouter.post('/weddings/create-free', requireCoupleAuth, async (req, res) => {
     };
 
     if (isSupabaseConfigured && supabase) {
-      const { error: wErr } = await supabase.from('weddings').insert(weddingRecord);
+      let insertPayload: Record<string, any> = { ...weddingRecord };
+      let { error: wErr } = await supabase.from('weddings').insert(insertPayload);
+      if (wErr && (wErr as any).code === 'PGRST204') {
+        const { music_source_type, music_external_id, music_external_meta, ...legacyPayload } = insertPayload;
+        const retryResult = await supabase.from('weddings').insert(legacyPayload);
+        wErr = retryResult.error;
+      }
       if (wErr) {
         console.error('Supabase free wedding insert error:', wErr);
         return res.status(500).json({ message: 'Failed to create free wedding card.' });
@@ -2572,12 +2578,21 @@ apiRouter.post('/weddings/create-payment', requireCoupleAuth, paystackInitialize
     }
 
     if (isSupabaseConfigured && supabase) {
-      const { error: wErr } = await supabase.from('weddings').insert(weddingRecord);
+      let insertPayload: Record<string, any> = { ...weddingRecord };
+      let { error: wErr } = await supabase.from('weddings').insert(insertPayload);
+      if (wErr && (wErr as any).code === 'PGRST204') {
+        const { music_source_type, music_external_id, music_external_meta, ...legacyPayload } = insertPayload;
+        const retryResult = await supabase.from('weddings').insert(legacyPayload);
+        wErr = retryResult.error;
+      }
       if (wErr) {
-        console.error('Supabase weddings insert error (falling back to in-memory store):', wErr);
-      } else {
-        for (const evRec of eventRecords) {
-          await supabase.from('wedding_events').insert(evRec);
+        console.error('Supabase weddings insert error:', wErr);
+        return res.status(500).json({ message: 'Failed to create wedding record before payment. Please try again.' });
+      }
+      for (const evRec of eventRecords) {
+        const { error: evErr } = await supabase.from('wedding_events').insert(evRec);
+        if (evErr) {
+          console.error('Supabase wedding_events insert error:', evErr);
         }
       }
     }

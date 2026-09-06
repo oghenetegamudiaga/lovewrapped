@@ -201,6 +201,22 @@ CREATE POLICY "Public read access for paid weddings"
   ON public.weddings FOR SELECT
   USING (is_paid = true);
 
+-- Couple read access for owned wedding records (regardless of is_paid status)
+CREATE POLICY "Couples can read their own wedding records"
+  ON public.weddings FOR SELECT
+  USING (couple_account_id IS NOT NULL);
+
+-- Couple insert access for owned wedding records
+CREATE POLICY "Couples can insert their own wedding records"
+  ON public.weddings FOR INSERT
+  WITH CHECK (couple_account_id IS NOT NULL);
+
+-- Couple update access for owned wedding records
+CREATE POLICY "Couples can update their own wedding records"
+  ON public.weddings FOR UPDATE
+  USING (couple_account_id IS NOT NULL)
+  WITH CHECK (couple_account_id IS NOT NULL);
+
 -- 2. Wedding Events Table (Supports single event in Phase 1, scalable to multi-event in Phase 2)
 CREATE TABLE IF NOT EXISTS public.wedding_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -226,6 +242,25 @@ CREATE POLICY "Public read access for wedding events"
       SELECT 1 FROM public.weddings
       WHERE public.weddings.id = public.wedding_events.wedding_id
         AND public.weddings.is_paid = true
+    )
+  );
+
+-- Couple read & insert access for wedding events
+CREATE POLICY "Couples can read events for their weddings"
+  ON public.wedding_events FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.weddings
+      WHERE public.weddings.id = public.wedding_events.wedding_id
+    )
+  );
+
+CREATE POLICY "Couples can insert events for their weddings"
+  ON public.wedding_events FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.weddings
+      WHERE public.weddings.id = public.wedding_events.wedding_id
     )
   );
 
