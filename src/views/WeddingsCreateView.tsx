@@ -345,9 +345,6 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
         {selectedTier === null && (
           <div className="space-y-8">
             <div className="text-center">
-              <div className="eyebrow-pill mb-3 mx-auto">
-                <span>Select Package Tier</span>
-              </div>
               <h1 className="font-serif text-3xl sm:text-4xl font-bold text-maroon mb-2">
                 Create Your Wedding Experience
               </h1>
