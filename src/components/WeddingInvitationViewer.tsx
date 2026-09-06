@@ -6,7 +6,7 @@ import { getWeddingTheme, resolveThemeStyles } from '../config/weddingThemes';
 import { submitWeddingRsvpApi, getPublicThemeAssetsApi } from '../lib/api';
 import { StaticInviteCard } from './StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
-import { MusicPlayerToggle } from './MusicPlayerToggle';
+import { MusicPlayerToggle, MusicPlayerToggleRef } from './MusicPlayerToggle';
 
 interface WeddingInvitationViewerProps {
   wedding?: Wedding | null;
@@ -210,6 +210,7 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
   const [isGalleryOpen, setIsGalleryOpen] = useState<boolean>(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState<number>(0);
   const personalizedCardRef = useRef<HTMLDivElement>(null);
+  const musicPlayerRef = useRef<MusicPlayerToggleRef | null>(null);
 
   // Name display computation (First Names for primary cards, Full Names for legal/details)
   const firstNames = wedding?.bride_first_name && wedding?.groom_first_name
@@ -393,6 +394,11 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   const handleUnseal = () => {
     if (isUnsealing || stage !== 'cover') return;
+
+    if (musicPlayerRef.current) {
+      musicPlayerRef.current.startPlayback();
+    }
+
     setIsUnsealing(true);
 
     if (isReducedMotion) {
@@ -610,13 +616,16 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   return (
     <div
-      className={`relative ${stage !== 'unveiled' || isSpike ? 'h-full min-h-screen w-full p-0' : 'min-h-screen p-4 sm:p-6'} text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center select-none`}
-      style={{ backgroundColor: activeTheme.bgColor }}
+      className={`relative ${stage !== 'ready' || isSpike ? 'h-full min-h-screen w-full p-0' : 'min-h-screen p-4 sm:p-6'} text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center select-none`}
+      style={{ backgroundColor: stage === 'cover' || stage === 'unsealing' ? '#FDF9F6' : activeTheme.bgColor }}
     >
 
       <div
-        className={`relative ${stage !== 'unveiled' || isSpike ? 'h-full min-h-screen w-full rounded-none border-0 shadow-none' : 'max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl border shadow-2xl'} overflow-hidden flex flex-col`}
-        style={{ backgroundColor: activeTheme.cardBgColor, borderColor: `${accentColor}50` }}
+        className={`relative ${stage !== 'ready' || isSpike ? 'h-full min-h-screen w-full rounded-none border-0 shadow-none' : 'max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl border shadow-2xl'} overflow-hidden flex flex-col`}
+        style={{
+          backgroundColor: stage === 'cover' || stage === 'unsealing' ? '#FDF9F6' : activeTheme.cardBgColor,
+          borderColor: stage === 'cover' || stage === 'unsealing' ? '#EBE2D9' : `${accentColor}50`,
+        }}
       >
         {/* Animated Cover, Loading Sequence & 3D Opening Doors */}
         <AnimatePresence mode="wait">
@@ -682,252 +691,78 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
             <motion.div
               key="cover-layer"
               initial={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 text-center overflow-hidden [perspective:1200px]"
-              style={{ backgroundColor: activeTheme.bgColor }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+              className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 sm:p-8 text-center overflow-hidden bg-[#FDF9F6]"
             >
-              {/* Material Texture Overlay: Subtle Paper/Fabric Noise */}
-              <svg className="absolute inset-0 w-full h-full opacity-15 pointer-events-none z-1 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
-                <filter id="paper-noise">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-                  <feColorMatrix type="saturate" values="0" />
-                </filter>
-                <rect width="100%" height="100%" filter="url(#paper-noise)" />
-              </svg>
-
-              {/* Ornate Vertical Seam / Ribbon Divider */}
-              <div
-                className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1 sm:w-1.5 z-10 pointer-events-none shadow-[0_0_12px_rgba(0,0,0,0.5)]"
-                style={{
-                  background: `linear-gradient(to bottom, transparent, ${accentColor}, transparent)`,
-                  opacity: 0.8,
-                }}
-              />
-
-              {/* 3D Swinging Door Panels (Scene 2 Transition) */}
-              {!isReducedMotion && (
-                <>
-                  <motion.div
-                    initial={{ rotateY: 0 }}
-                    animate={{ rotateY: stage !== 'cover' ? -105 : 0, opacity: stage === 'view_prompt' ? 0 : 1 }}
-                    transition={{ duration: 1.1, ease: [0.77, 0, 0.175, 1] }}
-                    className="absolute inset-y-0 left-0 w-1/2 border-r z-20 pointer-events-none shadow-2xl"
-                    style={{
-                      backgroundColor: activeTheme.cardBgColor,
-                      borderColor: `${accentColor}40`,
-                      transformOrigin: 'left center',
-                    }}
+              {/* Upper Portion: Couple Photo Sliding Down From Top */}
+              <div className="w-full flex-1 flex flex-col items-center justify-center max-w-sm mx-auto pt-4 pb-2">
+                <motion.div
+                  initial={!isReducedMotion ? { y: '-100%', opacity: 0 } : { y: 0, opacity: 1 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                  className="w-full relative rounded-3xl overflow-hidden shadow-xl border border-[#EBE2D9] aspect-[4/3] max-h-[300px] sm:max-h-[340px]"
+                >
+                  <img
+                    src={coverPhoto}
+                    alt={`${coupleNames} Cover`}
+                    className="w-full h-full object-cover object-center"
                   />
-                  <motion.div
-                    initial={{ rotateY: 0 }}
-                    animate={{ rotateY: stage !== 'cover' ? 105 : 0, opacity: stage === 'view_prompt' ? 0 : 1 }}
-                    transition={{ duration: 1.1, ease: [0.77, 0, 0.175, 1] }}
-                    className="absolute inset-y-0 right-0 w-1/2 border-l z-20 pointer-events-none shadow-2xl"
-                    style={{
-                      backgroundColor: activeTheme.cardBgColor,
-                      borderColor: `${accentColor}40`,
-                      transformOrigin: 'right center',
-                    }}
-                  />
-                </>
-              )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                </motion.div>
+              </div>
 
-              {/* Minimal & Premium Opening State: Tactile 3D Wax Seal + CTA Only */}
-              {stage === 'cover' && (
-                <div className="relative z-30 my-auto flex flex-col items-center justify-center gap-6">
-                  {/* Tactile 3D Embossed Wax Seal Button */}
-                  <div className="relative flex items-center justify-center">
-                    {!isReducedMotion && (
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.7, 0.3] }}
-                        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                        className="absolute inset-0 -m-4 rounded-full"
-                        style={{
-                          background: `radial-gradient(circle, ${accentColor}40 0%, transparent 70%)`,
-                        }}
-                      />
-                    )}
-
-                    <motion.button
-                      type="button"
-                      disabled={isUnsealing || stage !== 'cover'}
-                      onClick={handleUnseal}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full cursor-pointer flex items-center justify-center shadow-[0_12px_32px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.35),inset_0_-4px_8px_rgba(0,0,0,0.5)] border-2 transition-transform disabled:pointer-events-none"
-                      style={{
-                        backgroundColor: activeTheme.cardBgColor,
-                        borderColor: accentColor,
-                      }}
-                    >
-                      {/* Outer Stamp Rim */}
-                      <div
-                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-dashed flex flex-col items-center justify-center shadow-[inset_0_2px_6px_rgba(0,0,0,0.4)]"
-                        style={{
-                          borderColor: `${accentColor}70`,
-                          backgroundColor: `${activeTheme.bgColor}D9`,
-                        }}
-                      >
-                        <span
-                          className={`font-serif font-bold text-2xl sm:text-3xl tracking-widest ${serifClass}`}
-                          style={{
-                            color: accentColor,
-                            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                          }}
-                        >
-                          {initials}
-                        </span>
-                      </div>
-                    </motion.button>
-                  </div>
-
-                  {/* Single CTA Copy Line */}
-                  <motion.p
-                    animate={{ opacity: [0.65, 1, 0.65] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="text-xs sm:text-sm tracking-[0.3em] uppercase font-semibold text-center px-4"
-                    style={{ color: accentColor, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}
-                  >
-                    Click to Open Invitation
-                  </motion.p>
+              {/* Lower Portion: Standard Heading, Dynamic Names Subtext & Primary CTA */}
+              <motion.div
+                initial={!isReducedMotion ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+                className="w-full max-w-xs mx-auto flex flex-col items-center gap-4 pb-6 sm:pb-8 text-center"
+              >
+                <div className="space-y-1.5">
+                  <h1 className={`text-3xl sm:text-4xl font-bold tracking-tight text-[#4A1525] ${serifClass}`}>
+                    Join Our Love Story
+                  </h1>
+                  <p className="text-sm sm:text-base font-medium text-[#7A3E4D] tracking-wide">
+                    {coupleNames}
+                  </p>
                 </div>
-              )}
+
+                <motion.button
+                  type="button"
+                  disabled={isUnsealing || stage !== 'cover'}
+                  onClick={handleUnseal}
+                  whileHover={!isReducedMotion ? { scale: 1.04 } : undefined}
+                  whileTap={!isReducedMotion ? { scale: 0.96 } : undefined}
+                  className="mt-2 w-full max-w-[240px] py-3.5 px-8 rounded-full bg-[#80182C] text-[#FDF9F6] text-sm font-semibold tracking-wide shadow-lg hover:bg-[#681323] transition-all disabled:pointer-events-none cursor-pointer border border-[#681323]/20"
+                >
+                  Tap to Open Invite
+                </motion.button>
+              </motion.div>
             </motion.div>
           )}
 
-          {/* Phase 2: Tap-to-Open Layered Reveal Sequence */}
+          {/* Unsealing Stage: Scale + Fade Connective Micro-Transition */}
           {stage === 'unsealing' && (
             <motion.div
               key="unsealing-layer"
-              initial={{ opacity: 1 }}
+              initial={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: 0, scale: 0.95 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-              className="absolute inset-0 z-40 flex flex-col items-center justify-between p-6 text-center overflow-hidden [perspective:1200px]"
-              style={{ backgroundColor: activeTheme.bgColor }}
+              transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+              className="absolute inset-0 z-40 flex flex-col items-center justify-center p-6 text-center overflow-hidden bg-[#FDF9F6]"
             >
-              {/* Layer 1: Background Camera Push (2-3% scale up over full duration) */}
               <motion.div
-                className="absolute inset-0 z-0 pointer-events-none"
-                initial={{ scale: 1 }}
-                animate={{ scale: 1.03 }}
-                transition={{ duration: 2.0, ease: 'easeOut' }}
-              >
-                {/* Material Texture Overlay */}
-                <svg className="w-full h-full opacity-15 mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
-                  <filter id="unseal-noise">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-                    <feColorMatrix type="saturate" values="0" />
-                  </filter>
-                  <rect width="100%" height="100%" filter="url(#unseal-noise)" />
-                </svg>
-              </motion.div>
-
-              {/* Layer 2: Seam & Wax Seal Dissolve (Fades out & scales down over 0.5s) */}
-              <motion.div
-                className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none"
                 initial={{ opacity: 1, scale: 1 }}
-                animate={{ opacity: 0, scale: 0.85 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                animate={{ opacity: 0, scale: 0.92 }}
+                transition={{ duration: 0.7, ease: 'easeOut' }}
+                className="flex flex-col items-center gap-3"
               >
-                {/* Vertical Ribbon Seam */}
-                <div
-                  className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-1 sm:w-1.5 shadow-[0_0_12px_rgba(0,0,0,0.5)]"
-                  style={{
-                    background: `linear-gradient(to bottom, transparent, ${accentColor}, transparent)`,
-                    opacity: 0.8,
-                  }}
-                />
-                {/* 3D Wax Seal Emblem */}
-                <div
-                  className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 flex items-center justify-center shadow-2xl"
-                  style={{
-                    backgroundColor: activeTheme.cardBgColor,
-                    borderColor: accentColor,
-                  }}
-                >
-                  <div
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-dashed flex items-center justify-center"
-                    style={{
-                      borderColor: `${accentColor}70`,
-                      backgroundColor: `${activeTheme.bgColor}D9`,
-                    }}
-                  >
-                    <span className={`font-serif font-bold text-2xl sm:text-3xl tracking-widest ${serifClass}`} style={{ color: accentColor }}>
-                      {initials}
-                    </span>
-                  </div>
-                </div>
+                <h2 className={`text-2xl font-bold text-[#4A1525] ${serifClass}`}>{coupleNames}</h2>
+                <p className="text-xs uppercase tracking-[0.2em] font-medium text-[#7A3E4D] opacity-70">
+                  Opening Invitation...
+                </p>
               </motion.div>
-
-              {/* Layers 3 & 4: Staggered Content Reveal Timeline */}
-              <div className="relative z-30 my-auto space-y-4 max-w-xs mx-auto text-center">
-                {/* Layer 4a: Eyebrow Text (Delay 0.65s) */}
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.65, ease: 'easeOut' }}
-                  className="text-[11px] tracking-[0.3em] uppercase font-semibold"
-                  style={{ color: accentColor }}
-                >
-                  {guest ? `Special Invitation For ${guest.name}` : 'Together With Their Families'}
-                </motion.p>
-
-                {/* Layer 3: Title / Couple Names Glow-In (Delay 0.35s, Blur-to-Sharp & Soft Glow) */}
-                <motion.div
-                  initial={{ opacity: 0, filter: 'blur(8px)' }}
-                  animate={{ opacity: 1, filter: 'blur(0px)' }}
-                  transition={{ duration: 0.6, delay: 0.35, ease: 'easeOut' }}
-                  className="py-1"
-                >
-                  <h1
-                    className={`text-4xl sm:text-5xl font-bold leading-tight ${serifClass}`}
-                    style={{
-                      color: secondaryColor,
-                      textShadow: `0 0 24px ${accentColor}AA, 0 2px 8px rgba(0,0,0,0.7)`,
-                    }}
-                  >
-                    {coupleNames}
-                  </h1>
-                </motion.div>
-
-                {/* Layer 4b: Subtitle Text (Delay 0.75s) */}
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.75, ease: 'easeOut' }}
-                  className="text-xs opacity-80 italic font-light"
-                >
-                  request the honor of your presence at their wedding celebration
-                </motion.p>
-
-                {/* Layer 4c: Date Badge (Delay 0.85s) */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.85, ease: 'easeOut' }}
-                  className="inline-flex py-1.5 px-3.5 rounded-full border text-[10px] items-center gap-1.5"
-                  style={{ backgroundColor: `${activeTheme.bgColor}E6`, borderColor: `${accentColor}40`, color: accentColor }}
-                >
-                  <Calendar className="w-3 h-3" />
-                  <span>
-                    {(activeEvents[0] ? formatEventDateTime(activeEvents[0].date, activeEvents[0].time).formattedDate : '').toUpperCase()}
-                  </span>
-                </motion.div>
-
-                {/* Layer 4d: Venue Details (Delay 0.95s) */}
-                {activeEvents[0]?.venue_name && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.95, ease: 'easeOut' }}
-                    className="text-[11px] opacity-75 uppercase tracking-wider font-medium"
-                    style={{ color: secondaryColor }}
-                  >
-                    {activeEvents[0].venue_name}
-                  </motion.p>
-                )}
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1327,6 +1162,8 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
       {/* Floating Background Music Player / Embed Widget */}
       <MusicPlayerToggle
+        ref={musicPlayerRef}
+        stage={stage}
         musicTrackId={wedding?.music_track}
         musicSourceType={wedding?.music_source_type}
         musicExternalId={wedding?.music_external_id}

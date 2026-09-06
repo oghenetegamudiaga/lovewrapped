@@ -1,4 +1,4 @@
-export type MusicPlatformType = 'spotify' | 'apple_music' | 'soundcloud';
+export type MusicPlatformType = 'spotify' | 'apple_music' | 'soundcloud' | 'youtube';
 export type MusicSourceType = 'curated' | MusicPlatformType;
 
 export interface MusicValidationResult {
@@ -201,36 +201,67 @@ export const soundCloudProvider: MusicProvider = {
 };
 
 /**
+ * 4. YouTube Hidden Audio Provider
+ * Matches: youtube.com/watch?v={id}, youtu.be/{id}, youtube.com/embed/{id}
+ * Embed: https://www.youtube.com/embed/{id}?enablejsapi=1&autoplay=1&playsinline=1
+ */
+export const youtubeProvider: MusicProvider = {
+  name: 'YouTube Audio',
+  type: 'youtube',
+  matchUrl: (url: string) => {
+    return /(?:youtube\.com|youtu\.be)/i.test(url);
+  },
+  validate: (url: string) => {
+    const trimmed = url.trim();
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = trimmed.match(regex);
+    if (match && match[1]) {
+      return {
+        valid: true,
+        type: 'youtube',
+        externalId: match[1],
+        externalMeta: {
+          videoId: match[1],
+          embedUrl: `https://www.youtube.com/embed/${match[1]}?enablejsapi=1&autoplay=1&playsinline=1`,
+        },
+      };
+    }
+    return {
+      valid: false,
+      message: 'Invalid YouTube link. Please provide a valid YouTube video or track link.',
+    };
+  },
+  getEmbedProps: (externalId) => ({
+    embedUrl: externalId ? `https://www.youtube.com/embed/${externalId}?enablejsapi=1&autoplay=1&playsinline=1` : undefined,
+    type: 'youtube',
+    title: 'YouTube Track',
+  }),
+};
+
+/**
  * Registry array of supported providers
  */
 export const MUSIC_PROVIDERS: MusicProvider[] = [
   spotifyProvider,
   appleMusicProvider,
   soundCloudProvider,
+  youtubeProvider,
 ];
 
 /**
- * Helper to detect YouTube links and return explicit rejection, or dispatch to provider registry
+ * Helper to detect supported links and dispatch to provider registry
  */
 export async function validateMusicUrlRegistry(rawUrl: string): Promise<MusicValidationResult> {
   if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
     return {
       valid: false,
-      message: 'Please paste a Spotify track link, Apple Music song link, or SoundCloud track link.',
+      message: 'Please paste a Spotify, Apple Music, SoundCloud, or YouTube link.',
     };
   }
 
   const trimmed = rawUrl.trim();
 
-  // 1. YouTube Explicit Guardrail
-  if (/(?:youtube\.com|youtu\.be)/i.test(trimmed)) {
-    return {
-      valid: false,
-      message: "YouTube links aren't supported. Please use a Spotify, Apple Music, or SoundCloud link instead.",
-    };
-  }
-
-  // 2. Registry Matching
+  // Registry Matching
   for (const provider of MUSIC_PROVIDERS) {
     if (provider.matchUrl(trimmed)) {
       return await provider.validate(trimmed);
@@ -239,6 +270,6 @@ export async function validateMusicUrlRegistry(rawUrl: string): Promise<MusicVal
 
   return {
     valid: false,
-    message: 'Unsupported link. Please use a Spotify, Apple Music, or SoundCloud link.',
+    message: 'Unsupported link. Please use a Spotify, Apple Music, SoundCloud, or YouTube link.',
   };
 }

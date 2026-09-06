@@ -161,7 +161,7 @@ export interface WeddingTheme {
   };
 }
 
-export type MusicSourceType = 'curated' | 'spotify' | 'apple_music' | 'soundcloud';
+export type MusicSourceType = 'curated' | 'spotify' | 'apple_music' | 'soundcloud' | 'youtube';
 
 export interface Wedding {
   id: string;
