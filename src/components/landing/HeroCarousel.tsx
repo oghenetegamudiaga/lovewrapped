@@ -17,13 +17,13 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
   };
 
   return (
-    <section className="relative bg-[#FAF7F2] text-[#3A0D22] overflow-hidden py-16 sm:py-24 md:py-32 px-4 sm:px-6 select-none flex items-center justify-center min-h-[75vh] sm:min-h-[85vh]">
+    <section className="relative bg-[#FDF9F6] text-[#3A0D22] overflow-hidden py-16 sm:py-24 md:py-32 px-4 sm:px-6 select-none flex items-center justify-center min-h-[75vh] sm:min-h-[85vh]">
       {/* Centered Wrapper for Hero Content & Corner Stickers */}
       <div className="relative z-20 w-full max-w-5xl mx-auto flex flex-col items-center text-center space-y-6 sm:space-y-8">
         
         {/* 1. Birthday Cake Sticker (Top-Left) */}
         <motion.div
-          className="absolute -top-6 left-0 sm:top-0 sm:left-4 md:top-2 md:left-8 lg:top-4 lg:left-12 z-10 cursor-pointer"
+          className="absolute -top-10 -left-2 sm:-top-4 sm:left-2 md:top-2 md:left-8 lg:top-4 lg:left-12 z-10 cursor-pointer"
           initial={{ rotate: -12 }}
           animate={{
             y: [0, -6, 0],
@@ -41,14 +41,14 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
           <img
             src="/stickers/cake.png"
             alt="Birthday Cake Sticker"
-            className="w-12 sm:w-16 md:w-20 lg:w-24 h-auto drop-shadow-md select-none"
+            className="w-10 sm:w-14 md:w-20 lg:w-24 h-auto select-none"
             loading="eager"
           />
         </motion.div>
 
         {/* 2. LOVE Badge Sticker (Top-Right) */}
         <motion.div
-          className="absolute -top-6 right-0 sm:top-0 sm:right-4 md:top-2 md:right-8 lg:top-4 lg:right-12 z-10 cursor-pointer"
+          className="absolute -top-10 -right-2 sm:-top-4 sm:right-2 md:top-2 md:right-8 lg:top-4 lg:right-12 z-10 cursor-pointer"
           initial={{ rotate: 14 }}
           animate={{
             y: [0, -7, 0],
@@ -66,14 +66,14 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
           <img
             src="/stickers/love.png"
             alt="LOVE Stamp Sticker"
-            className="w-14 sm:w-18 md:w-22 lg:w-28 h-auto drop-shadow-md select-none"
+            className="w-12 sm:w-16 md:w-22 lg:w-28 h-auto select-none"
             loading="eager"
           />
         </motion.div>
 
         {/* 3. Heart with Arrow Sticker (Bottom-Left) */}
         <motion.div
-          className="absolute -bottom-6 left-0 sm:-bottom-2 sm:left-4 md:bottom-0 md:left-8 lg:bottom-2 lg:left-12 z-10 cursor-pointer"
+          className="absolute -bottom-10 -left-2 sm:-bottom-4 sm:left-2 md:bottom-0 md:left-8 lg:bottom-2 lg:left-12 z-10 cursor-pointer"
           initial={{ rotate: -10 }}
           animate={{
             y: [0, -6, 0],
@@ -91,14 +91,14 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
           <img
             src="/stickers/heart.png"
             alt="Heart Sticker"
-            className="w-14 sm:w-18 md:w-22 lg:w-28 h-auto drop-shadow-md select-none"
+            className="w-12 sm:w-16 md:w-22 lg:w-28 h-auto select-none"
             loading="eager"
           />
         </motion.div>
 
         {/* 4. Smiley Face Sticker (Bottom-Right) */}
         <motion.div
-          className="absolute -bottom-6 right-0 sm:-bottom-2 sm:right-4 md:bottom-0 md:right-8 lg:bottom-2 lg:right-12 z-10 cursor-pointer"
+          className="absolute -bottom-10 -right-2 sm:-bottom-4 sm:right-2 md:bottom-0 md:right-8 lg:bottom-2 lg:right-12 z-10 cursor-pointer"
           initial={{ rotate: 8 }}
           animate={{
             y: [0, -8, 0],
@@ -116,20 +116,20 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
           <img
             src="/stickers/smiley.png"
             alt="Smiley Face Sticker"
-            className="w-10 sm:w-14 md:w-16 lg:w-20 h-auto drop-shadow-md select-none"
+            className="w-9 sm:w-12 md:w-16 lg:w-20 h-auto select-none"
             loading="eager"
           />
         </motion.div>
 
         {/* Headline H1 matching reference design */}
-        <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.15] max-w-3xl">
+        <h1 className="hero-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.15] max-w-3xl px-4 sm:px-8 md:px-0">
           <span className="text-[#3A0D22] block sm:inline">Make Every Moment </span>
           <br className="hidden sm:inline" />
           <span className="text-[#df6d73] block sm:inline">Memorable.</span>
         </h1>
 
         {/* Subtext */}
-        <p className="text-base sm:text-lg md:text-xl text-[#55404A] max-w-2xl mx-auto font-normal leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-[#55404A] max-w-2xl mx-auto font-normal leading-relaxed px-4 sm:px-8 md:px-0">
           Amorah creates interactive digital stories and scene based invitations for life's most meaningful occasions.
         </p>
 
@@ -149,4 +149,3 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onNavigate }) => {
     </section>
   );
 };
-

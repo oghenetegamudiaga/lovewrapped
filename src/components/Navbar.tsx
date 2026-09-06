@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#3A0D22] text-white border-b-0 transition-all">
+    <header className="sticky top-0 z-50 bg-[#FDF9F6] text-[#3A0D22] border-b border-[#3A0D22]/10 transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
         {/* Brand Logo */}
         <button
@@ -59,8 +59,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
             onClick={() => onNavigate('/weddings')}
             className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
               currentPath.startsWith('/weddings')
-                ? 'text-coral font-semibold'
-                : 'text-white/80 hover:text-white'
+                ? 'text-[#df6d73] font-semibold'
+                : 'text-[#3A0D22]/80 hover:text-[#3A0D22]'
             }`}
           >
             Weddings
@@ -71,8 +71,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
             onClick={() => onNavigate('/love-stories')}
             className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
               currentPath === '/love-stories'
-                ? 'text-coral font-semibold'
-                : 'text-white/80 hover:text-white'
+                ? 'text-[#df6d73] font-semibold'
+                : 'text-[#3A0D22]/80 hover:text-[#3A0D22]'
             }`}
           >
             Moments
@@ -83,18 +83,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
             onClick={() => onNavigate('/blog')}
             className={`text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
               currentPath.startsWith('/blog')
-                ? 'text-coral font-semibold'
-                : 'text-white/80 hover:text-white'
+                ? 'text-[#df6d73] font-semibold'
+                : 'text-[#3A0D22]/80 hover:text-[#3A0D22]'
             }`}
           >
             Blog
           </button>
 
-          {/* Outline Pill Button matching AMORAH_NEW_HERO.png */}
+          {/* Outline Pill Button matching reference image */}
           <button
             id="nav-get-started-button"
             onClick={handleGetStarted}
-            className="px-5 py-2 rounded-full border border-coral text-coral hover:bg-coral hover:text-white font-medium text-xs sm:text-sm transition-all active:scale-95 cursor-pointer"
+            className="px-5 py-2 rounded-full border border-[#3A0D22] text-[#3A0D22] hover:bg-[#3A0D22] hover:text-[#FDF9F6] font-medium text-xs sm:text-sm transition-all active:scale-95 cursor-pointer"
           >
             <span>{currentCouple ? 'My Experiences' : 'Get Started'}</span>
           </button>
@@ -107,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
             id="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
-            className="p-2 rounded-xl text-white hover:text-coral bg-white/10 border border-white/10 focus:outline-none cursor-pointer"
+            className="p-2 rounded-xl text-[#3A0D22] hover:text-[#df6d73] bg-[#3A0D22]/5 border border-[#3A0D22]/10 focus:outline-none cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -122,14 +122,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="sm:hidden bg-[#3A0D22] border-b border-white/10 text-white overflow-hidden"
+            className="sm:hidden bg-[#FDF9F6] border-b border-[#3A0D22]/10 text-[#3A0D22] overflow-hidden"
           >
             <div className="px-4 py-6 flex flex-col gap-3">
               <button
                 type="button"
                 id="mobile-nav-weddings"
                 onClick={() => handleMobileNav('/weddings')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-sm"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-white/60 border border-[#3A0D22]/10 text-[#3A0D22] font-medium text-sm hover:bg-white/80"
               >
                 <span>Weddings</span>
               </button>
@@ -138,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
                 type="button"
                 id="mobile-nav-love-stories"
                 onClick={() => handleMobileNav('/love-stories')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-sm"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-white/60 border border-[#3A0D22]/10 text-[#3A0D22] font-medium text-sm hover:bg-white/80"
               >
                 <span>Moments</span>
               </button>
@@ -147,7 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
                 type="button"
                 id="mobile-nav-blog"
                 onClick={() => handleMobileNav('/blog')}
-                className="w-full text-left px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-medium text-sm"
+                className="w-full text-left px-4 py-3 rounded-2xl bg-white/60 border border-[#3A0D22]/10 text-[#3A0D22] font-medium text-sm hover:bg-white/80"
               >
                 <span>Blog</span>
               </button>
@@ -156,7 +156,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate, current
                 type="button"
                 id="mobile-nav-get-started"
                 onClick={handleGetStarted}
-                className="w-full text-center px-4 py-3 rounded-2xl border border-coral text-coral hover:bg-coral hover:text-white font-semibold text-sm cursor-pointer transition-colors"
+                className="w-full text-center px-4 py-3 rounded-2xl border border-[#3A0D22] text-[#3A0D22] hover:bg-[#3A0D22] hover:text-[#FDF9F6] font-semibold text-sm cursor-pointer transition-colors"
               >
                 <span>{currentCouple ? 'My Experiences' : 'Get Started'}</span>
               </button>
