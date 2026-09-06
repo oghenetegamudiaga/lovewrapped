@@ -167,7 +167,7 @@ export const PayView: React.FC<PayViewProps> = ({
                   type="text"
                   readOnly
                   value={getShareableUrl()}
-                  className="flex-1 bg-cream px-3 py-2 rounded-xl border border-cream-border text-xs font-mono text-maroon focus:outline-none"
+                  className="flex-1 bg-cream-field px-3 py-2 rounded-xl border border-cream-border text-xs font-mono text-maroon focus:outline-none"
                 />
                 <button
                   id="copy-link-button"

@@ -615,7 +615,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         required
                         value={editBrideFirstName}
                         onChange={(e) => setEditBrideFirstName(e.target.value)}
-                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                     <div>
@@ -624,7 +624,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         type="text"
                         value={editBrideOtherNames}
                         onChange={(e) => setEditBrideOtherNames(e.target.value)}
-                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                   </div>
@@ -637,7 +637,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         required
                         value={editGroomFirstName}
                         onChange={(e) => setEditGroomFirstName(e.target.value)}
-                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                     <div>
@@ -646,7 +646,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                         type="text"
                         value={editGroomOtherNames}
                         onChange={(e) => setEditGroomOtherNames(e.target.value)}
-                        className="w-full p-3 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                   </div>
@@ -658,7 +658,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                       placeholder="e.g. Account Name: Becky & Martins / Bank: GTBank / Account No: 0123456789"
                       value={editRegistryInfo}
                       onChange={(e) => setEditRegistryInfo(e.target.value)}
-                      className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
+                      className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
                     />
                   </div>
 
@@ -669,7 +669,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                       placeholder="Share a short note about your love story..."
                       value={editLoveStory}
                       onChange={(e) => setEditLoveStory(e.target.value)}
-                      className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
+                      className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral leading-relaxed"
                     />
                   </div>
 
@@ -894,7 +894,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                   placeholder="Search guest name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                 />
               </div>
 
@@ -1086,7 +1086,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                   placeholder="e.g. Chief & Mrs. Adebayo"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-cream-card border border-cream-border text-maroon"
+                  className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon"
                 />
               </div>
 
@@ -1097,7 +1097,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                   placeholder="e.g. guest@example.com"
                   value={guestEmail}
                   onChange={(e) => setGuestEmail(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-cream-card border border-cream-border text-maroon"
+                  className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon"
                 />
               </div>
 
@@ -1120,7 +1120,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                   placeholder="e.g. VIP, Vegetarian"
                   value={dietaryNotes}
                   onChange={(e) => setDietaryNotes(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-cream-card border border-cream-border text-maroon"
+                  className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon"
                 />
               </div>
 
@@ -1212,7 +1212,7 @@ export const WeddingsDashboardView: React.FC<WeddingsDashboardViewProps> = ({
                   placeholder={`name,email,plus_one_allowed,dietary_notes\nChief Adebayo,adebayo@example.com,yes,Vegetarian\nDr. Grace Johnson,grace@example.com,no,No shellfish`}
                   value={csvRawText}
                   onChange={(e) => setCsvRawText(e.target.value)}
-                  className="w-full p-3 rounded-2xl bg-cream-card border border-cream-border text-maroon font-mono text-[11px]"
+                  className="w-full p-3 rounded-2xl bg-cream-field border border-cream-border text-maroon font-mono text-[11px]"
                 />
               </div>
 

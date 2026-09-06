@@ -95,7 +95,7 @@ export const PreviewView: React.FC<PreviewViewProps> = ({
                 placeholder="your.email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
+                className="w-full px-4 py-2.5 rounded-xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
               />
               {emailError && (
                 <p className="text-[11px] text-coral mt-1 font-medium">{emailError}</p>

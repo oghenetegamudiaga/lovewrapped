@@ -937,7 +937,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                   placeholder="admin@amorah.xyz"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
                 />
               </div>
             </div>
@@ -952,7 +952,7 @@ export const AdminView: React.FC<AdminViewProps> = () => {
                   placeholder="••••••••••••"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60"
                 />
               </div>
             </div>

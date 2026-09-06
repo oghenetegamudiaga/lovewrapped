@@ -555,7 +555,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                         placeholder="e.g. Temilolu"
                         value={freeBrideFirstName}
                         onChange={(e) => setFreeBrideFirstName(e.target.value)}
-                        className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                     <div>
@@ -566,7 +566,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                         placeholder="e.g. Juwon"
                         value={freeGroomFirstName}
                         onChange={(e) => setFreeGroomFirstName(e.target.value)}
-                        className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                   </div>
@@ -577,7 +577,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       type="date"
                       value={freeWeddingDate}
                       onChange={(e) => setFreeWeddingDate(e.target.value)}
-                      className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
+                      className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
                     />
                   </div>
 
@@ -857,7 +857,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                         placeholder="e.g. Temilolu"
                         value={brideFirstName}
                         onChange={(e) => setBrideFirstName(e.target.value)}
-                        className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                     <div>
@@ -867,7 +867,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                         placeholder="e.g. Adeola"
                         value={brideOtherNames}
                         onChange={(e) => setBrideOtherNames(e.target.value)}
-                        className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                   </div>
@@ -881,7 +881,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                         placeholder="e.g. Juwon"
                         value={groomFirstName}
                         onChange={(e) => setGroomFirstName(e.target.value)}
-                        className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                     <div>
@@ -891,7 +891,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                         placeholder="e.g. Oluwaseun"
                         value={groomOtherNames}
                         onChange={(e) => setGroomOtherNames(e.target.value)}
-                        className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                        className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                       />
                     </div>
                   </div>
@@ -943,7 +943,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       placeholder="Share a short note about your journey together..."
                       value={loveStory}
                       onChange={(e) => setLoveStory(e.target.value)}
-                      className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                     />
                   </div>
 
@@ -1080,7 +1080,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                               placeholder="Paste link e.g. https://open.spotify.com/track/... or https://music.apple.com/... or https://soundcloud.com/..."
                               value={customMusicUrl}
                               onChange={(e) => handleValidateCustomMusicUrl(e.target.value)}
-                              className="w-full p-3 rounded-xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60 pr-10"
+                              className="w-full p-3 rounded-xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral placeholder:text-mauve/60 pr-10"
                             />
                             {isValidatingMusic && (
                               <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -1243,7 +1243,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                             placeholder="e.g. Traditional Ceremony / Engagement"
                             value={ev.title}
                             onChange={(e) => handleEventChange(index, 'title', e.target.value)}
-                            className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                            className="w-full p-3 rounded-xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                           />
                         </div>
 
@@ -1255,7 +1255,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                               required
                               value={ev.date}
                               onChange={(e) => handleEventChange(index, 'date', e.target.value)}
-                              className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
+                              className="w-full p-3 rounded-xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
                             />
                           </div>
                           <div>
@@ -1265,7 +1265,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                               required
                               value={ev.time}
                               onChange={(e) => handleEventChange(index, 'time', e.target.value)}
-                              className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
+                              className="w-full p-3 rounded-xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral cursor-pointer"
                             />
                           </div>
                         </div>
@@ -1278,7 +1278,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                             placeholder="e.g. Eko Hotel Grand Ballroom"
                             value={ev.venue_name}
                             onChange={(e) => handleEventChange(index, 'venue_name', e.target.value)}
-                            className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                            className="w-full p-3 rounded-xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                           />
                         </div>
 
@@ -1289,7 +1289,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                             placeholder="e.g. Victoria Island, Lagos"
                             value={ev.venue_address || ''}
                             onChange={(e) => handleEventChange(index, 'venue_address', e.target.value)}
-                            className="w-full p-3 rounded-xl bg-cream-card border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                            className="w-full p-3 rounded-xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                           />
                         </div>
                       </div>
@@ -1340,7 +1340,7 @@ export const WeddingsCreateView: React.FC<WeddingsCreateViewProps> = ({ onNaviga
                       placeholder="e.g. Account Name: Becky & Martins Wedding / Bank: GTBank / Account No: 0123456789"
                       value={registryInfo}
                       onChange={(e) => setRegistryInfo(e.target.value)}
-                      className="w-full p-3.5 rounded-2xl bg-cream border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
+                      className="w-full p-3.5 rounded-2xl bg-cream-field border border-cream-border text-maroon text-xs focus:outline-none focus:border-coral"
                     />
                   </div>
 

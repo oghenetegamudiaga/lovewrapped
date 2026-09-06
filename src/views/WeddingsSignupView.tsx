@@ -125,7 +125,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder={AUTH_COPY.signup.fullNamePlaceholder}
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
             </div>
           </div>
@@ -145,7 +145,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={AUTH_COPY.signup.emailPlaceholder}
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
+                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
             </div>
           </div>
@@ -166,7 +166,7 @@ export const WeddingsSignupView: React.FC<WeddingsSignupViewProps> = ({ onNaviga
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={AUTH_COPY.signup.passwordPlaceholder}
-                className="w-full pl-10 pr-10 py-3 rounded-2xl bg-cream border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
+                className="w-full pl-10 pr-10 py-3 rounded-2xl bg-cream-field border border-cream-border text-maroon text-sm focus:outline-none focus:border-coral transition-colors"
               />
               <button
                 type="button"

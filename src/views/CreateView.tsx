@@ -605,7 +605,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
                   placeholder="e.g. Daniel"
                   value={senderName}
                   onChange={(e) => setSenderName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-cream-card border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium transition-all"
+                  className="w-full px-4 py-3 rounded-2xl bg-cream-field border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium transition-all"
                 />
               </div>
 
@@ -617,7 +617,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
                   placeholder="e.g. Amara"
                   value={receiverName}
                   onChange={(e) => setReceiverName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-cream-card border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium transition-all"
+                  className="w-full px-4 py-3 rounded-2xl bg-cream-field border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium transition-all"
                 />
               </div>
             </div>
@@ -628,7 +628,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
               <select
                 value={occasion}
                 onChange={(e) => setOccasion(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-cream-card border border-cream-border focus:outline-none focus:border-coral text-maroon text-sm font-medium transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-cream-field border border-cream-border focus:outline-none focus:border-coral text-maroon text-sm font-medium transition-all"
               >
                 {OCCASIONS.map((occ) => (
                   <option key={occ} value={occ} className="bg-cream-card text-maroon">
@@ -643,7 +643,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
                   placeholder="Enter custom occasion..."
                   value={customOccasion}
                   onChange={(e) => setCustomOccasion(e.target.value)}
-                  className="w-full mt-3 px-4 py-3 rounded-2xl bg-cream-card border border-cream-border focus:outline-none focus:border-coral text-maroon text-sm font-medium transition-all"
+                  className="w-full mt-3 px-4 py-3 rounded-2xl bg-cream-field border border-cream-border focus:outline-none focus:border-coral text-maroon text-sm font-medium transition-all"
                 />
               )}
             </div>
@@ -663,7 +663,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
                 placeholder="Tell them something true and beautiful..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-cream-card border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium leading-relaxed transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-cream-field border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium leading-relaxed transition-all"
               />
               <p className="text-[11px] text-mauve/80 mt-1">
                 Keep it honest. We’ll turn this into a beautiful story.
@@ -913,7 +913,7 @@ export const CreateView: React.FC<CreateViewProps> = ({
                 placeholder="e.g. daniel@example.com"
                 value={creatorEmail}
                 onChange={(e) => setCreatorEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-cream-card border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-cream-field border border-cream-border focus:outline-none focus:border-coral text-maroon placeholder:text-mauve/60 text-sm font-medium transition-all"
               />
             </div>
 

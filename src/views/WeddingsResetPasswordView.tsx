@@ -136,7 +136,7 @@ export const WeddingsResetPasswordView: React.FC<WeddingsResetPasswordViewProps>
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="At least 8 characters"
-                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-cream-border bg-white text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-cream-border bg-cream-field text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
                   />
                   <button
                     type="button"
@@ -164,7 +164,7 @@ export const WeddingsResetPasswordView: React.FC<WeddingsResetPasswordViewProps>
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
-                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-cream-border bg-white text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-cream-border bg-cream-field text-maroon focus:outline-none focus:border-coral text-sm transition-colors"
                   />
                   <button
                     type="button"
