@@ -1,5 +1,4 @@
 import React from 'react';
-import { Instagram, Mail, MessageSquare } from 'lucide-react';
 import { ScrollReveal } from '../common/ScrollReveal';
 
 export const CommunitySection: React.FC = () => {
@@ -13,61 +12,36 @@ export const CommunitySection: React.FC = () => {
           </h2>
 
           <p className="text-mauve text-base sm:text-lg leading-relaxed font-normal mb-8">
-            You're not the only one turning ordinary days into something worth reopening. Come see what people are building, or reach us directly.
+            Share your love stories and see how they're received. Connect and grow with others who believe in celebrating the people they love.
           </p>
 
-          {/* Three Real Functional Link Pills */}
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          {/* Single Primary "Join Community" CTA Button */}
+          <div className="w-full sm:w-auto">
             <a
-              id="community-instagram-link"
-              href="https://instagram.com/getamorah"
+              id="community-join-whatsapp-button"
+              href="https://chat.whatsapp.com/DCOZ3PaIa8p3YUlmDW8jSv?s=cl&p=a&mlu=4&ilr=4"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-5 py-3 rounded-full bg-white hover:bg-cream-card text-maroon border border-cream-border font-semibold text-xs sm:text-sm shadow-xs transition-all inline-flex items-center gap-2 cursor-pointer hover:border-coral"
+              className="px-8 py-4 rounded-full bg-[#3A0D22] hover:bg-[#2B0818] text-[#FFFDF9] font-semibold text-base sm:text-lg shadow-md hover:scale-[1.03] active:scale-95 transition-all inline-flex items-center justify-center cursor-pointer border border-transparent"
             >
-              <Instagram className="w-4 h-4 text-coral" />
-              <span>Instagram</span>
-            </a>
-
-            <a
-              id="community-email-link"
-              href="mailto:hello@amorah.xyz"
-              className="px-5 py-3 rounded-full bg-white hover:bg-cream-card text-maroon border border-cream-border font-semibold text-xs sm:text-sm shadow-xs transition-all inline-flex items-center gap-2 cursor-pointer hover:border-coral"
-            >
-              <Mail className="w-4 h-4 text-coral" />
-              <span>Email Us</span>
-            </a>
-
-            <a
-              id="community-whatsapp-link"
-              href="https://wa.me/2348000000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-5 py-3 rounded-full bg-white hover:bg-cream-card text-maroon border border-cream-border font-semibold text-xs sm:text-sm shadow-xs transition-all inline-flex items-center gap-2 cursor-pointer hover:border-coral"
-            >
-              <MessageSquare className="w-4 h-4 text-emerald-600" />
-              <span>WhatsApp</span>
+              <span>Join Community</span>
             </a>
           </div>
         </ScrollReveal>
 
-        {/* Right Image Column with Speech Bubble */}
+        {/* Right Image Column */}
         <ScrollReveal delay={120} className="w-full lg:w-1/2 flex justify-center relative">
           <div className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-cream-card">
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80"
+              src="/images/community-member.png"
               alt="Community Member Enjoying Story"
-              className="w-full h-[360px] sm:h-[440px] object-cover object-center"
+              className="w-full h-auto max-h-[460px] object-cover object-center"
               loading="lazy"
             />
-
-            {/* Floating Speech Bubble Accent */}
-            <div className="absolute bottom-6 right-6 bg-coral text-white font-serif font-semibold text-sm px-5 py-2.5 rounded-2xl shadow-lg border border-white/20 backdrop-blur-xs animate-bounce-slow">
-              <span>Amorah 💖</span>
-            </div>
           </div>
         </ScrollReveal>
       </div>
     </section>
   );
 };
+
