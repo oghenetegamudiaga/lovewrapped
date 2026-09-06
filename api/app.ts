@@ -2088,14 +2088,13 @@ apiRouter.get('/weddings/slug/:slug', async (req, res) => {
         .from('weddings')
         .select('*')
         .eq('slug', slug)
-        .eq('is_paid', true)
-        .single();
+        .maybeSingle();
       if (wData) wedding = wData;
     }
 
     if (!wedding) {
       for (const w of weddingsStore.values()) {
-        if (w.slug === slug && w.is_paid) {
+        if (w.slug === slug) {
           wedding = w;
           break;
         }
@@ -2103,7 +2102,20 @@ apiRouter.get('/weddings/slug/:slug', async (req, res) => {
     }
 
     if (!wedding) {
-      return res.status(404).json({ message: 'Wedding invitation not found or payment pending.' });
+      return res.status(404).json({
+        error_type: 'NOT_FOUND',
+        message: 'Wedding invitation not found.',
+      });
+    }
+
+    if (!wedding.is_paid && wedding.tier !== 'free') {
+      return res.status(402).json({
+        error_type: 'PAYMENT_PENDING',
+        message: 'Payment is pending for this wedding invitation.',
+        slug: wedding.slug,
+        weddingId: wedding.id,
+        reference: wedding.payment_reference || null,
+      });
     }
 
     if (isSupabaseConfigured && supabase) {
@@ -2314,7 +2326,7 @@ apiRouter.post('/weddings/create-free', requireCoupleAuth, async (req, res) => {
       couple_names: coupleNames,
       theme_id: validTheme,
       tier: 'free',
-      is_paid: false,
+      is_paid: true,
       created_at: now,
       updated_at: now,
     };
@@ -2786,7 +2798,20 @@ apiRouter.get('/weddings/guest-invite/:weddingSlug/:guestSlug', async (req, res)
     }
 
     if (!targetWedding) {
-      return res.status(404).json({ message: 'Wedding invitation not found.' });
+      return res.status(404).json({
+        error_type: 'NOT_FOUND',
+        message: 'Wedding invitation not found.',
+      });
+    }
+
+    if (!targetWedding.is_paid && targetWedding.tier !== 'free') {
+      return res.status(402).json({
+        error_type: 'PAYMENT_PENDING',
+        message: 'Payment is pending for this wedding invitation.',
+        slug: targetWedding.slug,
+        weddingId: targetWedding.id,
+        reference: targetWedding.payment_reference || null,
+      });
     }
 
     let targetGuest: WeddingGuest | undefined;

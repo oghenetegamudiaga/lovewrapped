@@ -28,17 +28,30 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     let errorMessage = `Server error (${res.status})`;
+    let errorType: string | undefined;
+    let paymentRef: string | undefined;
+
     try {
       const parsed = JSON.parse(text);
       if (parsed.message) {
         errorMessage = parsed.message;
+      }
+      if (parsed.error_type) {
+        errorType = parsed.error_type;
+      }
+      if (parsed.reference) {
+        paymentRef = parsed.reference;
       }
     } catch {
       if (text && text.length < 150) {
         errorMessage = `Server error (${res.status}): ${text}`;
       }
     }
-    throw new Error(errorMessage);
+    const err = new Error(errorMessage) as any;
+    err.error_type = errorType;
+    err.reference = paymentRef;
+    err.status = res.status;
+    throw err;
   }
 
   return res.json();
