@@ -2,6 +2,7 @@ import React from 'react';
 import { Heart, ArrowUpRight, Check, Mail } from 'lucide-react';
 import { PAID_PLAN_PRICE_FORMATTED } from '../constants.js';
 import { useSiteContent } from '../lib/useSiteContent.js';
+import { IphoneDeviceMockup } from '../components/landing/IphoneDeviceMockup';
 
 interface LandingViewProps {
   onNavigate: (path: string) => void;
@@ -56,46 +57,11 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="glow-one" />
           <div className="glow-two" />
 
-          {/* Interactive Phone Card - Keeps dark maroon theme for story preview mockup */}
-          <div
-            onClick={() => onNavigate('/w/demo')}
-            className="relative w-full max-w-[320px] aspect-[9/16] rounded-[38px] bg-gradient-to-b from-[#4a102b] via-[#3a0d22] to-[#250614] p-6 border border-coral/40 phone-card-shadow flex flex-col justify-between cursor-pointer group hover:border-coral transition-all transform hover:-translate-y-1"
-          >
-            {/* Top status bar dots */}
-            <div className="flex items-center justify-center gap-1.5 opacity-60 mb-4">
-              <i className="w-2 h-2 rounded-full bg-rose-200" />
-              <i className="w-2 h-2 rounded-full bg-rose-200" />
-              <i className="w-2 h-2 rounded-full bg-rose-200" />
-              <i className="w-2 h-2 rounded-full bg-rose-200" />
-              <i className="w-2 h-2 rounded-full bg-rose-200/30" />
-              <i className="w-2 h-2 rounded-full bg-rose-200/30" />
-              <i className="w-2 h-2 rounded-full bg-rose-200/30" />
-            </div>
-
-            {/* Inner Content */}
-            <div className="flex-1 flex flex-col items-center justify-center text-center my-auto">
-              <p className="text-xs uppercase font-medium tracking-widest text-rose-300/80 mb-2">
-                a little something for
-              </p>
-              <h2 className="font-serif text-4xl sm:text-5xl font-bold text-white mb-6 flex items-center justify-center gap-2">
-                Amara <span className="text-rose-400 font-normal">♡</span>
-              </h2>
-
-              <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-400/30 flex items-center justify-center text-rose-300 text-xl my-4 group-hover:scale-110 group-hover:bg-rose-500/30 transition-all">
-                ✦
-              </div>
-
-              <p className="text-sm font-medium text-rose-200/90 max-w-[200px] leading-snug">
-                Tap to open your story
-              </p>
-            </div>
-
-            {/* Bottom Tap Prompt */}
-            <div className="pt-4 border-t border-rose-900/40 flex items-center justify-between text-xs text-rose-300/70 font-medium">
-              <span>tap anywhere</span>
-              <b className="text-rose-300 group-hover:translate-x-1 transition-transform">→</b>
-            </div>
-          </div>
+          {/* Interactive Phone Mockup */}
+          <IphoneDeviceMockup
+            demoUrl="/w/demo"
+            title="Amorah Moments"
+          />
 
           {/* Floating Pills */}
           <div className="absolute top-12 -left-4 sm:-left-8 glass-card px-4 py-2 rounded-full text-xs font-semibold text-maroon border border-cream-border flex items-center gap-1.5 animate-bounce-slow">
