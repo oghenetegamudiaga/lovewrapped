@@ -82,7 +82,7 @@ export const WatchView: React.FC<WatchViewProps> = ({ slug, onNavigateToCreate }
   const isAutoShare = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('share') === 'true';
 
   return (
-    <div className="min-h-screen bg-cream py-6 px-4 flex items-center justify-center font-sans">
+    <div className="min-h-screen min-h-[100dvh] w-full bg-black flex flex-col p-0 m-0 overflow-hidden font-sans">
       <StoryViewer experience={experience} autoOpenShare={isAutoShare} onNavigateToCreate={onNavigateToCreate} />
     </div>
   );

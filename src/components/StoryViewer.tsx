@@ -225,55 +225,59 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   }
 
   return (
-    <div className="relative w-full max-w-sm sm:max-w-md mx-auto aspect-[9/16] max-h-[820px] bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-rose-900/30 select-none flex flex-col">
+    <div className={isPreview ? "relative w-full max-w-sm sm:max-w-md mx-auto aspect-[9/16] max-h-[820px] bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-rose-900/30 select-none flex flex-col" : "relative w-full h-full min-h-screen min-h-[100dvh] bg-black rounded-none border-0 shadow-none p-0 select-none flex flex-col overflow-hidden"}>
       {/* Top Progress Segment Bars */}
-      <div className="absolute top-0 inset-x-0 z-30 p-3 pt-4 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex gap-1.5 pointer-events-none">
-        {slides.map((_, idx) => {
-          let segmentWidth = '0%';
-          if (idx < currentIndex) segmentWidth = '100%';
-          else if (idx === currentIndex) segmentWidth = `${progress}%`;
+      <div className="absolute top-0 inset-x-0 z-30 p-3 pt-4 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex justify-center pointer-events-none">
+        <div className="w-full max-w-md flex gap-1.5">
+          {slides.map((_, idx) => {
+            let segmentWidth = '0%';
+            if (idx < currentIndex) segmentWidth = '100%';
+            else if (idx === currentIndex) segmentWidth = `${progress}%`;
 
-          return (
-            <div key={idx} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
-              <div
-                className="h-full bg-white transition-all duration-75 ease-linear"
-                style={{ width: isEndCard ? '100%' : segmentWidth }}
-              />
-            </div>
-          );
-        })}
+            return (
+              <div key={idx} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+                <div
+                  className="h-full bg-white transition-all duration-75 ease-linear"
+                  style={{ width: isEndCard ? '100%' : segmentWidth }}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Top Control Bar (Sender badge, Audio, and Share Link button) */}
-      <div className="absolute top-7 inset-x-0 z-30 px-4 flex items-center justify-between text-white text-xs font-medium">
-        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-          <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
-          <span className="truncate max-w-[120px] sm:max-w-[150px]">
-            To {experience.receiver_name || 'You'} from {experience.sender_name || 'Someone'}
-          </span>
-        </div>
+      <div className="absolute top-7 inset-x-0 z-30 px-4 flex justify-center text-white text-xs font-medium">
+        <div className="w-full max-w-md flex items-center justify-between">
+          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+            <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
+            <span className="truncate max-w-[120px] sm:max-w-[150px]">
+              To {experience.receiver_name || 'You'} from {experience.sender_name || 'Someone'}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2">
-          {!isPreview && (
+          <div className="flex items-center gap-2">
+            {!isPreview && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShareModalOpen(true);
+                }}
+                className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-rose-300 hover:text-white transition-colors cursor-pointer"
+                title="Share story link"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+            )}
+
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShareModalOpen(true);
-              }}
-              className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-rose-300 hover:text-white transition-colors"
-              title="Share story link"
+              onClick={toggleSound}
+              className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white transition-colors cursor-pointer"
+              title={isMuted ? 'Unmute romantic music' : 'Mute music'}
             >
-              <Share2 className="w-4 h-4" />
+              {isMuted ? <VolumeX className="w-4 h-4 text-rose-300" /> : <Volume2 className="w-4 h-4 text-rose-400 animate-pulse" />}
             </button>
-          )}
-
-          <button
-            onClick={toggleSound}
-            className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white transition-colors"
-            title={isMuted ? 'Unmute romantic music' : 'Mute music'}
-          >
-            {isMuted ? <VolumeX className="w-4 h-4 text-rose-300" /> : <Volume2 className="w-4 h-4 text-rose-400 animate-pulse" />}
-          </button>
+          </div>
         </div>
       </div>
 
@@ -438,24 +442,26 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
 
         {/* Tap zones for Left (30%) and Right (70%) navigation (only rendered when story is playing) */}
         {!isEndCard && (
-          <div className="absolute inset-0 z-20 flex pointer-events-auto">
-            <div
-              className="w-[30%] h-full group flex items-center justify-start pl-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrev();
-              }}
-            >
-              <ChevronLeft className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
-            </div>
-            <div
-              className="w-[70%] h-full group flex items-center justify-end pr-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-            >
-              <ChevronRight className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
+          <div className="absolute inset-0 z-20 flex justify-center pointer-events-auto">
+            <div className="w-full max-w-md h-full flex justify-between">
+              <div
+                className="w-[30%] h-full group flex items-center justify-start pl-2 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrev();
+                }}
+              >
+                <ChevronLeft className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
+              </div>
+              <div
+                className="w-[70%] h-full group flex items-center justify-end pr-2 cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+              >
+                <ChevronRight className="w-6 h-6 text-white/30 group-hover:text-white/80 transition-opacity" />
+              </div>
             </div>
           </div>
         )}
@@ -540,19 +546,21 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
 
       {/* Floating Reaction Button (Bottom Right) */}
       {!isEndCard && (
-        <div className="absolute bottom-12 right-4 z-30 flex items-center gap-1.5">
-          <button
-            onClick={handleHeartReaction}
-            className="w-12 h-12 rounded-full bg-rose-600/90 hover:bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 border border-white/20 hover:scale-110 active:scale-95 transition-all"
-            title="Send love reaction"
-          >
-            <Heart className="w-6 h-6 fill-white" />
-          </button>
-          {reactionsCount > 0 && (
-            <span className="bg-black/60 text-rose-200 text-xs px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-md">
-              {reactionsCount}
-            </span>
-          )}
+        <div className="absolute bottom-10 inset-x-0 z-30 px-6 flex justify-end pointer-events-none">
+          <div className="w-full max-w-md flex items-center justify-end gap-1.5 pointer-events-auto">
+            <button
+              onClick={handleHeartReaction}
+              className="w-12 h-12 rounded-full bg-rose-600/90 hover:bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-900/50 border border-white/20 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              title="Send love reaction"
+            >
+              <Heart className="w-6 h-6 fill-white" />
+            </button>
+            {reactionsCount > 0 && (
+              <span className="bg-black/60 text-rose-200 text-xs px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md font-semibold">
+                {reactionsCount}
+              </span>
+            )}
+          </div>
         </div>
       )}
 

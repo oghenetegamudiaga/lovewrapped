@@ -617,12 +617,11 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
 
   return (
     <div
-      className={`relative ${stage !== 'ready' || isSpike ? 'h-full min-h-screen w-full p-0' : 'min-h-screen p-4 sm:p-6'} text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center select-none`}
+      className={`relative min-h-screen min-h-[100dvh] w-full p-0 m-0 border-0 rounded-none text-[#FDFBF7] ${sansClass} overflow-y-auto flex flex-col items-center justify-center select-none`}
       style={{ backgroundColor: stage === 'cover' || stage === 'unsealing' ? '#FDF9F6' : activeTheme.bgColor }}
     >
-
       <div
-        className={`relative ${stage !== 'ready' || isSpike ? 'h-full min-h-screen w-full rounded-none border-0 shadow-none' : 'max-w-md w-full min-h-[640px] sm:min-h-[740px] rounded-3xl border shadow-2xl'} overflow-hidden flex flex-col`}
+        className="relative min-h-screen min-h-[100dvh] w-full rounded-none border-0 shadow-none overflow-hidden flex flex-col"
         style={{
           backgroundColor: stage === 'cover' || stage === 'unsealing' ? '#FDF9F6' : activeTheme.cardBgColor,
           borderColor: stage === 'cover' || stage === 'unsealing' ? '#EBE2D9' : `${accentColor}50`,
@@ -953,21 +952,23 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                 className="relative flex-1 overflow-y-auto text-maroon bg-[#FFFEFE] flex flex-col min-h-0 h-full w-full select-none"
               >
                 {/* Sticky Navigation Bar with Back to Cover Button */}
-                <div className="sticky top-0 z-30 px-4 py-3 border-b border-cream-border bg-[#FFFEFE]/95 backdrop-blur-md flex items-center justify-between shadow-xs shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setActiveView('photo_hero')}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-cream-border bg-cream-card hover:bg-cream-border text-maroon text-xs font-semibold transition-all cursor-pointer active:scale-95"
-                  >
-                    <span>← Photo Cover</span>
-                  </button>
-                  <span className="text-xs font-bold uppercase tracking-wider text-maroon font-serif">
-                    {coupleNames}
-                  </span>
+                <div className="sticky top-0 z-30 px-4 py-3 border-b border-cream-border bg-[#FFFEFE]/95 backdrop-blur-md shadow-xs shrink-0">
+                  <div className="max-w-md mx-auto w-full flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setActiveView('photo_hero')}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-cream-border bg-cream-card hover:bg-cream-border text-maroon text-xs font-semibold transition-all cursor-pointer active:scale-95"
+                    >
+                      <span>← Photo Cover</span>
+                    </button>
+                    <span className="text-xs font-bold uppercase tracking-wider text-maroon font-serif">
+                      {coupleNames}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Scrollable Detail Content (Padded Stack) */}
-                <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8">
+                <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-8 max-w-md mx-auto w-full">
                   {/* Couple Context Header */}
                   <div className="text-center space-y-1 pb-4 border-b border-cream-border">
                     <p className="text-[10px] uppercase tracking-widest font-semibold text-coral">
