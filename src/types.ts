@@ -178,6 +178,8 @@ export interface Wedding {
   color_variant?: string | null;
   font_variant?: string | null;
   section_order?: string[] | null;
+  intro_headline?: string | null;
+  intro_cta_text?: string | null;
   love_story?: string | null;
   gallery_photos?: string[] | null;
   music_track?: string | null;

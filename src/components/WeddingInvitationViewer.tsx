@@ -7,6 +7,7 @@ import { submitWeddingRsvpApi, getPublicThemeAssetsApi } from '../lib/api';
 import { StaticInviteCard } from './StaticInviteCard';
 import { downloadCard } from '../lib/downloadCard';
 import { MusicPlayerToggle, MusicPlayerToggleRef } from './MusicPlayerToggle';
+import { FallingPetals } from './FallingPetals';
 
 interface WeddingInvitationViewerProps {
   wedding?: Wedding | null;
@@ -693,37 +694,40 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
               initial={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-              className="absolute inset-0 z-30 flex flex-col items-center justify-between p-6 sm:p-8 text-center overflow-hidden bg-[#FDF9F6]"
+              className="absolute inset-0 z-30 flex flex-col items-center justify-end text-center overflow-hidden bg-black select-none"
             >
-              {/* Upper Portion: Couple Photo Sliding Down From Top */}
-              <div className="w-full flex-1 flex flex-col items-center justify-center max-w-sm mx-auto pt-4 pb-2">
-                <motion.div
-                  initial={!isReducedMotion ? { y: '-100%', opacity: 0 } : { y: 0, opacity: 1 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full relative rounded-3xl overflow-hidden shadow-xl border border-[#EBE2D9] aspect-[4/3] max-h-[300px] sm:max-h-[340px]"
-                >
-                  <img
-                    src={coverPhoto}
-                    alt={`${coupleNames} Cover`}
-                    className="w-full h-full object-cover object-center"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
-                </motion.div>
-              </div>
-
-              {/* Lower Portion: Standard Heading, Dynamic Names Subtext & Primary CTA */}
+              {/* Full-Bleed Edge-to-Edge Backdrop Photo with Sequenced Fade & Settle */}
               <motion.div
-                initial={!isReducedMotion ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-                className="w-full max-w-xs mx-auto flex flex-col items-center gap-4 pb-6 sm:pb-8 text-center"
+                className="absolute inset-0 z-0 overflow-hidden pointer-events-none"
+                initial={!isReducedMotion ? { opacity: 0.25, scale: 1.08 } : { opacity: 1, scale: 1.0 }}
+                animate={{ opacity: 1, scale: 1.0 }}
+                transition={{ duration: 1.3, ease: [0.25, 1, 0.5, 1] }}
               >
-                <div className="space-y-1.5">
-                  <h1 className={`text-3xl sm:text-4xl font-bold tracking-tight text-[#4A1525] ${serifClass}`}>
-                    Join Our Love Story
+                <img
+                  src={coverPhoto}
+                  alt={`${coupleNames} Full Bleed Cover`}
+                  className="w-full h-full object-cover object-center"
+                />
+              </motion.div>
+
+              {/* Ambient Falling Petals Layer */}
+              <FallingPetals count={8} color={accentColor} isReducedMotion={isReducedMotion} />
+
+              {/* Dark Gradient Overlay for Contrast & Text Legibility */}
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/45 to-transparent pointer-events-none z-15" />
+
+              {/* Sequenced Text & CTA Reveal Container (Slides Up AFTER Photo Fade) */}
+              <motion.div
+                initial={!isReducedMotion ? { opacity: 0, y: 40 } : { opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: !isReducedMotion ? 1.2 : 0, ease: [0.25, 1, 0.5, 1] }}
+                className="relative z-20 w-full max-w-sm mx-auto flex flex-col items-center gap-4 px-6 pb-10 sm:pb-14 text-center"
+              >
+                <div className="space-y-2">
+                  <h1 className={`text-2xl sm:text-4xl font-bold tracking-tight text-white drop-shadow-md leading-snug ${serifClass}`}>
+                    {wedding?.intro_headline || wedding?.headline || 'The Beginning Of A Beautiful Journey'}
                   </h1>
-                  <p className="text-sm sm:text-base font-medium text-[#7A3E4D] tracking-wide">
+                  <p className="text-xs sm:text-sm font-semibold text-white/90 tracking-widest uppercase drop-shadow-xs">
                     {coupleNames}
                   </p>
                 </div>
@@ -734,9 +738,9 @@ export const WeddingInvitationViewer: React.FC<WeddingInvitationViewerProps> = (
                   onClick={handleUnseal}
                   whileHover={!isReducedMotion ? { scale: 1.04 } : undefined}
                   whileTap={!isReducedMotion ? { scale: 0.96 } : undefined}
-                  className="mt-2 w-full max-w-[240px] py-3.5 px-8 rounded-full bg-[#80182C] text-[#FDF9F6] text-sm font-semibold tracking-wide shadow-lg hover:bg-[#681323] transition-all disabled:pointer-events-none cursor-pointer border border-[#681323]/20"
+                  className="mt-2 w-full max-w-[240px] py-3.5 px-8 rounded-full bg-[#80182C] text-[#FDF9F6] text-sm font-semibold tracking-wide shadow-2xl hover:bg-[#681323] transition-all disabled:pointer-events-none cursor-pointer border border-white/20 active:scale-95"
                 >
-                  Tap to Open Invite
+                  {wedding?.intro_cta_text || 'Tap To Open Invite'}
                 </motion.button>
               </motion.div>
             </motion.div>
