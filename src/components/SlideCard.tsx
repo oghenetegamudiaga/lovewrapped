@@ -66,7 +66,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
   }
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-rose-900 via-rose-950 to-slate-950 text-rose-50 p-6 sm:p-8 flex flex-col justify-between overflow-hidden">
+    <div className="relative w-full h-full flex-1 bg-gradient-to-br from-rose-900 via-rose-950 to-slate-950 text-rose-50 p-6 sm:p-8 pt-16 sm:pt-20 pb-12 sm:pb-16 flex flex-col justify-between overflow-hidden">
       {/* Decorative background glow */}
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-pink-500/15 rounded-full blur-3xl pointer-events-none" />

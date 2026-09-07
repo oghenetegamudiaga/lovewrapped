@@ -225,7 +225,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
   }
 
   return (
-    <div className={isPreview ? "relative w-full max-w-sm sm:max-w-md mx-auto aspect-[9/16] max-h-[820px] bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-rose-900/30 select-none flex flex-col" : "relative w-full h-full min-h-screen min-h-[100dvh] bg-black rounded-none border-0 shadow-none p-0 select-none flex flex-col overflow-hidden"}>
+    <div className={isPreview ? "relative w-full max-w-sm sm:max-w-md mx-auto aspect-[9/16] max-h-[820px] bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-rose-900/30 select-none flex flex-col" : "relative w-full h-full h-screen h-[100dvh] bg-black rounded-none border-0 shadow-none p-0 select-none flex flex-col overflow-hidden"}>
       {/* Top Progress Segment Bars */}
       <div className="absolute top-0 inset-x-0 z-30 p-3 pt-4 bg-gradient-to-b from-black/80 via-black/30 to-transparent flex justify-center pointer-events-none">
         <div className="w-full max-w-md flex gap-1.5">
@@ -283,7 +283,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
 
       {/* Main Slide Content OR End Card */}
       <div
-        className="relative flex-1 w-full h-full cursor-pointer"
+        className="relative flex-1 w-full h-full flex flex-col cursor-pointer"
         onMouseDown={() => setIsPaused(true)}
         onMouseUp={() => setIsPaused(false)}
         onTouchStart={() => setIsPaused(true)}
