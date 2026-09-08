@@ -18,27 +18,16 @@ export const SlideCard: React.FC<SlideCardProps> = ({
 }) => {
   if (slide.type === 'image' && slide.url) {
     return (
-      <div className="relative w-full h-full bg-slate-950 flex flex-col items-center justify-center overflow-hidden">
-        {/* Background Blur Image */}
+      <div className="relative w-full h-full flex-1 bg-slate-950 flex flex-col justify-between overflow-hidden">
+        {/* Full-bleed Edge-to-Edge Foreground Image */}
         <img
           src={slide.url}
           alt={slide.caption || 'Memory'}
-          className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-105"
+          className="absolute inset-0 w-full h-full object-cover slide-image-reveal"
         />
 
-        {/* Foreground Main Image */}
-        <div className="relative z-10 w-full h-full max-h-[82%] p-4 flex items-center justify-center">
-          <div className="relative rounded-2xl overflow-hidden border-2 border-white/20 max-w-full max-h-full">
-            <img
-              src={slide.url}
-              alt={slide.caption || 'Memory'}
-              className="w-full h-full object-contain max-h-[60vh] rounded-2xl"
-            />
-          </div>
-        </div>
-
         {/* Caption Overlay */}
-        <div className="absolute bottom-0 inset-x-0 z-20 p-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent text-center text-white">
+        <div className="relative z-20 mt-auto p-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent text-center text-white slide-text-stagger-2">
           {slide.caption && (
             <p className="font-serif italic text-base sm:text-lg text-rose-100 tracking-wide drop-shadow-md max-w-sm mx-auto">
               "{slide.caption}"
@@ -72,7 +61,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
       <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-pink-500/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header details */}
-      <div className="relative z-10 flex items-center justify-between text-rose-300/80 text-xs font-medium uppercase tracking-widest">
+      <div className="relative z-10 flex items-center justify-between text-rose-300/80 text-xs font-medium uppercase tracking-widest slide-text-stagger-1">
         <span className="flex items-center gap-1">
           <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
           {occasion || 'Amorah'}
@@ -81,7 +70,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
       </div>
 
       {/* Main Text Content */}
-      <div className="relative z-10 my-auto py-6 flex flex-col items-center justify-center text-center">
+      <div className="relative z-10 my-auto py-6 flex flex-col items-center justify-center text-center slide-text-stagger-2">
         <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-rose-400/50 to-transparent mb-6" />
         <p className={`font-serif text-rose-50 ${fontSizeClass} whitespace-pre-line drop-shadow-sm max-w-md mx-auto`}>
           {textContent}
@@ -90,7 +79,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
       </div>
 
       {/* Footer Accent */}
-      <div className="relative z-10 flex items-center justify-center text-rose-300/60 text-[11px] font-medium tracking-wider uppercase">
+      <div className="relative z-10 flex items-center justify-center text-rose-300/60 text-[11px] font-medium tracking-wider uppercase slide-text-stagger-3">
         <ChevronRight className="w-3.5 h-3.5 text-rose-400 mr-1" />
         Tap to continue
       </div>

@@ -291,11 +291,11 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
       >
         {!isEndCard ? (
           (slides[currentIndex] as any)?.type === 'voice' && experience.voice_message_url ? (
-            <div className="relative w-full h-full bg-gradient-to-br from-rose-950 via-pink-950 to-slate-950 text-white p-6 sm:p-8 flex flex-col justify-between items-center text-center overflow-hidden">
+            <div key={slides[currentIndex]?.id || currentIndex} className="relative w-full h-full bg-gradient-to-br from-rose-950 via-pink-950 to-slate-950 text-white p-6 sm:p-8 flex flex-col justify-between items-center text-center overflow-hidden">
               <div className="absolute -top-20 -right-20 w-64 h-64 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="relative z-10 pt-4 flex flex-col items-center gap-1">
+              <div className="relative z-10 pt-4 flex flex-col items-center gap-1 slide-text-stagger-1">
                 <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-rose-300 font-semibold bg-white/10 px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
                   <Mic className="w-3.5 h-3.5 text-rose-400" />
                   Voice Message
@@ -305,7 +305,7 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 </h3>
               </div>
 
-              <div className="relative z-30 my-auto flex flex-col items-center justify-center space-y-6">
+              <div className="relative z-30 my-auto flex flex-col items-center justify-center space-y-6 slide-text-stagger-2">
                 <div className="relative flex items-center justify-center">
                   {isPlayingVoice && (
                     <>
@@ -363,12 +363,13 @@ export const StoryViewer: React.FC<StoryViewerProps> = ({
                 </p>
               </div>
 
-              <div className="relative z-10 pb-2 text-[11px] text-rose-300/60 uppercase tracking-wider font-medium">
+              <div className="relative z-10 pb-2 text-[11px] text-rose-300/60 uppercase tracking-wider font-medium slide-text-stagger-3">
                 Personal voice memo for {experience.receiver_name || 'you'}
               </div>
             </div>
           ) : (
             <SlideCard
+              key={slides[currentIndex]?.id || currentIndex}
               slide={slides[currentIndex]}
               senderName={experience.sender_name}
               receiverName={experience.receiver_name}

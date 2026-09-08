@@ -183,9 +183,61 @@
   animation: sticker-float-2 5.2s ease-in-out 0.8s infinite;
 }
 
+/* Moments Viewer Slide Entrance Micro-Animations */
+@keyframes slide-text-drift-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-image-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.slide-text-stagger-1 {
+  animation: slide-text-drift-in 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 0ms;
+  will-change: opacity, transform;
+}
+
+.slide-text-stagger-2 {
+  animation: slide-text-drift-in 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 80ms;
+  will-change: opacity, transform;
+}
+
+.slide-text-stagger-3 {
+  animation: slide-text-drift-in 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 160ms;
+  will-change: opacity, transform;
+}
+
+.slide-image-reveal {
+  animation: slide-image-zoom-in 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-sticker-float-1,
-  .animate-sticker-float-2 {
+  .animate-sticker-float-2,
+  .slide-text-stagger-1,
+  .slide-text-stagger-2,
+  .slide-text-stagger-3,
+  .slide-image-reveal {
     animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
