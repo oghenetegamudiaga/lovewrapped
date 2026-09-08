@@ -462,6 +462,10 @@ export const CreateView: React.FC<CreateViewProps> = ({
       setErrorMessage('Please enter their name.');
       return;
     }
+    if (!creatorEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(creatorEmail.trim())) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
     if (!message.trim() || message.trim().length < 10) {
       setErrorMessage('Please enter a heartfelt message (at least 10 characters).');
       return;
@@ -905,11 +909,12 @@ export const CreateView: React.FC<CreateViewProps> = ({
               </div>
             )}
 
-            {/* Email optional */}
+            {/* Email required */}
             <div>
-              <label className="block text-xs font-medium text-mauve mb-1.5">Your email (optional)</label>
+              <label className="block text-xs font-medium text-mauve mb-1.5">Your email address <span className="text-coral">*</span></label>
               <input
                 type="email"
+                required
                 placeholder="e.g. daniel@example.com"
                 value={creatorEmail}
                 onChange={(e) => setCreatorEmail(e.target.value)}

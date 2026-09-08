@@ -11,7 +11,7 @@ import { generateSlides } from '../src/lib/slideEngine.js';
 import { isSupabaseConfigured, supabase } from '../src/lib/supabase.js';
 import { PAID_PLAN_PRICE_KOBO, PAID_PLAN_PRICE_NGN, PAID_PLAN_PRICE_FORMATTED, WEDDING_PLAN_PRICE_KOBO, WEDDING_PLAN_PRICE_NGN, WEDDING_PLAN_PRICE_FORMATTED } from '../src/constants.js';
 import { validateMusicUrlRegistry } from '../src/lib/musicProviders.js';
-import { sendPasswordResetEmail } from './lib/email.js';
+import { sendPasswordResetEmail, sendCreationConfirmationEmail, sendFollowUpEmail } from './lib/email.js';
 
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -582,7 +582,7 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
     const receiver_name = payload.receiver_name.trim();
     const occasion = (payload.occasion || 'Special Moment').trim();
     const message = payload.message.trim();
-    const creator_email = payload.creator_email ? payload.creator_email.trim() : undefined;
+    const creator_email = payload.creator_email ? payload.creator_email.trim() : '';
 
     if (!sender_name) {
       return res.status(400).json({ message: 'Sender name cannot be empty.' });
@@ -609,14 +609,15 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
       return res.status(400).json({ message: 'Message must be under 2000 characters.' });
     }
 
-    if (creator_email) {
-      if (creator_email.length > 255) {
-        return res.status(400).json({ message: 'Creator email must be under 255 characters.' });
-      }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(creator_email)) {
-        return res.status(400).json({ message: 'Please provide a valid creator email address.' });
-      }
+    if (!creator_email) {
+      return res.status(400).json({ message: 'Creator email address is required.' });
+    }
+    if (creator_email.length > 255) {
+      return res.status(400).json({ message: 'Creator email must be under 255 characters.' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(creator_email)) {
+      return res.status(400).json({ message: 'Please provide a valid creator email address.' });
     }
 
     const id = crypto.randomUUID();
@@ -643,6 +644,7 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
       image_count: images.length,
       is_paid: tier === 'free', // Free tier is instantly active; Paid requires paystack step
       payment_reference: null,
+      creator_email,
       voice_message_url: payload.voice_message_url || null,
       views_count: 0,
       reactions_count: 0,
@@ -661,6 +663,7 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
         image_count: experience.image_count,
         is_paid: experience.is_paid,
         payment_reference: experience.payment_reference,
+        creator_email: experience.creator_email,
         voice_message_url: experience.voice_message_url,
         views_count: experience.views_count,
         reactions_count: experience.reactions_count,
@@ -700,6 +703,18 @@ apiRouter.post('/experiences', createExperienceLimiter, async (req, res) => {
         tier,
         created_at: new Date().toISOString(),
       });
+    }
+
+    // Trigger immediate confirmation email for Free tier experiences
+    if (tier === 'free') {
+      const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer as string).origin : 'https://amorah.xyz');
+      const shareUrl = `${origin}/w/${slug}`;
+      sendCreationConfirmationEmail({
+        product: 'moments',
+        toEmail: creator_email,
+        name: receiver_name,
+        shareUrl,
+      }).catch((err) => console.error('[Email Dispatch Error]:', err));
     }
 
     res.status(201).json(experience);
@@ -937,6 +952,7 @@ apiRouter.post('/paystack/verify', async (req, res) => {
       return res.status(404).json({ message: 'Experience or transaction reference not found.' });
     }
 
+    const wasAlreadyPaid = exp.is_paid;
     exp.is_paid = true;
     exp.payment_reference = reference;
 
@@ -948,6 +964,17 @@ apiRouter.post('/paystack/verify', async (req, res) => {
     }
 
     experiencesStore.set(exp.slug, exp);
+
+    if (!wasAlreadyPaid && exp.creator_email) {
+      const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer as string).origin : 'https://amorah.xyz');
+      const shareUrl = `${origin}/w/${exp.slug}`;
+      sendCreationConfirmationEmail({
+        product: 'moments',
+        toEmail: exp.creator_email,
+        name: exp.receiver_name,
+        shareUrl,
+      }).catch((err) => console.error('[Email Dispatch Error]:', err));
+    }
 
     return res.json({
       success: true,
@@ -988,23 +1015,46 @@ apiRouter.post('/paystack/webhook', async (req, res) => {
 
       if (isWedding && txData.amount >= WEDDING_PLAN_PRICE_KOBO) {
         const weddingId = metadata.wedding_id || metadata.weddingId;
+        let targetW: Wedding | null = null;
+
         if (isSupabaseConfigured && supabase) {
           if (weddingId) {
+            const { data } = await supabase.from('weddings').select('*').eq('id', weddingId).single();
+            if (data) targetW = data;
             await supabase.from('weddings').update({ is_paid: true }).eq('id', weddingId);
           } else if (reference) {
+            const { data } = await supabase.from('weddings').select('*').eq('payment_reference', reference).single();
+            if (data) targetW = data;
             await supabase.from('weddings').update({ is_paid: true }).eq('payment_reference', reference);
           }
         }
+
         for (const w of weddingsStore.values()) {
           if (w.id === weddingId || w.payment_reference === reference) {
             w.is_paid = true;
+            if (!targetW) targetW = w;
             weddingsStore.set(w.id, w);
             break;
           }
         }
+
+        const recipientEmail = txData.customer?.email || metadata.email;
+        if (recipientEmail && targetW) {
+          const origin = process.env.APP_URL || 'https://amorah.xyz';
+          sendCreationConfirmationEmail({
+            product: 'weddings',
+            toEmail: recipientEmail,
+            name: targetW.couple_names || 'Your Wedding',
+            shareUrl: `${origin}/w/wedding/${targetW.slug}`,
+          }).catch((err) => console.error('[Webhook Email Error]:', err));
+        }
       } else if (txData.amount === PAID_PLAN_PRICE_KOBO) {
         if (reference) {
+          let expRec: Experience | null = null;
+
           if (isSupabaseConfigured && supabase) {
+            const { data } = await supabase.from('experiences').select('*').eq('payment_reference', reference).single();
+            if (data) expRec = data;
             await supabase
               .from('experiences')
               .update({ is_paid: true })
@@ -1014,9 +1064,21 @@ apiRouter.post('/paystack/webhook', async (req, res) => {
           for (const item of experiencesStore.values()) {
             if (item.payment_reference === reference) {
               item.is_paid = true;
+              if (!expRec) expRec = item;
               experiencesStore.set(item.slug, item);
               break;
             }
+          }
+
+          const email = expRec?.creator_email || txData.customer?.email;
+          if (email && expRec) {
+            const origin = process.env.APP_URL || 'https://amorah.xyz';
+            sendCreationConfirmationEmail({
+              product: 'moments',
+              toEmail: email,
+              name: expRec.receiver_name,
+              shareUrl: `${origin}/w/${expRec.slug}`,
+            }).catch((err) => console.error('[Webhook Email Error]:', err));
           }
         }
       }
@@ -1024,6 +1086,159 @@ apiRouter.post('/paystack/webhook', async (req, res) => {
   }
 
   return res.status(200).json({ status: 'success' });
+});
+
+// Vercel Cron Endpoint: Scheduled Follow-Up Emails for Moments (3 days post-creation) & Weddings (7 days post-event)
+apiRouter.all('/cron/follow-ups', async (req, res) => {
+  try {
+    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = req.headers['authorization'];
+
+    if (cronSecret) {
+      if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+        return res.status(401).json({ message: 'Unauthorized cron request.' });
+      }
+    }
+
+    const now = new Date();
+    const nowMs = now.getTime();
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const momentsCutoffStr = new Date(nowMs - THREE_DAYS_MS).toISOString();
+
+    let momentsSent = 0;
+    let weddingsSent = 0;
+
+    // 1. Process Moments Candidate Experiences (Created >= 3 days ago, follow_up_sent_at IS NULL, valid creator_email)
+    let candidateMoments: any[] = [];
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('experiences')
+        .select('*')
+        .is('follow_up_sent_at', null)
+        .lte('created_at', momentsCutoffStr)
+        .not('creator_email', 'is', null);
+
+      if (data && !error) {
+        candidateMoments = data;
+      }
+    } else {
+      for (const exp of experiencesStore.values()) {
+        if (!exp.follow_up_sent_at && exp.creator_email && exp.created_at <= momentsCutoffStr) {
+          candidateMoments.push(exp);
+        }
+      }
+    }
+
+    for (const exp of candidateMoments) {
+      if (!exp.creator_email) continue;
+      const sentTime = new Date().toISOString();
+
+      // Set follow_up_sent_at BEFORE sending email to enforce strict idempotency
+      if (isSupabaseConfigured && supabase) {
+        await supabase
+          .from('experiences')
+          .update({ follow_up_sent_at: sentTime })
+          .eq('id', exp.id);
+      }
+      exp.follow_up_sent_at = sentTime;
+      experiencesStore.set(exp.slug, exp);
+
+      const origin = process.env.APP_URL || 'https://amorah.xyz';
+      const shareUrl = `${origin}/w/${exp.slug}`;
+
+      try {
+        await sendFollowUpEmail({
+          product: 'moments',
+          toEmail: exp.creator_email,
+          name: exp.receiver_name,
+          shareUrl,
+        });
+        momentsSent++;
+      } catch (err) {
+        console.error(`[Cron Follow-Up Error] Failed to send Moments follow-up for experience ${exp.id}:`, err);
+      }
+    }
+
+    // 2. Process Weddings Candidate Records (Event date >= 7 days ago, follow_up_sent_at IS NULL)
+    let candidateWeddings: any[] = [];
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('weddings')
+        .select('*, couple_accounts(email), wedding_events(*)')
+        .is('follow_up_sent_at', null);
+
+      if (data && !error) {
+        candidateWeddings = data;
+      }
+    } else {
+      for (const w of weddingsStore.values()) {
+        if (!w.follow_up_sent_at) {
+          const evs = weddingEventsStore.get(w.id) || [];
+          const coupleAcc = coupleAccountsStore.get(w.couple_account_id);
+          candidateWeddings.push({
+            ...w,
+            couple_accounts: coupleAcc ? { email: coupleAcc.email } : null,
+            wedding_events: evs,
+          });
+        }
+      }
+    }
+
+    for (const w of candidateWeddings) {
+      const coupleEmail = w.couple_accounts?.email || w.couple_email;
+      if (!coupleEmail) continue;
+
+      const eventsList = w.wedding_events || [];
+      const primaryEvent = eventsList[0];
+      const rawDateStr = primaryEvent?.date || w.event_date;
+      if (!rawDateStr) continue;
+
+      const eventDate = new Date(rawDateStr);
+      if (isNaN(eventDate.getTime())) continue;
+
+      // Event date + 7 days cutoff check
+      if (nowMs >= eventDate.getTime() + SEVEN_DAYS_MS) {
+        const sentTime = new Date().toISOString();
+
+        if (isSupabaseConfigured && supabase) {
+          await supabase
+            .from('weddings')
+            .update({ follow_up_sent_at: sentTime })
+            .eq('id', w.id);
+        }
+        w.follow_up_sent_at = sentTime;
+        weddingsStore.set(w.id, w);
+
+        const origin = process.env.APP_URL || 'https://amorah.xyz';
+        const shareUrl = `${origin}/w/wedding/${w.slug}`;
+
+        try {
+          await sendFollowUpEmail({
+            product: 'weddings',
+            toEmail: coupleEmail,
+            name: w.couple_names || 'Your Wedding',
+            shareUrl,
+          });
+          weddingsSent++;
+        } catch (err) {
+          console.error(`[Cron Follow-Up Error] Failed to send Weddings follow-up for wedding ${w.id}:`, err);
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      timestamp: now.toISOString(),
+      processed: {
+        momentsSent,
+        weddingsSent,
+      },
+    });
+  } catch (err: any) {
+    console.error('[Cron Follow-Up Error] Exception executing follow-up cron job:', err);
+    return res.status(500).json({ message: 'Internal cron execution error.' });
+  }
 });
 
 // Periodic Cleanup Task for Abandoned Unpaid Wedding Records (> 24 hours old)
@@ -2307,6 +2522,10 @@ apiRouter.post('/weddings/create-free', requireCoupleAuth, async (req, res) => {
     const bFirstName = bride_first_name ? bride_first_name.trim().slice(0, 100) : '';
     const gFirstName = groom_first_name ? groom_first_name.trim().slice(0, 100) : '';
 
+    if (!couple || !couple.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(couple.email)) {
+      return res.status(400).json({ message: 'A valid couple account email address is required.' });
+    }
+
     if (!bFirstName || !gFirstName) {
       return res.status(400).json({ message: "Bride's first name and Groom's first name are required." });
     }
@@ -2346,6 +2565,16 @@ apiRouter.post('/weddings/create-free', requireCoupleAuth, async (req, res) => {
     }
 
     weddingsStore.set(weddingId, weddingRecord);
+
+    // Trigger immediate confirmation email for Free Wedding Save-the-Date
+    const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer as string).origin : 'https://amorah.xyz');
+    const shareUrl = `${origin}/w/wedding/${slug}`;
+    sendCreationConfirmationEmail({
+      product: 'weddings',
+      toEmail: couple.email,
+      name: coupleNames,
+      shareUrl,
+    }).catch((err) => console.error('[Email Dispatch Error]:', err));
 
     return res.status(201).json({
       success: true,
@@ -2717,6 +2946,17 @@ apiRouter.post('/weddings/verify-payment', requireCoupleAuth, async (req, res) =
           .eq('id', targetWedding.id);
       }
       weddingsStore.set(targetWedding.id, targetWedding);
+
+      if (couple && couple.email) {
+        const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer as string).origin : 'https://amorah.xyz');
+        const shareUrl = `${origin}/w/wedding/${targetWedding.slug}`;
+        sendCreationConfirmationEmail({
+          product: 'weddings',
+          toEmail: couple.email,
+          name: targetWedding.couple_names || 'Your Wedding',
+          shareUrl,
+        }).catch((err) => console.error('[Email Dispatch Error]:', err));
+      }
     }
 
     let eventRecords = weddingEventsStore.get(targetWedding.id) || [];

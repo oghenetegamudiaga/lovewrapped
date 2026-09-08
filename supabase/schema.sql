@@ -474,3 +474,11 @@ CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_couple_account_id ON public
 
 -- Enable Row Level Security (RLS) to lock down public access (Server / Service Role access only)
 ALTER TABLE public.password_reset_tokens ENABLE ROW LEVEL SECURITY;
+
+-- ==================== Migration: Transactional & Follow-Up Email Columns ====================
+-- Run this block in Supabase SQL Editor to support creator email storage and cron follow-up tracking.
+
+ALTER TABLE public.experiences ADD COLUMN IF NOT EXISTS creator_email TEXT;
+ALTER TABLE public.experiences ADD COLUMN IF NOT EXISTS follow_up_sent_at TIMESTAMPTZ;
+ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS follow_up_sent_at TIMESTAMPTZ;
+
